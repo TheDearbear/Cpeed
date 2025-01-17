@@ -13,9 +13,16 @@ void load_instance_pointers();
 int main() {
     vkGetInstanceProcAddr = PLATFORM_load_vulkan_lib();
     if (vkGetInstanceProcAddr == VK_NULL_HANDLE) {
-        printf("Unable to load Vulkan library");
+        printf("Unable to load Vulkan library\n");
         return -1;
     }
+
+    CpdWindowInfo windowInfo = {
+        .title = "Cpeed",
+        .width = 800,
+        .height = 600
+    };
+    CpdWindow window = PLATFORM_create_window(&windowInfo);
 
     load_global_pointers();
 
@@ -23,17 +30,20 @@ int main() {
 
     result = create_instance();
     if (result != VK_SUCCESS) {
-        printf_s("Unable to create Vulkan instance. Result code: %s", string_VkResult(result));
+        printf_s("Unable to create Vulkan instance. Result code: %s\n", string_VkResult(result));
         return -1;
     }
 
     load_instance_pointers();
 
     // Do stuff
-    printf("Vulkan instance handle: %p", g_instance);
+    printf("Vulkan instance handle: %p\n", g_instance);
+
+    while (!PLATFORM_window_poll(window));
     // No mor stuff
 
     vkDestroyInstance(g_instance, VK_NULL_HANDLE);
+    PLATFORM_window_destroy(window);
     PLATFORM_free_vulkan_lib();
 }
 
