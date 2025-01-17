@@ -150,16 +150,13 @@ VkResult RENDERER_select_render_device(CpdRenderer* renderer) {
         VkPhysicalDeviceProperties properties;
         vkGetPhysicalDeviceProperties(devices[i], &properties);
 
-        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ||
-            properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU) {
-            
-            if (performance_device_index == UINT32_MAX || properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-                performance_device_index = i;
-            }
+        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            performance_device_index = i;
+            break;
+        }
 
-            if (properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-                break;
-            }
+        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU && performance_device_index == UINT32_MAX) {
+            performance_device_index = i;
         }
     }
 
