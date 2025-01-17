@@ -1,4 +1,4 @@
-﻿# CMakeList.txt : Top-level CMake project file, do global configuration
+# CMakeList.txt : Top-level CMake project file, do global configuration
 # and include sub-projects here.
 #
 cmake_minimum_required (VERSION 3.8)
@@ -18,8 +18,8 @@ add_subdirectory ("Cpeed")
 
 if (WIN32)
   add_subdirectory ("Cpeed/windows")
-  target_link_libraries (Cpeed LINK_PUBLIC winmain)
+  target_link_libraries (Cpeed LINK_PUBLIC CpeedWindows)
 elseif (UNIX)
   add_subdirectory ("Cpeed/linux")
-  target_link_libraries (Cpeed LINK_PUBLIC linuxmain)
+  target_link_libraries (Cpeed LINK_PUBLIC CpeedLinux)
 endif (WIN32)
