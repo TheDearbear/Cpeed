@@ -1,6 +1,5 @@
 #include "main.h"
 #include "common/renderer.h"
-#include <malloc.h>
 
 VkInstance g_instance;
 
@@ -37,7 +36,7 @@ int main() {
 
     result = create_instance();
     if (result != VK_SUCCESS) {
-        printf_s("Unable to create Vulkan instance. Result code: %s\n", string_VkResult(result));
+        printf("Unable to create Vulkan instance. Result code: %s\n", string_VkResult(result));
         return -1;
     }
 

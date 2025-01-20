@@ -2,7 +2,8 @@
 
 typedef void* CpdWindow;
 
-typedef enum CpdWindowFlags { } CpdWindowFlags;
+// Reserverd for future use
+typedef unsigned int CpdWindowFlags;
 
 typedef struct CpdWindowInfo {
     char* title;

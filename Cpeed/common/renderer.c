@@ -82,7 +82,7 @@ static VkResult init_device(CpdDevice* cpeed_device, VkPhysicalDevice physical, 
 
     VkPhysicalDeviceProperties physical_device_properties;
     vkGetPhysicalDeviceProperties(physical, &physical_device_properties);
-    printf_s("Initializing %s with name: %s\n", string_VkPhysicalDeviceType(physical_device_properties.deviceType), physical_device_properties.deviceName);
+    printf("Initializing %s with name: %s\n", string_VkPhysicalDeviceType(physical_device_properties.deviceType), physical_device_properties.deviceName);
 
     uint32_t queue_create_info_count;
     VkDeviceQueueCreateInfo* queue_create_info;
