@@ -5,6 +5,13 @@
 #include <stdbool.h>
 #include <vulkan/vulkan.h>
 
+typedef enum CompilePlatform {
+    CompilePlatform_Windows,
+    CompilePlatform_Linux
+} CompilePlatform;
+
+extern CompilePlatform PLATFORM_compile_platform();
+
 extern PFN_vkGetInstanceProcAddr PLATFORM_load_vulkan_lib();
 extern void PLATFORM_free_vulkan_lib();
 

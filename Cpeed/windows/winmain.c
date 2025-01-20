@@ -2,6 +2,10 @@
 
 HMODULE g_vulkan;
 
+CompilePlatform PLATFORM_compile_platform() {
+    return CompilePlatform_Windows;
+}
+
 PFN_vkGetInstanceProcAddr PLATFORM_load_vulkan_lib() {
     if (g_vulkan == NULL) {
         g_vulkan = LoadLibraryW(L"vulkan-1");
