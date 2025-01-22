@@ -78,7 +78,10 @@ static void destroy_queue_create_infos(VkDeviceQueueCreateInfo* infos, uint32_t 
     free(infos);
 }
 
-static VkResult init_device(CpdDevice* cpeed_device, VkPhysicalDevice physical, uint32_t graphics, uint32_t compute, uint32_t transfer) {
+static VkResult init_device(
+    CpdDevice* cpeed_device, VkPhysicalDevice physical, CpdPlatformExtensions* extensions,
+    uint32_t graphics, uint32_t compute, uint32_t transfer
+) {
 
     VkPhysicalDeviceProperties physical_device_properties;
     vkGetPhysicalDeviceProperties(physical, &physical_device_properties);
@@ -97,8 +100,8 @@ static VkResult init_device(CpdDevice* cpeed_device, VkPhysicalDevice physical, 
         .queueCreateInfoCount = queue_create_info_count,
         .pQueueCreateInfos = queue_create_info,
         .enabledExtensionCount = 0,
-        .ppEnabledExtensionNames = 0,
-        .pEnabledFeatures = VK_NULL_HANDLE
+        .ppEnabledExtensionNames = extensions->count,
+        .pEnabledFeatures = extensions->count > 0 ? extensions->extensions : 0
     };
 
     VkDevice device;
@@ -172,11 +175,20 @@ VkResult RENDERER_select_render_device(CpdRenderer* renderer) {
         if (graphics_family_index != UINT32_MAX && compute_family_index != UINT32_MAX && transfer_family_index != UINT32_MAX) {
             free(devices);
 
-            return init_device(&renderer->render_device, device, graphics_family_index, compute_family_index, transfer_family_index);
+            CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_render_device_extensions();
+
+            VkResult result = init_device(&renderer->render_device, device, extensions, graphics_family_index, compute_family_index, transfer_family_index);
+
+            PLATFORM_free_vulkan_extensions(extensions);
+            return result;
         }
     }
 
     for (uint32_t i = 0; i < count; i++) {
+        if (i == performance_device_index) {
+            continue;
+        }
+
         VkPhysicalDevice device = devices[i];
 
         get_physical_device_families(device, &graphics_family_index, &compute_family_index, &transfer_family_index);
@@ -184,7 +196,12 @@ VkResult RENDERER_select_render_device(CpdRenderer* renderer) {
         if (graphics_family_index != UINT32_MAX && compute_family_index != UINT32_MAX && transfer_family_index != UINT32_MAX) {
             free(devices);
 
-            return init_device(&renderer->render_device, device, graphics_family_index, compute_family_index, transfer_family_index);
+            CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_render_device_extensions();
+
+            VkResult result = init_device(&renderer->render_device, device, extensions, graphics_family_index, compute_family_index, transfer_family_index);
+
+            PLATFORM_free_vulkan_extensions(extensions);
+            return result;
         }
     }
 

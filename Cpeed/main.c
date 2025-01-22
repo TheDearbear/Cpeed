@@ -86,6 +86,12 @@ VkResult create_instance() {
         .applicationVersion = VK_API_VERSION_1_0
     };
 
+    CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_instance_extensions();
+    if (extensions == 0) {
+        printf("Unable to get required Vulkan instance extensions\n");
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
     VkInstanceCreateInfo create_info = {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pNext = 0,
@@ -93,9 +99,13 @@ VkResult create_instance() {
         .pApplicationInfo = &app_info,
         .enabledLayerCount = 0,
         .ppEnabledLayerNames = 0,
-        .enabledExtensionCount = 0,
-        .ppEnabledExtensionNames = 0
+        .enabledExtensionCount = extensions->count,
+        .ppEnabledExtensionNames = extensions->count > 0 ? extensions->extensions : 0
     };
 
-    return vkCreateInstance(&create_info, VK_NULL_HANDLE, &g_instance);
+    VkResult result = vkCreateInstance(&create_info, VK_NULL_HANDLE, &g_instance);
+
+    PLATFORM_free_vulkan_extensions(extensions);
+
+    return result;
 }

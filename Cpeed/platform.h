@@ -5,18 +5,36 @@
 #include <stdbool.h>
 #include <vulkan/vulkan.h>
 
-typedef enum CompilePlatform {
-    CompilePlatform_Windows,
-    CompilePlatform_Linux
-} CompilePlatform;
+typedef enum CpdCompilePlatform {
+    CpdCompilePlatform_Windows,
+    CpdCompilePlatform_Linux
+} CpdCompilePlatform;
 
-extern CompilePlatform PLATFORM_compile_platform();
+typedef struct CpdPlatformExtensions {
+    char** extensions;
+    unsigned int count;
+} CpdPlatformExtensions;
+
+// == Generic
+
+extern CpdCompilePlatform PLATFORM_compile_platform();
+
+// == Vulkan
 
 extern PFN_vkGetInstanceProcAddr PLATFORM_load_vulkan_lib();
 extern void PLATFORM_free_vulkan_lib();
 
+extern const CpdPlatformExtensions* PLATFORM_alloc_vulkan_instance_extensions();
+extern const CpdPlatformExtensions* PLATFORM_alloc_vulkan_render_device_extensions();
+extern const CpdPlatformExtensions* PLATFORM_alloc_vulkan_ui_device_extensions();
+
+extern void PLATFORM_free_vulkan_extensions(CpdPlatformExtensions* extensions);
+
+// == Windowing
+
 extern CpdWindow PLATFORM_create_window(const CpdWindowInfo* info);
+extern void PLATFORM_window_destroy(CpdWindow window);
+
 extern void PLATFORM_window_show(CpdWindow window);
 extern void PLATFORM_window_hide(CpdWindow window);
-extern void PLATFORM_window_destroy(CpdWindow window);
 extern bool PLATFORM_window_poll(CpdWindow window);
