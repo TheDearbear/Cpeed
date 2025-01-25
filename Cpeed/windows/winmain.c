@@ -36,7 +36,19 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_instance_extensions() {
         return 0;
     }
 
-    extensions->count = 0;
+    const int extension_count = 2;
+
+    char** extensionNames = (char**)malloc(extension_count * sizeof(char*));
+    if (extensionNames == 0) {
+        free(extensions);
+        return 0;
+    }
+
+    extensions->count = extension_count;
+    extensions->extensions = extensionNames;
+
+    extensionNames[0] = VK_KHR_SURFACE_EXTENSION_NAME;
+    extensionNames[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 
     return extensions;
 }
@@ -65,9 +77,6 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_ui_device_extensions() {
 
 void PLATFORM_free_vulkan_extensions(CpdPlatformExtensions* extensions) {
     if (extensions->count > 0) {
-        for (unsigned int i = 0; i < extensions->count; i++) {
-            free(extensions->extensions[i]);
-        }
         free(extensions->extensions);
     }
 
