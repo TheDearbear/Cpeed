@@ -49,6 +49,12 @@ int main() {
         goto shutdown;
     }
 
+    result = RENDERER_select_ui_device(renderer);
+    if (result != VK_SUCCESS) {
+        printf("Unable to select ui device. Result code: %s\n", string_VkResult(result));
+        goto shutdown;
+    }
+
     while (!PLATFORM_window_poll(window)) {
         // Do stuff
     }
@@ -90,6 +96,10 @@ VkResult create_instance() {
     if (extensions == 0) {
         printf("Unable to get required Vulkan instance extensions\n");
         return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    for (unsigned int i = 0; i < extensions->count; i++) {
+        printf("Enabling instance extension: %s\n", extensions->extensions[i]);
     }
 
     VkInstanceCreateInfo create_info = {

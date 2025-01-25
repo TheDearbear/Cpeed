@@ -2,6 +2,11 @@
 
 #include "../main.h"
 
+typedef struct CpdTransferQueue {
+    uint64_t bytes_queued;
+    VkQueue handle;
+} CpdTransferQueue;
+
 typedef struct CpdDevice {
     VkPhysicalDevice physical_handle;
     VkDevice handle;
@@ -13,7 +18,8 @@ typedef struct CpdDevice {
     VkQueue compute_queue;
 
     uint32_t transfer_index;
-    VkQueue transfer_queue;
+    uint32_t transfer_queue_count;
+    CpdTransferQueue* transfer_queues;
 
     PFN_vkGetDeviceQueue vkGetDeviceQueue;
     PFN_vkDestroyDevice vkDestroyDevice;
