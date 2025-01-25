@@ -61,6 +61,16 @@ bool PLATFORM_window_poll(CpdWindow window) {
 
     DWORD err = GetLastError();
     if (err != 0) {
+        wchar_t* buffer = NULL;
+        DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS;
+
+        if (FormatMessageW(flags, NULL, err, 0, &buffer, 0, NULL) != 0) {
+            wprintf(buffer);
+            LocalFree(buffer);
+        }
+
         printf("Unable to read window state. Error code: %d\n", err);
         return true;
     }
