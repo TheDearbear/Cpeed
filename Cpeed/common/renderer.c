@@ -245,7 +245,7 @@ VkResult RENDERER_select_ui_device(CpdRenderer* renderer) {
     }
 
     if (iGPU_index != UINT32_MAX) {
-        if (try_initialize_ui_device(devices[iGPU_index], &renderer->render_device, &result)) {
+        if (try_initialize_ui_device(devices[iGPU_index], &renderer->ui_device, &result)) {
             free(devices);
             return result;
         }
@@ -256,7 +256,7 @@ VkResult RENDERER_select_ui_device(CpdRenderer* renderer) {
             continue;
         }
 
-        if (try_initialize_ui_device(devices[i], &renderer->render_device, &result)) {
+        if (try_initialize_ui_device(devices[i], &renderer->ui_device, &result)) {
             free(devices);
             return result;
         }
