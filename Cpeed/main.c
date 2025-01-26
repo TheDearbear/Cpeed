@@ -45,6 +45,13 @@ int main() {
         goto shutdown;
     }
 
+    VkSurfaceKHR surface;
+    result = PLATFORM_create_surface(g_instance, window, &surface);
+    if (result != VK_SUCCESS) {
+        printf("Unable to create surface. Result code: %s\n", string_VkResult(result));
+        goto shutdown;
+    }
+
     while (!PLATFORM_window_poll(window)) {
         // Do stuff
     }
@@ -52,6 +59,11 @@ int main() {
     printf("Goodbye!\n");
 
 shutdown:
+    #pragma warning(push)
+    #pragma warning(disable:6001)
+    vkDestroySurfaceKHR(g_instance, surface, VK_NULL_HANDLE);
+    #pragma warning(pop)
+
     RENDERER_destroy(renderer);
     vkDestroyInstance(g_instance, VK_NULL_HANDLE);
     PLATFORM_window_destroy(window);
