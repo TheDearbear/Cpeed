@@ -3,7 +3,7 @@
 #
 
 # Add source to this project's executable.
-add_executable (Cpeed "main.c" "main.h" "platform.h" "common/window.h" "common/renderer.h" "common/renderer.c")
+add_executable (Cpeed "main.c" "main.h" "platform.h" "common/window.h" "common/renderer.h" "common/renderer.c" "common/renderer.queue_init.c" "common/renderer.queue_init.h" "vulkan.h" "vulkan.c")
 
 target_include_directories(Cpeed PUBLIC "$ENV{VULKAN_SDK}/include")
 

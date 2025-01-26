@@ -1,6 +1,4 @@
-#include "renderer.h" 
-#include "renderer.queue_init.h"
-#include <malloc.h>
+#include "renderer.h"
 
 CpdRenderer* RENDERER_create(VkInstance instance) {
     CpdRenderer* renderer = (CpdRenderer*)malloc(sizeof(CpdRenderer));
@@ -43,8 +41,8 @@ static VkResult init_device(
     vkGetPhysicalDeviceProperties(physical, &physical_device_properties);
     printf("Initializing %s with name: %s\n", string_VkPhysicalDeviceType(physical_device_properties.deviceType), physical_device_properties.deviceName);
 
-    uint32_t queue_create_info_count;
-    VkDeviceQueueCreateInfo* queue_create_info;
+    uint32_t queue_create_info_count = 0;
+    VkDeviceQueueCreateInfo* queue_create_info = (VkDeviceQueueCreateInfo*)0;
     if (!allocate_queue_create_infos(graphics, compute, transfer, transfer_count + transfer_offset, &queue_create_info_count, &queue_create_info)) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }

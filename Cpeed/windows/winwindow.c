@@ -1,5 +1,4 @@
 #include "winmain.h"
-#include <malloc.h>
 #include <stdio.h>
 
 static int windows_created;

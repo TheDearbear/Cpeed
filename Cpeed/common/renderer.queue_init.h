@@ -1,12 +1,9 @@
 #pragma once
 
-#define VK_NO_PROTOTYPES
-
-#include <vulkan/vulkan.h>
 #include <malloc.h>
 #include <stdbool.h>
 
-#include "../main.h"
+#include "../vulkan.h"
 
 extern void get_physical_device_families(VkPhysicalDevice physical,
     uint32_t* graphics, uint32_t* compute, uint32_t* transfer,

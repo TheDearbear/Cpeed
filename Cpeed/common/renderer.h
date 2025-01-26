@@ -1,6 +1,10 @@
 #pragma once
 
-#include "../main.h"
+#include <malloc.h>
+
+#include "../vulkan.h"
+#include "../platform.h"
+#include "renderer.queue_init.h"
 
 typedef struct CpdTransferQueue {
     uint64_t bytes_queued;
