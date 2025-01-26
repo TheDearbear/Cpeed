@@ -53,9 +53,11 @@ static VkResult init_device(
         .flags = 0,
         .queueCreateInfoCount = queue_create_info_count,
         .pQueueCreateInfos = queue_create_info,
-        .enabledExtensionCount = 0,
-        .ppEnabledExtensionNames = extensions->count,
-        .pEnabledFeatures = extensions->count > 0 ? extensions->extensions : 0
+        .enabledLayerCount = 0,
+        .ppEnabledLayerNames = VK_NULL_HANDLE,
+        .enabledExtensionCount = extensions->count,
+        .ppEnabledExtensionNames = extensions->count > 0 ? extensions->extensions : VK_NULL_HANDLE,
+        .pEnabledFeatures = VK_NULL_HANDLE
     };
 
     VkDevice device;
