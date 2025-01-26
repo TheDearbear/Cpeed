@@ -112,7 +112,7 @@ static bool try_initialize_render_device(VkPhysicalDevice physical_device, CpdDe
         CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_render_device_extensions();
 
         for (unsigned int i = 0; i < extensions->count; i++) {
-            printf("Enabling render device extension: %s", extensions->extensions[i]);
+            printf("Enabling render device extension: %s\n", extensions->extensions[i]);
         }
 
         *result = init_device(cpeed_device, physical_device, extensions,
@@ -142,7 +142,7 @@ static bool try_initialize_ui_device(VkPhysicalDevice physical_device, CpdDevice
         CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_ui_device_extensions();
 
         for (unsigned int i = 0; i < extensions->count; i++) {
-            printf("Enabling ui device extension: %s", extensions->extensions[i]);
+            printf("Enabling ui device extension: %s\n", extensions->extensions[i]);
         }
 
         *result = init_device(cpeed_device, physical_device, extensions,
