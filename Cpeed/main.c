@@ -60,6 +60,7 @@ shutdown:
 
 void load_global_pointers() {
     vkCreateInstance = (PFN_vkCreateInstance)vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkCreateInstance");
+    vkEnumerateInstanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkEnumerateInstanceExtensionProperties");
 }
 
 void load_instance_pointers() {
@@ -69,6 +70,49 @@ void load_instance_pointers() {
     vkGetPhysicalDeviceQueueFamilyProperties = (PFN_vkGetPhysicalDeviceQueueFamilyProperties)vkGetInstanceProcAddr(g_instance, "vkGetPhysicalDeviceQueueFamilyProperties");
     vkCreateDevice = (PFN_vkCreateDevice)vkGetInstanceProcAddr(g_instance, "vkCreateDevice");
     vkGetDeviceProcAddr = (PFN_vkGetDeviceProcAddr)vkGetInstanceProcAddr(g_instance, "vkGetDeviceProcAddr");
+    vkDestroySurfaceKHR = (PFN_vkDestroySurfaceKHR)vkGetInstanceProcAddr(g_instance, "vkDestroySurfaceKHR");
+    vkEnumerateDeviceExtensionProperties = (PFN_vkEnumerateDeviceExtensionProperties)vkGetInstanceProcAddr(g_instance, "vkEnumerateDeviceExtensionProperties");
+}
+
+static VkResult validate_extensions(char** extensions, unsigned int extension_count) {
+    uint32_t property_count;
+    VkResult result = vkEnumerateInstanceExtensionProperties(VK_NULL_HANDLE, &property_count, VK_NULL_HANDLE);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    VkExtensionProperties* properties = (VkExtensionProperties*)malloc(property_count * sizeof(VkExtensionProperties));
+    if (properties == 0) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    result = vkEnumerateInstanceExtensionProperties(VK_NULL_HANDLE, &property_count, properties);
+    if (result != VK_SUCCESS) {
+        free(properties);
+        return result;
+    }
+
+    bool missing = false;
+    for (unsigned int i = 0; i < extension_count; i++) {
+        bool found = false;
+        for (uint32_t j = 0; j < property_count; j++) {
+            #pragma warning(push)
+            #pragma warning(disable:6385)
+            if (strcmp(extensions[i], properties[j].extensionName) == 0) {
+            #pragma warning(pop)
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            missing = true;
+            printf("Instance extension missing: %s\n", extensions[i]);
+        }
+    }
+
+    free(properties);
+    return missing ? VK_ERROR_EXTENSION_NOT_PRESENT : VK_SUCCESS;
 }
 
 VkResult create_instance() {
@@ -88,8 +132,28 @@ VkResult create_instance() {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    const int base_extension_count = 1;
+
+    unsigned int all_extensions_count = extensions->count + base_extension_count;
+    char** all_extensions = (char**)malloc((size_t)all_extensions_count * sizeof(char*));
+    if (all_extensions == 0) {
+        PLATFORM_free_vulkan_extensions(extensions);
+        printf("Unable to get all required Vulkan instance extensions\n");
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    all_extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME;
     for (unsigned int i = 0; i < extensions->count; i++) {
-        printf("Enabling instance extension: %s\n", extensions->extensions[i]);
+        all_extensions[i + base_extension_count] = extensions->extensions[i];
+    }
+
+    VkResult result = validate_extensions(all_extensions, all_extensions_count);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    for (unsigned int i = 0; i < all_extensions_count; i++) {
+        printf("Enabling instance extension: %s\n", all_extensions[i]);
     }
 
     VkInstanceCreateInfo create_info = {
@@ -99,11 +163,11 @@ VkResult create_instance() {
         .pApplicationInfo = &app_info,
         .enabledLayerCount = 0,
         .ppEnabledLayerNames = 0,
-        .enabledExtensionCount = extensions->count,
-        .ppEnabledExtensionNames = extensions->count > 0 ? extensions->extensions : 0
+        .enabledExtensionCount = all_extensions_count,
+        .ppEnabledExtensionNames = all_extensions_count > 0 ? all_extensions : 0
     };
 
-    VkResult result = vkCreateInstance(&create_info, VK_NULL_HANDLE, &g_instance);
+    result = vkCreateInstance(&create_info, VK_NULL_HANDLE, &g_instance);
 
     PLATFORM_free_vulkan_extensions(extensions);
 

@@ -36,7 +36,7 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_instance_extensions() {
         return 0;
     }
 
-    const int extension_count = 2;
+    const int extension_count = 1;
 
     char** extensionNames = (char**)malloc(extension_count * sizeof(char*));
     if (extensionNames == 0) {
@@ -47,8 +47,7 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_instance_extensions() {
     extensions->count = extension_count;
     extensions->extensions = extensionNames;
 
-    extensionNames[0] = VK_KHR_SURFACE_EXTENSION_NAME;
-    extensionNames[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+    extensionNames[0] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 
     return extensions;
 }
@@ -73,6 +72,23 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_ui_device_extensions() {
     extensions->count = 0;
 
     return extensions;
+}
+
+VkResult PLATFORM_create_surface(VkInstance instance, CpdWindow window, VkSurfaceKHR* surface) {
+    PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
+    if (vkCreateWin32SurfaceKHR == 0) {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+
+    VkWin32SurfaceCreateInfoKHR create_info = {
+        .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+        .pNext = 0,
+        .flags = 0,
+        .hinstance = GetModuleHandleW(NULL),
+        .hwnd = (HWND)window
+    };
+
+    return vkCreateWin32SurfaceKHR(instance, &create_info, VK_NULL_HANDLE, surface);
 }
 
 void PLATFORM_free_vulkan_extensions(CpdPlatformExtensions* extensions) {
