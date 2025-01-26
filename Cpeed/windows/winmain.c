@@ -58,7 +58,18 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_render_device_extensions() {
         return 0;
     }
 
-    extensions->count = 0;
+    const int extension_count = 1;
+
+    char** extensionNames = (char**)malloc(extension_count * sizeof(char*));
+    if (extensionNames == 0) {
+        free(extensions);
+        return 0;
+    }
+
+    extensions->count = extension_count;
+    extensions->extensions = extensionNames;
+
+    extensionNames[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 
     return extensions;
 }
