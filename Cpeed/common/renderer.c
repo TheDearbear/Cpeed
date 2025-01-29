@@ -1,4 +1,15 @@
+#include <stdio.h>
+#include <malloc.h>
+
 #include "renderer.h"
+
+static uint32_t min(uint32_t a, uint32_t b) {
+    return a < b ? a : b;
+}
+
+static uint32_t max(uint32_t a, uint32_t b) {
+    return a > b ? a : b;
+}
 
 CpdRenderer* RENDERER_create(VkInstance instance) {
     CpdRenderer* renderer = (CpdRenderer*)malloc(sizeof(CpdRenderer));
@@ -7,6 +18,8 @@ CpdRenderer* RENDERER_create(VkInstance instance) {
     }
 
     renderer->instance = instance;
+    renderer->surface.handle = VK_NULL_HANDLE;
+    renderer->surface.swapchain = VK_NULL_HANDLE;
     renderer->render_device.handle = VK_NULL_HANDLE;
     renderer->ui_device.handle = VK_NULL_HANDLE;
 
@@ -14,6 +27,11 @@ CpdRenderer* RENDERER_create(VkInstance instance) {
 }
 
 void RENDERER_destroy(CpdRenderer* renderer) {
+    if (renderer->surface.swapchain != VK_NULL_HANDLE) {
+        renderer->render_device.vkDestroySwapchainKHR(renderer->render_device.handle, renderer->surface.swapchain, VK_NULL_HANDLE);
+        renderer->surface.swapchain = VK_NULL_HANDLE;
+    }
+
     if (renderer->render_device.handle != VK_NULL_HANDLE) {
         renderer->render_device.vkDestroyDevice(renderer->render_device.handle, VK_NULL_HANDLE);
         free(renderer->render_device.transfer_queues);
@@ -77,6 +95,11 @@ static VkResult init_device(
 
     cpeed_device->vkGetDeviceQueue = (PFN_vkGetDeviceQueue)vkGetDeviceProcAddr(device, "vkGetDeviceQueue");
     cpeed_device->vkDestroyDevice = (PFN_vkDestroyDevice)vkGetDeviceProcAddr(device, "vkDestroyDevice");
+
+    cpeed_device->vkAcquireNextImageKHR = (PFN_vkAcquireNextImageKHR)vkGetDeviceProcAddr(device, "vkAcquireNextImageKHR");
+    cpeed_device->vkCreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)vkGetDeviceProcAddr(device, "vkCreateSwapchainKHR");
+    cpeed_device->vkDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)vkGetDeviceProcAddr(device, "vkDestroySwapchainKHR");
+    cpeed_device->vkQueuePresentKHR = (PFN_vkQueuePresentKHR)vkGetDeviceProcAddr(device, "vkQueuePresentKHR");
 
     cpeed_device->vkGetDeviceQueue(device, cpeed_device->graphics_index, 0, &cpeed_device->graphics_queue);
     cpeed_device->vkGetDeviceQueue(device, cpeed_device->compute_index, 0, &cpeed_device->compute_queue);
@@ -264,4 +287,136 @@ VkResult RENDERER_select_ui_device(CpdRenderer* renderer) {
 
     free(devices);
     return VK_ERROR_UNKNOWN;
+}
+
+static VkResult create_swapchain(CpdRenderer* renderer, VkExtent2D* extent, VkSwapchainKHR* swapchain, VkSurfaceCapabilitiesKHR* surface_capabilities) {
+    VkExtent2D fitted_extent = {
+        .width = surface_capabilities->maxImageExtent.width == 0xFFFFFFFF ?
+            extent->width :
+            min(surface_capabilities->maxImageExtent.width, extent->width),
+        
+        .height = surface_capabilities->maxImageExtent.height == 0xFFFFFFFF ?
+            extent->height :
+            min(surface_capabilities->maxImageExtent.height, extent->height)
+    };
+
+    uint32_t imageCount = surface_capabilities->maxImageCount == 0 ?
+        max(surface_capabilities->minImageCount, 2) :
+        min(max(surface_capabilities->minImageCount, 2), surface_capabilities->maxImageCount);
+
+    VkSwapchainCreateInfoKHR create_info = {
+        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .pNext = VK_NULL_HANDLE,
+        .flags = 0,
+        .surface = renderer->surface.handle,
+        .minImageCount = imageCount,
+        .imageFormat = renderer->surface.format.format,
+        .imageColorSpace = renderer->surface.format.colorSpace,
+        .imageExtent = fitted_extent,
+        .imageArrayLayers = 1,
+        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 1,
+        .pQueueFamilyIndices = &renderer->render_device.graphics_index,
+        .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+        .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        .presentMode = VK_PRESENT_MODE_FIFO_KHR,
+        .clipped = VK_TRUE,
+        .oldSwapchain = VK_NULL_HANDLE
+    };
+
+    return renderer->render_device.vkCreateSwapchainKHR(renderer->render_device.handle, &create_info, VK_NULL_HANDLE, swapchain);
+}
+
+VkResult RENDERER_set_surface(CpdRenderer* renderer, VkSurfaceKHR surface, CpdWindowSize* size) {
+    if (renderer->surface.swapchain != VK_NULL_HANDLE) {
+        renderer->render_device.vkDestroySwapchainKHR(renderer->render_device.handle, renderer->surface.swapchain, VK_NULL_HANDLE);
+        renderer->surface.swapchain = VK_NULL_HANDLE;
+    }
+
+    uint32_t format_count;
+    VkResult result = vkGetPhysicalDeviceSurfaceFormatsKHR(renderer->render_device.physical_handle, surface, &format_count, VK_NULL_HANDLE);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    VkSurfaceFormatKHR* formats = (VkSurfaceFormatKHR*)malloc(format_count * sizeof(VkSurfaceFormatKHR));
+    if (formats == 0) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    result = vkGetPhysicalDeviceSurfaceFormatsKHR(renderer->render_device.physical_handle, surface, &format_count, formats);
+    if (result != VK_SUCCESS) {
+        free(formats);
+        return result;
+    }
+
+    renderer->surface.format = formats[format_count - 1];
+    free(formats);
+
+    VkBool32 supported = VK_FALSE;
+    result = vkGetPhysicalDeviceSurfaceSupportKHR(
+        renderer->render_device.physical_handle,
+        renderer->render_device.graphics_index,
+        surface,
+        &supported);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    if (!supported) {
+        printf("Presentation is not supported by selected queue family\n");
+        return VK_ERROR_UNKNOWN;
+    }
+
+    renderer->surface.handle = surface;
+
+    VkSurfaceCapabilitiesKHR surface_capabilities;
+    result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(renderer->render_device.physical_handle, surface, &surface_capabilities);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    VkExtent2D extent = {
+        .width = size->width,
+        .height = size->height
+    };
+
+    // create swapchain
+    VkSwapchainKHR swapchain;
+    result = create_swapchain(renderer, &extent, &swapchain, &surface_capabilities);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    renderer->surface.swapchain = swapchain;
+    return result;
+}
+
+VkResult RENDERER_update_surface_size(CpdRenderer* renderer, CpdWindowSize* size) {
+    if (renderer->surface.swapchain != VK_NULL_HANDLE) {
+        renderer->render_device.vkDestroySwapchainKHR(renderer->render_device.handle, renderer->surface.swapchain, VK_NULL_HANDLE);
+        renderer->surface.swapchain = VK_NULL_HANDLE;
+    }
+
+    VkExtent2D extent = {
+        .width = size->width,
+        .height = size->height
+    };
+
+    VkSurfaceCapabilitiesKHR surface_capabilities;
+    VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(renderer->render_device.physical_handle, renderer->surface.handle, &surface_capabilities);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    // create swapchain
+    VkSwapchainKHR swapchain;
+    result = create_swapchain(renderer, &extent, &swapchain, &surface_capabilities);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    renderer->surface.swapchain = swapchain;
+    return result;
 }

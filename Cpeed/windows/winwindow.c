@@ -56,7 +56,7 @@ bool PLATFORM_window_poll(CpdWindow window) {
         DispatchMessageW(&msg);
     }
 
-    LONG should_close = GetWindowLongW((HWND)window, 0);
+    LONG should_close = GetWindowLongW((HWND)window, WND_OFFSET_SHOULD_CLOSE);
 
     DWORD err = GetLastError();
     if (err != 0) {
@@ -77,6 +77,25 @@ bool PLATFORM_window_poll(CpdWindow window) {
     return should_close;
 }
 
+CpdWindowSize PLATFORM_get_window_size(CpdWindow window) {
+    RECT rectangle = { 0, 0, 0, 0 };
+    GetClientRect((HWND)window, &rectangle);
+    
+    return (CpdWindowSize){
+        .width = rectangle.right - rectangle.left,
+        .height = rectangle.bottom - rectangle.top
+    };
+}
+
+bool PLATFORM_window_resized(CpdWindow window) {
+    bool resized = (bool)GetWindowLongW((HWND)window, WND_OFFSET_RESIZED);
+    if (resized) {
+        SetWindowLongW((HWND)window, WND_OFFSET_RESIZED, false);
+    }
+
+    return resized;
+}
+
 static void register_class() {
     if (window_class != NULL) {
         return;
@@ -85,7 +104,7 @@ static void register_class() {
     WNDCLASSEXW wndClassExW = {
         .cbSize = sizeof(WNDCLASSEXW),
         .lpfnWndProc = wndProc,
-        .cbWndExtra = sizeof(LONG),
+        .cbWndExtra = 2 * sizeof(LONG),
         .hInstance = GetModuleHandleW(NULL),
         .lpszClassName = L"Cpeed"
     };
@@ -94,15 +113,24 @@ static void register_class() {
 }
 
 static void close_window(HWND hWnd) {
-    SetWindowLongW(hWnd, 0, true); // should_close = true
+    SetWindowLongW(hWnd, WND_OFFSET_SHOULD_CLOSE, true);
 }
 
 static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_SYSCOMMAND:
-            if ((wParam & 0xFFF0) == SC_CLOSE) {
-                close_window(hWnd);
-                return 0;
+            switch (wParam & 0xFFF0) {
+                case SC_CLOSE:
+                    close_window(hWnd);
+                    return 0;
+
+                case SC_MAXIMIZE:
+                case SC_RESTORE:
+                    {
+                        DefWindowProcW(hWnd, uMsg, wParam, lParam);
+                        SetWindowLongW(hWnd, WND_OFFSET_RESIZED, true);
+                    }
+                    return 0;
             }
             return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 
@@ -123,8 +151,11 @@ static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             }
             return 0;
 
+        case WM_SIZING:
+            SetWindowLongW(hWnd, WND_OFFSET_RESIZED, true);
+            return 0;
+
         case WM_CREATE:
-        case WM_SIZE:
             return 0;
 
         default:

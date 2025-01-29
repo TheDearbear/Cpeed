@@ -7,3 +7,8 @@
 
 #include "../vulkan.h"
 #include "../platform.h"
+
+#include <windowsx.h>
+
+#define WND_OFFSET_SHOULD_CLOSE 0
+#define WND_OFFSET_RESIZED 4

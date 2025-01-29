@@ -34,9 +34,17 @@ extern void PLATFORM_free_vulkan_extensions(CpdPlatformExtensions* extensions);
 
 // == Windowing
 
+typedef struct CpdWindowSize {
+    unsigned short width;
+    unsigned short height;
+} CpdWindowSize;
+
 extern CpdWindow PLATFORM_create_window(const CpdWindowInfo* info);
 extern void PLATFORM_window_destroy(CpdWindow window);
 
 extern void PLATFORM_window_show(CpdWindow window);
 extern void PLATFORM_window_hide(CpdWindow window);
 extern bool PLATFORM_window_poll(CpdWindow window);
+
+extern CpdWindowSize PLATFORM_get_window_size(CpdWindow window);
+extern bool PLATFORM_window_resized(CpdWindow window);

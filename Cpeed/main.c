@@ -52,19 +52,36 @@ int main() {
         goto shutdown;
     }
 
+    CpdWindowSize size = PLATFORM_get_window_size(window);
+    result = RENDERER_set_surface(renderer, surface, &size);
+    if (result != VK_SUCCESS) {
+        printf("Unable to initialize surface for rendering. Result code: %s\n", string_VkResult(result));
+        goto shutdown;
+    }
+
     while (!PLATFORM_window_poll(window)) {
-        // Do stuff
+        bool resized = PLATFORM_window_resized(window);
+        if (resized) {
+            size = PLATFORM_get_window_size(window);
+            
+            result = RENDERER_update_surface_size(renderer, &size);
+            if (result != VK_SUCCESS) {
+                printf("Unable to update surface size. Result code: %s\n", string_VkResult(result));
+                continue;
+            }
+        }
     }
 
     printf("Goodbye!\n");
 
 shutdown:
-    #pragma warning(push)
-    #pragma warning(disable:6001)
-    vkDestroySurfaceKHR(g_instance, surface, VK_NULL_HANDLE);
-    #pragma warning(pop)
-
     RENDERER_destroy(renderer);
+
+#pragma warning(push)
+#pragma warning(disable:6001)
+    vkDestroySurfaceKHR(g_instance, surface, VK_NULL_HANDLE);
+#pragma warning(pop)
+
     vkDestroyInstance(g_instance, VK_NULL_HANDLE);
     PLATFORM_window_destroy(window);
     PLATFORM_free_vulkan_lib();
@@ -84,6 +101,9 @@ void load_instance_pointers() {
     vkGetDeviceProcAddr = (PFN_vkGetDeviceProcAddr)vkGetInstanceProcAddr(g_instance, "vkGetDeviceProcAddr");
     vkDestroySurfaceKHR = (PFN_vkDestroySurfaceKHR)vkGetInstanceProcAddr(g_instance, "vkDestroySurfaceKHR");
     vkEnumerateDeviceExtensionProperties = (PFN_vkEnumerateDeviceExtensionProperties)vkGetInstanceProcAddr(g_instance, "vkEnumerateDeviceExtensionProperties");
+    vkGetPhysicalDeviceSurfaceFormatsKHR = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)vkGetInstanceProcAddr(g_instance, "vkGetPhysicalDeviceSurfaceFormatsKHR");
+    vkGetPhysicalDeviceSurfaceSupportKHR = (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)vkGetInstanceProcAddr(g_instance, "vkGetPhysicalDeviceSurfaceSupportKHR");
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR = (PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)vkGetInstanceProcAddr(g_instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
 }
 
 static VkResult validate_extensions(char** extensions, unsigned int extension_count) {
