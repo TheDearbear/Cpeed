@@ -1,13 +1,29 @@
 #include "vulkan.h"
 
+// == Global
+
 PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
+
+// == Instance
+
 PFN_vkCreateInstance vkCreateInstance;
 PFN_vkDestroyInstance vkDestroyInstance;
+PFN_vkEnumerateInstanceExtensionProperties vkEnumerateInstanceExtensionProperties;
+
+// == Physical Device
+
 PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices;
 PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties;
 PFN_vkGetPhysicalDeviceQueueFamilyProperties vkGetPhysicalDeviceQueueFamilyProperties;
+PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR;
+PFN_vkGetPhysicalDeviceSurfaceSupportKHR vkGetPhysicalDeviceSurfaceSupportKHR;
+
+// == Logical Device
+
 PFN_vkCreateDevice vkCreateDevice;
 PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr;
-PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR;
-PFN_vkEnumerateInstanceExtensionProperties vkEnumerateInstanceExtensionProperties;
 PFN_vkEnumerateDeviceExtensionProperties vkEnumerateDeviceExtensionProperties;
+
+// == Surface
+
+PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR;
