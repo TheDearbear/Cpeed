@@ -105,6 +105,30 @@ int main() {
             break;
         }
 
+        VkCommandBufferSubmitInfo buffer_submit_info = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+            .pNext = VK_NULL_HANDLE,
+            .commandBuffer = buffer,
+            .deviceMask = 0
+        };
+
+        VkSubmitInfo2KHR submit_info = {
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR,
+            .pNext = VK_NULL_HANDLE,
+            .flags = 0,
+            .waitSemaphoreInfoCount = 0,
+            .pWaitSemaphoreInfos = VK_NULL_HANDLE,
+            .commandBufferInfoCount = 1,
+            .pCommandBufferInfos = &buffer_submit_info,
+            .signalSemaphoreInfoCount = 0,
+            .pSignalSemaphoreInfos = VK_NULL_HANDLE
+        };
+
+        result = renderer->render_device.vkQueueSubmit2KHR(renderer->render_device.graphics_family.queue, 1, &submit_info, VK_NULL_HANDLE);
+        if (result != VK_SUCCESS) {
+            printf("Unable to queue work. Result code: %s\n", string_VkResult(result));
+        }
+
         result = RENDERER_wait_idle(renderer);
         if (result != VK_SUCCESS) {
             printf("Unable to wait for idle. Result code: %s\n", string_VkResult(result));

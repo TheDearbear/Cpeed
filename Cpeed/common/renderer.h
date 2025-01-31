@@ -51,6 +51,7 @@ typedef struct CpdDevice {
     // == Queue
 
     PFN_vkQueueWaitIdle vkQueueWaitIdle;
+    PFN_vkQueueSubmit2KHR vkQueueSubmit2KHR;
 
     // == Command Pool
 

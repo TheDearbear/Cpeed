@@ -69,6 +69,7 @@ static void init_device_functions(CpdDevice* cpeed_device) {
     GET_DEVICE_PROC_ADDR(cpeed_device, vkQueuePresentKHR);
 
     GET_DEVICE_PROC_ADDR(cpeed_device, vkQueueWaitIdle);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkQueueSubmit2KHR);
 
     GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateCommandPool);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyCommandPool);
@@ -103,25 +104,26 @@ static VkResult init_device_transfer_pool(CpdDevice* cpeed_device, CpdTransferQu
     return cpeed_device->vkCreateCommandPool(cpeed_device->handle, &create_info, VK_NULL_HANDLE, &queue_family->pool);
 }
 
-static VkResult init_device(
-    CpdDevice* cpeed_device, VkPhysicalDevice physical, CpdPlatformExtensions* extensions,
+static VkResult create_logical_device(
+    VkPhysicalDevice physical, CpdPlatformExtensions* extensions,
     uint32_t graphics, uint32_t compute, uint32_t transfer,
-    uint32_t transfer_count, uint32_t transfer_offset
+    uint32_t transfer_count, uint32_t transfer_offset, VkDevice* device
 ) {
-
-    VkPhysicalDeviceProperties physical_device_properties;
-    vkGetPhysicalDeviceProperties(physical, &physical_device_properties);
-    printf("Initializing %s with name: %s\n", string_VkPhysicalDeviceType(physical_device_properties.deviceType), physical_device_properties.deviceName);
-
     uint32_t queue_create_info_count = 0;
     VkDeviceQueueCreateInfo* queue_create_info = (VkDeviceQueueCreateInfo*)0;
     if (!allocate_queue_create_infos(graphics, compute, transfer, transfer_count + transfer_offset, &queue_create_info_count, &queue_create_info)) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2_features = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
+        .pNext = VK_NULL_HANDLE,
+        .synchronization2 = VK_TRUE
+    };
+
     VkDeviceCreateInfo create_info = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-        .pNext = VK_NULL_HANDLE,
+        .pNext = &synchronization2_features,
         .flags = 0,
         .queueCreateInfoCount = queue_create_info_count,
         .pQueueCreateInfos = queue_create_info,
@@ -132,9 +134,23 @@ static VkResult init_device(
         .pEnabledFeatures = VK_NULL_HANDLE
     };
 
-    VkDevice device;
-    VkResult result = vkCreateDevice(physical, &create_info, VK_NULL_HANDLE, &device);
+    VkResult result = vkCreateDevice(physical, &create_info, VK_NULL_HANDLE, device);
     destroy_queue_create_infos(queue_create_info, queue_create_info_count);
+    return result;
+}
+
+static VkResult init_device(
+    CpdDevice* cpeed_device, VkPhysicalDevice physical, CpdPlatformExtensions* extensions,
+    uint32_t graphics, uint32_t compute, uint32_t transfer,
+    uint32_t transfer_count, uint32_t transfer_offset
+) {
+
+    VkPhysicalDeviceProperties physical_device_properties;
+    vkGetPhysicalDeviceProperties(physical, &physical_device_properties);
+    printf("Initializing %s with name: %s\n", string_VkPhysicalDeviceType(physical_device_properties.deviceType), physical_device_properties.deviceName);
+
+    VkDevice device;
+    VkResult result = create_logical_device(physical, extensions, graphics, compute, transfer, transfer_count, transfer_offset, &device);
     if (result != VK_SUCCESS) {
         return result;
     }

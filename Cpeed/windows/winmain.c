@@ -58,7 +58,7 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_render_device_extensions() {
         return 0;
     }
 
-    const int extension_count = 1;
+    const int extension_count = 2;
 
     char** extensionNames = (char**)malloc(extension_count * sizeof(char*));
     if (extensionNames == 0) {
@@ -70,6 +70,7 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_render_device_extensions() {
     extensions->extensions = extensionNames;
 
     extensionNames[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    extensionNames[1] = VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
 
     return extensions;
 }
