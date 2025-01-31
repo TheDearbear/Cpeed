@@ -62,17 +62,19 @@ int main() {
         goto shutdown;
     }
 
-    CpdWindowSize size = PLATFORM_get_window_size(window);
-    result = RENDERER_set_surface(renderer, surface, &size);
-    if (result != VK_SUCCESS) {
-        printf("Unable to initialize surface for rendering. Result code: %s\n", string_VkResult(result));
-        goto shutdown;
+    {
+        CpdWindowSize size = PLATFORM_get_window_size(window);
+        result = RENDERER_set_surface(renderer, surface, &size);
+        if (result != VK_SUCCESS) {
+            printf("Unable to initialize surface for rendering. Result code: %s\n", string_VkResult(result));
+            goto shutdown;
+        }
     }
 
     while (!PLATFORM_window_poll(window)) {
         bool resized = PLATFORM_window_resized(window);
         if (resized) {
-            size = PLATFORM_get_window_size(window);
+            CpdWindowSize size = PLATFORM_get_window_size(window);
             
             result = RENDERER_update_surface_size(renderer, &size);
             if (result != VK_SUCCESS) {
