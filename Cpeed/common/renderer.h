@@ -8,6 +8,7 @@ typedef struct CpdRenderSurface {
     VkSurfaceKHR handle;
     VkSwapchainKHR swapchain;
     VkSurfaceFormatKHR format;
+    CpdWindowSize size;
 } CpdRenderSurface;
 
 typedef struct CpdTransferQueue {

@@ -362,7 +362,7 @@ VkResult RENDERER_select_ui_device(CpdRenderer* renderer) {
     return VK_ERROR_UNKNOWN;
 }
 
-static VkResult create_swapchain(CpdRenderer* renderer, VkExtent2D* extent, VkSwapchainKHR* swapchain, VkSurfaceCapabilitiesKHR* surface_capabilities) {
+static VkResult create_swapchain(CpdRenderer* renderer, VkExtent2D* extent, VkSurfaceCapabilitiesKHR* surface_capabilities) {
     VkExtent2D fitted_extent = {
         .width = surface_capabilities->maxImageExtent.width == 0xFFFFFFFF ?
             extent->width :
@@ -372,6 +372,9 @@ static VkResult create_swapchain(CpdRenderer* renderer, VkExtent2D* extent, VkSw
             extent->height :
             min(surface_capabilities->maxImageExtent.height, extent->height)
     };
+
+    renderer->surface.size.width = (unsigned short)fitted_extent.width;
+    renderer->surface.size.height = (unsigned short)fitted_extent.height;
 
     uint32_t imageCount = surface_capabilities->maxImageCount == 0 ?
         max(surface_capabilities->minImageCount, 2) :
@@ -398,7 +401,7 @@ static VkResult create_swapchain(CpdRenderer* renderer, VkExtent2D* extent, VkSw
         .oldSwapchain = VK_NULL_HANDLE
     };
 
-    return renderer->render_device.vkCreateSwapchainKHR(renderer->render_device.handle, &create_info, VK_NULL_HANDLE, swapchain);
+    return renderer->render_device.vkCreateSwapchainKHR(renderer->render_device.handle, &create_info, VK_NULL_HANDLE, &renderer->surface.swapchain);
 }
 
 VkResult RENDERER_set_surface(CpdRenderer* renderer, VkSurfaceKHR surface, CpdWindowSize* size) {
@@ -455,15 +458,7 @@ VkResult RENDERER_set_surface(CpdRenderer* renderer, VkSurfaceKHR surface, CpdWi
         .height = size->height
     };
 
-    // create swapchain
-    VkSwapchainKHR swapchain;
-    result = create_swapchain(renderer, &extent, &swapchain, &surface_capabilities);
-    if (result != VK_SUCCESS) {
-        return result;
-    }
-
-    renderer->surface.swapchain = swapchain;
-    return result;
+    return create_swapchain(renderer, &extent, &surface_capabilities);
 }
 
 VkResult RENDERER_update_surface_size(CpdRenderer* renderer, CpdWindowSize* size) {
@@ -483,15 +478,7 @@ VkResult RENDERER_update_surface_size(CpdRenderer* renderer, CpdWindowSize* size
         return result;
     }
 
-    // create swapchain
-    VkSwapchainKHR swapchain;
-    result = create_swapchain(renderer, &extent, &swapchain, &surface_capabilities);
-    if (result != VK_SUCCESS) {
-        return result;
-    }
-
-    renderer->surface.swapchain = swapchain;
-    return result;
+    return create_swapchain(renderer, &extent, &surface_capabilities);
 }
 
 static VkResult reset_device_pools(CpdDevice* device, VkCommandPoolResetFlags flags) {
