@@ -18,12 +18,14 @@ typedef struct CpdTransferQueue {
 typedef struct CpdQueueFamily {
     VkQueue queue;
     uint32_t index;
+    VkCommandPool pool;
 } CpdQueueFamily;
 
 typedef struct CpdTransferQueueFamily {
     CpdTransferQueue* queues;
     uint32_t queue_count;
     uint32_t index;
+    VkCommandPool pool;
 } CpdTransferQueueFamily;
 
 typedef struct CpdDevice {
@@ -49,6 +51,20 @@ typedef struct CpdDevice {
     // == Queue
 
     PFN_vkQueueWaitIdle vkQueueWaitIdle;
+
+    // == Command Pool
+
+    PFN_vkCreateCommandPool vkCreateCommandPool;
+    PFN_vkDestroyCommandPool vkDestroyCommandPool;
+    PFN_vkResetCommandPool vkResetCommandPool;
+
+    // == Command Buffer
+
+    PFN_vkAllocateCommandBuffers vkAllocateCommandBuffers;
+    PFN_vkFreeCommandBuffers vkFreeCommandBuffers;
+
+    PFN_vkBeginCommandBuffer vkBeginCommandBuffer;
+    PFN_vkEndCommandBuffer vkEndCommandBuffer;
 } CpdDevice;
 
 typedef struct CpdRenderer {
@@ -65,3 +81,6 @@ VkResult RENDERER_set_surface(CpdRenderer* renderer, VkSurfaceKHR surface, CpdWi
 VkResult RENDERER_select_render_device(CpdRenderer* renderer);
 VkResult RENDERER_select_ui_device(CpdRenderer* renderer);
 VkResult RENDERER_update_surface_size(CpdRenderer* renderer, CpdWindowSize* size);
+
+VkResult RENDERER_reset_pools(CpdRenderer* renderer);
+VkResult RENDERER_wait_idle(CpdRenderer* renderer);

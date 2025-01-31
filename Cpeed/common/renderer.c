@@ -3,6 +3,8 @@
 
 #include "renderer.h"
 
+#define GET_DEVICE_PROC_ADDR(cpeed_device, name) cpeed_device->name = (PFN_ ## name)vkGetDeviceProcAddr(cpeed_device->handle, #name)
+
 static uint32_t min(uint32_t a, uint32_t b) {
     return a < b ? a : b;
 }
@@ -33,6 +35,10 @@ void RENDERER_destroy(CpdRenderer* renderer) {
     }
 
     if (renderer->render_device.handle != VK_NULL_HANDLE) {
+        renderer->render_device.vkDestroyCommandPool(renderer->render_device.handle, renderer->render_device.graphics_family.pool, VK_NULL_HANDLE);
+        renderer->render_device.vkDestroyCommandPool(renderer->render_device.handle, renderer->render_device.compute_family.pool, VK_NULL_HANDLE);
+        renderer->render_device.vkDestroyCommandPool(renderer->render_device.handle, renderer->render_device.transfer_family.pool, VK_NULL_HANDLE);
+
         renderer->render_device.vkDestroyDevice(renderer->render_device.handle, VK_NULL_HANDLE);
         free(renderer->render_device.transfer_family.queues);
 
@@ -40,6 +46,10 @@ void RENDERER_destroy(CpdRenderer* renderer) {
     }
 
     if (renderer->ui_device.handle != VK_NULL_HANDLE) {
+        renderer->ui_device.vkDestroyCommandPool(renderer->ui_device.handle, renderer->ui_device.graphics_family.pool, VK_NULL_HANDLE);
+        renderer->ui_device.vkDestroyCommandPool(renderer->ui_device.handle, renderer->ui_device.compute_family.pool, VK_NULL_HANDLE);
+        renderer->ui_device.vkDestroyCommandPool(renderer->ui_device.handle, renderer->ui_device.transfer_family.pool, VK_NULL_HANDLE);
+
         renderer->ui_device.vkDestroyDevice(renderer->ui_device.handle, VK_NULL_HANDLE);
         free(renderer->ui_device.transfer_family.queues);
 
@@ -47,6 +57,50 @@ void RENDERER_destroy(CpdRenderer* renderer) {
     }
 
     free(renderer);
+}
+
+static void init_device_functions(CpdDevice* cpeed_device) {
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkGetDeviceQueue);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyDevice);
+
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkAcquireNextImageKHR);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateSwapchainKHR);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroySwapchainKHR);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkQueuePresentKHR);
+
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkQueueWaitIdle);
+
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateCommandPool);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyCommandPool);
+
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkAllocateCommandBuffers);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkFreeCommandBuffers);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkResetCommandPool);
+
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkBeginCommandBuffer);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkEndCommandBuffer);
+}
+
+static VkResult init_device_pool(CpdDevice* cpeed_device, CpdQueueFamily* queue_family) {
+    VkCommandPoolCreateInfo create_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = VK_NULL_HANDLE,
+        .flags = 0,
+        .queueFamilyIndex = queue_family->index
+    };
+
+    return cpeed_device->vkCreateCommandPool(cpeed_device->handle, &create_info, VK_NULL_HANDLE, &queue_family->pool);
+}
+
+static VkResult init_device_transfer_pool(CpdDevice* cpeed_device, CpdTransferQueueFamily* queue_family) {
+    VkCommandPoolCreateInfo create_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = VK_NULL_HANDLE,
+        .flags = 0,
+        .queueFamilyIndex = queue_family->index
+    };
+
+    return cpeed_device->vkCreateCommandPool(cpeed_device->handle, &create_info, VK_NULL_HANDLE, &queue_family->pool);
 }
 
 static VkResult init_device(
@@ -93,18 +147,19 @@ static VkResult init_device(
     cpeed_device->transfer_family.index = transfer;
     cpeed_device->transfer_family.queue_count = transfer_count;
 
-    cpeed_device->vkGetDeviceQueue = (PFN_vkGetDeviceQueue)vkGetDeviceProcAddr(device, "vkGetDeviceQueue");
-    cpeed_device->vkDestroyDevice = (PFN_vkDestroyDevice)vkGetDeviceProcAddr(device, "vkDestroyDevice");
-
-    cpeed_device->vkAcquireNextImageKHR = (PFN_vkAcquireNextImageKHR)vkGetDeviceProcAddr(device, "vkAcquireNextImageKHR");
-    cpeed_device->vkCreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)vkGetDeviceProcAddr(device, "vkCreateSwapchainKHR");
-    cpeed_device->vkDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)vkGetDeviceProcAddr(device, "vkDestroySwapchainKHR");
-    cpeed_device->vkQueuePresentKHR = (PFN_vkQueuePresentKHR)vkGetDeviceProcAddr(device, "vkQueuePresentKHR");
-
-    cpeed_device->vkQueueWaitIdle = (PFN_vkQueueWaitIdle)vkGetDeviceProcAddr(device, "vkQueueWaitIdle");
+    init_device_functions(cpeed_device);
 
     cpeed_device->vkGetDeviceQueue(device, cpeed_device->graphics_family.index, 0, &cpeed_device->graphics_family.queue);
+    result = init_device_pool(cpeed_device, &cpeed_device->graphics_family);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+    
     cpeed_device->vkGetDeviceQueue(device, cpeed_device->compute_family.index, 0, &cpeed_device->compute_family.queue);
+    result = init_device_pool(cpeed_device, &cpeed_device->compute_family);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
 
     cpeed_device->transfer_family.queues = (CpdTransferQueue*)malloc(cpeed_device->transfer_family.queue_count * sizeof(CpdTransferQueue));
     if (cpeed_device->transfer_family.queues == 0) {
@@ -118,7 +173,7 @@ static VkResult init_device(
         cpeed_device->vkGetDeviceQueue(device, cpeed_device->transfer_family.index, i + transfer_offset, &cpeed_device->transfer_family.queues[i].handle);
     }
 
-    return VK_SUCCESS;
+    return init_device_transfer_pool(cpeed_device, &cpeed_device->transfer_family);
 }
 
 static bool try_initialize_render_device(VkPhysicalDevice physical_device, CpdDevice* cpeed_device, VkResult* result) {
@@ -421,6 +476,29 @@ VkResult RENDERER_update_surface_size(CpdRenderer* renderer, CpdWindowSize* size
 
     renderer->surface.swapchain = swapchain;
     return result;
+}
+
+static VkResult reset_device_pools(CpdDevice* device, VkCommandPoolResetFlags flags) {
+    VkResult result = device->vkResetCommandPool(device->handle, device->graphics_family.pool, flags);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    result = device->vkResetCommandPool(device->handle, device->compute_family.pool, flags);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    return device->vkResetCommandPool(device->handle, device->transfer_family.pool, flags);
+}
+
+VkResult RENDERER_reset_pools(CpdRenderer* renderer) {
+    VkResult result = reset_device_pools(&renderer->render_device, 0);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    return reset_device_pools(&renderer->ui_device, 0);
 }
 
 static VkResult wait_device_idle(CpdDevice* device) {

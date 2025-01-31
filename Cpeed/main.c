@@ -1,8 +1,11 @@
 #include "main.h"
 
+#define GET_INSTANCE_PROC_ADDR(instance, name) name = (PFN_ ## name)vkGetInstanceProcAddr(instance, #name)
+
 VkInstance g_instance;
 
 VkResult create_instance();
+VkResult create_command_buffer(CpdDevice* device, VkCommandPool pool, VkCommandBuffer* buffer);
 void load_global_pointers();
 void load_instance_pointers();
 
@@ -39,6 +42,13 @@ int main() {
         goto shutdown;
     }
 
+    VkCommandBuffer buffer = VK_NULL_HANDLE;
+    result = create_command_buffer(&renderer->render_device, renderer->render_device.graphics_family.pool, &buffer);
+    if (result != VK_SUCCESS) {
+        printf("Unable to create command buffer. Result code: %s\n", string_VkResult(result));
+        goto shutdown;
+    }
+
     result = RENDERER_select_ui_device(renderer);
     if (result != VK_SUCCESS) {
         printf("Unable to select ui device. Result code: %s\n", string_VkResult(result));
@@ -71,6 +81,30 @@ int main() {
             }
         }
 
+        result = RENDERER_reset_pools(renderer);
+        if (result != VK_SUCCESS) {
+            printf("Unable to reset command pools. Result code: %s\n", string_VkResult(result));
+            break;
+        }
+
+        VkCommandBufferBeginInfo begin_info = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .pNext = VK_NULL_HANDLE,
+            .flags = 0,
+            .pInheritanceInfo = VK_NULL_HANDLE
+        };
+        result = renderer->render_device.vkBeginCommandBuffer(buffer, &begin_info);
+        if (result != VK_SUCCESS) {
+            printf("Unable to begin command buffer. Result code: %s\n", string_VkResult(result));
+            break;
+        }
+
+        result = renderer->render_device.vkEndCommandBuffer(buffer);
+        if (result != VK_SUCCESS) {
+            printf("Unable to end command buffer. Result code: %s\n", string_VkResult(result));
+            break;
+        }
+
         result = RENDERER_wait_idle(renderer);
         if (result != VK_SUCCESS) {
             printf("Unable to wait for idle. Result code: %s\n", string_VkResult(result));
@@ -80,6 +114,8 @@ int main() {
     printf("Goodbye!\n");
 
 shutdown:
+    renderer->render_device.vkFreeCommandBuffers(renderer->render_device.handle, renderer->render_device.graphics_family.pool, 1, &buffer);
+
     RENDERER_destroy(renderer);
 
 #pragma warning(push)
@@ -93,22 +129,22 @@ shutdown:
 }
 
 void load_global_pointers() {
-    vkCreateInstance = (PFN_vkCreateInstance)vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkCreateInstance");
-    vkEnumerateInstanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkEnumerateInstanceExtensionProperties");
+    GET_INSTANCE_PROC_ADDR(VK_NULL_HANDLE, vkCreateInstance);
+    GET_INSTANCE_PROC_ADDR(VK_NULL_HANDLE, vkEnumerateInstanceExtensionProperties);
 }
 
 void load_instance_pointers() {
-    vkDestroyInstance = (PFN_vkDestroyInstance)vkGetInstanceProcAddr(g_instance, "vkDestroyInstance");
-    vkEnumeratePhysicalDevices = (PFN_vkEnumeratePhysicalDevices)vkGetInstanceProcAddr(g_instance, "vkEnumeratePhysicalDevices");
-    vkGetPhysicalDeviceProperties = (PFN_vkGetPhysicalDeviceProperties)vkGetInstanceProcAddr(g_instance, "vkGetPhysicalDeviceProperties");
-    vkGetPhysicalDeviceQueueFamilyProperties = (PFN_vkGetPhysicalDeviceQueueFamilyProperties)vkGetInstanceProcAddr(g_instance, "vkGetPhysicalDeviceQueueFamilyProperties");
-    vkCreateDevice = (PFN_vkCreateDevice)vkGetInstanceProcAddr(g_instance, "vkCreateDevice");
-    vkGetDeviceProcAddr = (PFN_vkGetDeviceProcAddr)vkGetInstanceProcAddr(g_instance, "vkGetDeviceProcAddr");
-    vkDestroySurfaceKHR = (PFN_vkDestroySurfaceKHR)vkGetInstanceProcAddr(g_instance, "vkDestroySurfaceKHR");
-    vkEnumerateDeviceExtensionProperties = (PFN_vkEnumerateDeviceExtensionProperties)vkGetInstanceProcAddr(g_instance, "vkEnumerateDeviceExtensionProperties");
-    vkGetPhysicalDeviceSurfaceFormatsKHR = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)vkGetInstanceProcAddr(g_instance, "vkGetPhysicalDeviceSurfaceFormatsKHR");
-    vkGetPhysicalDeviceSurfaceSupportKHR = (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)vkGetInstanceProcAddr(g_instance, "vkGetPhysicalDeviceSurfaceSupportKHR");
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR = (PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)vkGetInstanceProcAddr(g_instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+    GET_INSTANCE_PROC_ADDR(g_instance, vkDestroyInstance);
+    GET_INSTANCE_PROC_ADDR(g_instance, vkEnumeratePhysicalDevices);
+    GET_INSTANCE_PROC_ADDR(g_instance, vkGetPhysicalDeviceProperties);
+    GET_INSTANCE_PROC_ADDR(g_instance, vkGetPhysicalDeviceQueueFamilyProperties);
+    GET_INSTANCE_PROC_ADDR(g_instance, vkCreateDevice);
+    GET_INSTANCE_PROC_ADDR(g_instance, vkGetDeviceProcAddr);
+    GET_INSTANCE_PROC_ADDR(g_instance, vkDestroySurfaceKHR);
+    GET_INSTANCE_PROC_ADDR(g_instance, vkEnumerateDeviceExtensionProperties);
+    GET_INSTANCE_PROC_ADDR(g_instance, vkGetPhysicalDeviceSurfaceFormatsKHR);
+    GET_INSTANCE_PROC_ADDR(g_instance, vkGetPhysicalDeviceSurfaceSupportKHR);
+    GET_INSTANCE_PROC_ADDR(g_instance, vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
 }
 
 static VkResult validate_extensions(char** extensions, unsigned int extension_count) {
@@ -150,6 +186,18 @@ static VkResult validate_extensions(char** extensions, unsigned int extension_co
 
     free(properties);
     return missing ? VK_ERROR_EXTENSION_NOT_PRESENT : VK_SUCCESS;
+}
+
+VkResult create_command_buffer(CpdDevice* cpeed_device, VkCommandPool pool, VkCommandBuffer* buffer) {
+    VkCommandBufferAllocateInfo allocate_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = VK_NULL_HANDLE,
+        .commandPool = pool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1
+    };
+
+    return cpeed_device->vkAllocateCommandBuffers(cpeed_device->handle, &allocate_info, buffer);
 }
 
 VkResult create_instance() {
