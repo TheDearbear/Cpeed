@@ -101,6 +101,8 @@ static VkResult init_device(
     cpeed_device->vkDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)vkGetDeviceProcAddr(device, "vkDestroySwapchainKHR");
     cpeed_device->vkQueuePresentKHR = (PFN_vkQueuePresentKHR)vkGetDeviceProcAddr(device, "vkQueuePresentKHR");
 
+    cpeed_device->vkQueueWaitIdle = (PFN_vkQueueWaitIdle)vkGetDeviceProcAddr(device, "vkQueueWaitIdle");
+
     cpeed_device->vkGetDeviceQueue(device, cpeed_device->graphics_family.index, 0, &cpeed_device->graphics_family.queue);
     cpeed_device->vkGetDeviceQueue(device, cpeed_device->compute_family.index, 0, &cpeed_device->compute_family.queue);
 
@@ -418,5 +420,43 @@ VkResult RENDERER_update_surface_size(CpdRenderer* renderer, CpdWindowSize* size
     }
 
     renderer->surface.swapchain = swapchain;
+    return result;
+}
+
+static VkResult wait_device_idle(CpdDevice* device) {
+    VkResult result = device->vkQueueWaitIdle(device->graphics_family.queue);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    result = device->vkQueueWaitIdle(device->compute_family.queue);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    for (uint32_t i = 0; i < device->transfer_family.queue_count; i++) {
+        if (device->transfer_family.queues[i].bytes_queued == 0) {
+            continue;
+        }
+
+        result = device->vkQueueWaitIdle(device->transfer_family.queues[i].handle);
+        device->transfer_family.queues[i].bytes_queued = 0;
+
+        if (result != VK_SUCCESS) {
+            break;
+        }
+    }
+    
+    return result;
+}
+
+VkResult RENDERER_wait_idle(CpdRenderer* renderer) {
+    VkResult result = wait_device_idle(&renderer->render_device);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    // result = wait_device_idle(&renderer->ui_device);
+
     return result;
 }

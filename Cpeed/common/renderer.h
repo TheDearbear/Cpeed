@@ -45,6 +45,10 @@ typedef struct CpdDevice {
     PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR;
     PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR;
     PFN_vkQueuePresentKHR vkQueuePresentKHR;
+
+    // == Queue
+
+    PFN_vkQueueWaitIdle vkQueueWaitIdle;
 } CpdDevice;
 
 typedef struct CpdRenderer {

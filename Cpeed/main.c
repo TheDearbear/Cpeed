@@ -70,6 +70,11 @@ int main() {
                 continue;
             }
         }
+
+        result = RENDERER_wait_idle(renderer);
+        if (result != VK_SUCCESS) {
+            printf("Unable to wait for idle. Result code: %s\n", string_VkResult(result));
+        }
     }
 
     printf("Goodbye!\n");
