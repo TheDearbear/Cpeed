@@ -34,14 +34,14 @@ void RENDERER_destroy(CpdRenderer* renderer) {
 
     if (renderer->render_device.handle != VK_NULL_HANDLE) {
         renderer->render_device.vkDestroyDevice(renderer->render_device.handle, VK_NULL_HANDLE);
-        free(renderer->render_device.transfer_queues);
+        free(renderer->render_device.transfer_family.queues);
 
         renderer->render_device.handle = VK_NULL_HANDLE;
     }
 
     if (renderer->ui_device.handle != VK_NULL_HANDLE) {
         renderer->ui_device.vkDestroyDevice(renderer->ui_device.handle, VK_NULL_HANDLE);
-        free(renderer->ui_device.transfer_queues);
+        free(renderer->ui_device.transfer_family.queues);
 
         renderer->ui_device.handle = VK_NULL_HANDLE;
     }
@@ -88,10 +88,10 @@ static VkResult init_device(
     cpeed_device->physical_handle = physical;
     cpeed_device->handle = device;
 
-    cpeed_device->graphics_index = graphics;
-    cpeed_device->compute_index = compute;
-    cpeed_device->transfer_index = transfer;
-    cpeed_device->transfer_queue_count = transfer_count;
+    cpeed_device->graphics_family.index = graphics;
+    cpeed_device->compute_family.index = compute;
+    cpeed_device->transfer_family.index = transfer;
+    cpeed_device->transfer_family.queue_count = transfer_count;
 
     cpeed_device->vkGetDeviceQueue = (PFN_vkGetDeviceQueue)vkGetDeviceProcAddr(device, "vkGetDeviceQueue");
     cpeed_device->vkDestroyDevice = (PFN_vkDestroyDevice)vkGetDeviceProcAddr(device, "vkDestroyDevice");
@@ -101,19 +101,19 @@ static VkResult init_device(
     cpeed_device->vkDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)vkGetDeviceProcAddr(device, "vkDestroySwapchainKHR");
     cpeed_device->vkQueuePresentKHR = (PFN_vkQueuePresentKHR)vkGetDeviceProcAddr(device, "vkQueuePresentKHR");
 
-    cpeed_device->vkGetDeviceQueue(device, cpeed_device->graphics_index, 0, &cpeed_device->graphics_queue);
-    cpeed_device->vkGetDeviceQueue(device, cpeed_device->compute_index, 0, &cpeed_device->compute_queue);
+    cpeed_device->vkGetDeviceQueue(device, cpeed_device->graphics_family.index, 0, &cpeed_device->graphics_family.queue);
+    cpeed_device->vkGetDeviceQueue(device, cpeed_device->compute_family.index, 0, &cpeed_device->compute_family.queue);
 
-    cpeed_device->transfer_queues = (CpdTransferQueue*)malloc(cpeed_device->transfer_queue_count * sizeof(CpdTransferQueue));
-    if (cpeed_device->transfer_queues == 0) {
+    cpeed_device->transfer_family.queues = (CpdTransferQueue*)malloc(cpeed_device->transfer_family.queue_count * sizeof(CpdTransferQueue));
+    if (cpeed_device->transfer_family.queues == 0) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    printf("Initializing device with %d transfer queue(s)\n", cpeed_device->transfer_queue_count);
+    printf("Initializing device with %d transfer queue(s)\n", cpeed_device->transfer_family.queue_count);
 
-    for (uint32_t i = 0; i < cpeed_device->transfer_queue_count; i++) {
-        cpeed_device->transfer_queues[i].bytes_queued = 0;
-        cpeed_device->vkGetDeviceQueue(device, cpeed_device->transfer_index, i + transfer_offset, &cpeed_device->transfer_queues[i].handle);
+    for (uint32_t i = 0; i < cpeed_device->transfer_family.queue_count; i++) {
+        cpeed_device->transfer_family.queues[i].bytes_queued = 0;
+        cpeed_device->vkGetDeviceQueue(device, cpeed_device->transfer_family.index, i + transfer_offset, &cpeed_device->transfer_family.queues[i].handle);
     }
 
     return VK_SUCCESS;
@@ -317,7 +317,7 @@ static VkResult create_swapchain(CpdRenderer* renderer, VkExtent2D* extent, VkSw
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 1,
-        .pQueueFamilyIndices = &renderer->render_device.graphics_index,
+        .pQueueFamilyIndices = &renderer->render_device.graphics_family.index,
         .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = VK_PRESENT_MODE_FIFO_KHR,
@@ -357,7 +357,7 @@ VkResult RENDERER_set_surface(CpdRenderer* renderer, VkSurfaceKHR surface, CpdWi
     VkBool32 supported = VK_FALSE;
     result = vkGetPhysicalDeviceSurfaceSupportKHR(
         renderer->render_device.physical_handle,
-        renderer->render_device.graphics_index,
+        renderer->render_device.graphics_family.index,
         surface,
         &supported);
     if (result != VK_SUCCESS) {

@@ -15,19 +15,24 @@ typedef struct CpdTransferQueue {
     VkQueue handle;
 } CpdTransferQueue;
 
+typedef struct CpdQueueFamily {
+    VkQueue queue;
+    uint32_t index;
+} CpdQueueFamily;
+
+typedef struct CpdTransferQueueFamily {
+    CpdTransferQueue* queues;
+    uint32_t queue_count;
+    uint32_t index;
+} CpdTransferQueueFamily;
+
 typedef struct CpdDevice {
     VkPhysicalDevice physical_handle;
     VkDevice handle;
 
-    uint32_t graphics_index;
-    VkQueue graphics_queue;
-
-    uint32_t compute_index;
-    VkQueue compute_queue;
-
-    uint32_t transfer_index;
-    uint32_t transfer_queue_count;
-    CpdTransferQueue* transfer_queues;
+    CpdQueueFamily graphics_family;
+    CpdQueueFamily compute_family;
+    CpdTransferQueueFamily transfer_family;
 
     // == Logical Device
 
