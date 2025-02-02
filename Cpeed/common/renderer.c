@@ -21,17 +21,26 @@ CpdRenderer* RENDERER_create(VkInstance instance) {
 
     renderer->instance = instance;
     renderer->surface.handle = VK_NULL_HANDLE;
-    renderer->surface.swapchain = VK_NULL_HANDLE;
+    renderer->surface.swapchain.handle = VK_NULL_HANDLE;
     renderer->render_device.handle = VK_NULL_HANDLE;
     renderer->ui_device.handle = VK_NULL_HANDLE;
 
     return renderer;
 }
 
+static void destroy_swapchain(CpdDevice* cpeed_device, CpdSwapchain* swapchain) {
+    cpeed_device->vkDestroySwapchainKHR(cpeed_device->handle, swapchain->handle, VK_NULL_HANDLE);
+    free(swapchain->images);
+
+    swapchain->handle = VK_NULL_HANDLE;
+    swapchain->images = VK_NULL_HANDLE;
+    swapchain->image_count = 0;
+    swapchain->current_image = 0;
+}
+
 void RENDERER_destroy(CpdRenderer* renderer) {
-    if (renderer->surface.swapchain != VK_NULL_HANDLE) {
-        renderer->render_device.vkDestroySwapchainKHR(renderer->render_device.handle, renderer->surface.swapchain, VK_NULL_HANDLE);
-        renderer->surface.swapchain = VK_NULL_HANDLE;
+    if (renderer->surface.swapchain.handle != VK_NULL_HANDLE) {
+        destroy_swapchain(&renderer->render_device, &renderer->surface.swapchain);
     }
 
     if (renderer->render_device.handle != VK_NULL_HANDLE) {
@@ -66,7 +75,16 @@ static void init_device_functions(CpdDevice* cpeed_device) {
     GET_DEVICE_PROC_ADDR(cpeed_device, vkAcquireNextImageKHR);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateSwapchainKHR);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroySwapchainKHR);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkGetSwapchainImagesKHR);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkQueuePresentKHR);
+
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateSemaphore);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroySemaphore);
+
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateFence);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyFence);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkResetFences);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkWaitForFences);
 
     GET_DEVICE_PROC_ADDR(cpeed_device, vkQueueWaitIdle);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkQueueSubmit2KHR);
@@ -373,24 +391,23 @@ static VkResult create_swapchain(CpdRenderer* renderer, VkExtent2D* extent, VkSu
             min(surface_capabilities->maxImageExtent.height, extent->height)
     };
 
-    renderer->surface.size.width = (unsigned short)fitted_extent.width;
-    renderer->surface.size.height = (unsigned short)fitted_extent.height;
+    const uint32_t base_image_count = 3;
 
-    uint32_t imageCount = surface_capabilities->maxImageCount == 0 ?
-        max(surface_capabilities->minImageCount, 2) :
-        min(max(surface_capabilities->minImageCount, 2), surface_capabilities->maxImageCount);
+    uint32_t image_count = surface_capabilities->maxImageCount == 0 ?
+        max(surface_capabilities->minImageCount, base_image_count) :
+        min(max(surface_capabilities->minImageCount, base_image_count), surface_capabilities->maxImageCount);
 
     VkSwapchainCreateInfoKHR create_info = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext = VK_NULL_HANDLE,
         .flags = 0,
         .surface = renderer->surface.handle,
-        .minImageCount = imageCount,
+        .minImageCount = image_count,
         .imageFormat = renderer->surface.format.format,
         .imageColorSpace = renderer->surface.format.colorSpace,
         .imageExtent = fitted_extent,
         .imageArrayLayers = 1,
-        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
         .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 1,
         .pQueueFamilyIndices = &renderer->render_device.graphics_family.index,
@@ -401,13 +418,63 @@ static VkResult create_swapchain(CpdRenderer* renderer, VkExtent2D* extent, VkSu
         .oldSwapchain = VK_NULL_HANDLE
     };
 
-    return renderer->render_device.vkCreateSwapchainKHR(renderer->render_device.handle, &create_info, VK_NULL_HANDLE, &renderer->surface.swapchain);
+    VkResult result = renderer->render_device.vkCreateSwapchainKHR(renderer->render_device.handle, &create_info, VK_NULL_HANDLE, &renderer->surface.swapchain.handle);
+    if (result == VK_SUCCESS) {
+        renderer->surface.swapchain.current_image = 0;
+
+        result = renderer->render_device.vkGetSwapchainImagesKHR(
+            renderer->render_device.handle,
+            renderer->surface.swapchain.handle,
+            &renderer->surface.swapchain.image_count,
+            VK_NULL_HANDLE);
+        if (result != VK_SUCCESS) {
+            destroy_swapchain(&renderer->render_device, &renderer->surface.swapchain);
+            return result;
+        }
+
+        VkImage* images = (VkImage*)malloc(renderer->surface.swapchain.image_count * sizeof(VkImage));
+        if (renderer->surface.swapchain.images == 0) {
+            destroy_swapchain(&renderer->render_device, &renderer->surface.swapchain);
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        result = renderer->render_device.vkGetSwapchainImagesKHR(
+            renderer->render_device.handle,
+            renderer->surface.swapchain.handle,
+            &renderer->surface.swapchain.image_count,
+            images);
+        if (result != VK_SUCCESS) {
+            destroy_swapchain(&renderer->render_device, &renderer->surface.swapchain);
+            free(images);
+            return result;
+        }
+
+        renderer->surface.swapchain.images = (CpdImage*)malloc(renderer->surface.swapchain.image_count * sizeof(CpdImage));
+        if (renderer->surface.swapchain.images == 0) {
+            destroy_swapchain(&renderer->render_device, &renderer->surface.swapchain);
+            free(images);
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        for (uint32_t i = 0; i < renderer->surface.swapchain.image_count; i++) {
+            renderer->surface.swapchain.images[i].handle = images[i];
+            renderer->surface.swapchain.images[i].stage = VK_PIPELINE_STAGE_2_NONE_KHR;
+            renderer->surface.swapchain.images[i].access = VK_ACCESS_2_NONE_KHR;
+            renderer->surface.swapchain.images[i].layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            renderer->surface.swapchain.images[i].queue_family_index = renderer->render_device.graphics_family.index;
+            renderer->surface.swapchain.images[i].size.width = (unsigned short)fitted_extent.width;
+            renderer->surface.swapchain.images[i].size.height = (unsigned short)fitted_extent.height;
+        }
+
+        free(images);
+    }
+
+    return result;
 }
 
 VkResult RENDERER_set_surface(CpdRenderer* renderer, VkSurfaceKHR surface, CpdWindowSize* size) {
-    if (renderer->surface.swapchain != VK_NULL_HANDLE) {
-        renderer->render_device.vkDestroySwapchainKHR(renderer->render_device.handle, renderer->surface.swapchain, VK_NULL_HANDLE);
-        renderer->surface.swapchain = VK_NULL_HANDLE;
+    if (renderer->surface.swapchain.handle != VK_NULL_HANDLE) {
+        destroy_swapchain(&renderer->render_device, &renderer->surface.swapchain);
     }
 
     uint32_t format_count;
@@ -462,9 +529,8 @@ VkResult RENDERER_set_surface(CpdRenderer* renderer, VkSurfaceKHR surface, CpdWi
 }
 
 VkResult RENDERER_update_surface_size(CpdRenderer* renderer, CpdWindowSize* size) {
-    if (renderer->surface.swapchain != VK_NULL_HANDLE) {
-        renderer->render_device.vkDestroySwapchainKHR(renderer->render_device.handle, renderer->surface.swapchain, VK_NULL_HANDLE);
-        renderer->surface.swapchain = VK_NULL_HANDLE;
+    if (renderer->surface.swapchain.handle != VK_NULL_HANDLE) {
+        destroy_swapchain(&renderer->render_device, &renderer->surface.swapchain);
     }
 
     VkExtent2D extent = {
@@ -537,7 +603,7 @@ VkResult RENDERER_wait_idle(CpdRenderer* renderer) {
         return result;
     }
 
-    // result = wait_device_idle(&renderer->ui_device);
+    result = wait_device_idle(&renderer->ui_device);
 
     return result;
 }

@@ -4,11 +4,26 @@
 #include "../platform.h"
 #include "renderer.queue_init.h"
 
+typedef struct CpdImage {
+    VkImage handle;
+    VkPipelineStageFlags2KHR stage;
+    VkAccessFlags2 access;
+    VkImageLayout layout;
+    uint32_t queue_family_index;
+    CpdWindowSize size;
+} CpdImage;
+
+typedef struct CpdSwapchain {
+    VkSwapchainKHR handle;
+    CpdImage* images;
+    uint32_t image_count;
+    uint32_t current_image;
+} CpdSwapchain;
+
 typedef struct CpdRenderSurface {
     VkSurfaceKHR handle;
-    VkSwapchainKHR swapchain;
+    CpdSwapchain swapchain;
     VkSurfaceFormatKHR format;
-    CpdWindowSize size;
 } CpdRenderSurface;
 
 typedef struct CpdTransferQueue {
@@ -47,7 +62,20 @@ typedef struct CpdDevice {
     PFN_vkAcquireNextImageKHR vkAcquireNextImageKHR;
     PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR;
     PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR;
+    PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR;
     PFN_vkQueuePresentKHR vkQueuePresentKHR;
+
+    // == Semaphore
+
+    PFN_vkCreateSemaphore vkCreateSemaphore;
+    PFN_vkDestroySemaphore vkDestroySemaphore;
+
+    // == Fence
+
+    PFN_vkCreateFence vkCreateFence;
+    PFN_vkDestroyFence vkDestroyFence;
+    PFN_vkResetFences vkResetFences;
+    PFN_vkWaitForFences vkWaitForFences;
 
     // == Queue
 

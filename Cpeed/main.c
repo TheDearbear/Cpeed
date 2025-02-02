@@ -3,9 +3,15 @@
 #define GET_INSTANCE_PROC_ADDR(instance, name) name = (PFN_ ## name)vkGetInstanceProcAddr(instance, #name)
 
 VkInstance g_instance;
+CpdWindow g_window;
 
 VkResult create_instance();
+VkResult create_renderer(CpdRenderer** renderer);
+VkResult create_fence(CpdDevice* device, VkFence* fence);
 VkResult create_command_buffer(CpdDevice* device, VkCommandPool pool, VkCommandBuffer* buffer);
+
+void destroy_renderer(CpdRenderer* renderer);
+
 void load_global_pointers();
 void load_instance_pointers();
 
@@ -21,7 +27,7 @@ int main() {
         .width = 800,
         .height = 600
     };
-    CpdWindow window = PLATFORM_create_window(&windowInfo);
+    g_window = PLATFORM_create_window(&windowInfo);
 
     load_global_pointers();
 
@@ -33,12 +39,10 @@ int main() {
         return -1;
     }
 
-    load_instance_pointers();
-
-    CpdRenderer* renderer = RENDERER_create(g_instance);
-    result = RENDERER_select_render_device(renderer);
+    CpdRenderer* renderer;
+    result = create_renderer(&renderer);
     if (result != VK_SUCCESS) {
-        printf("Unable to select render device. Result code: %s\n", string_VkResult(result));
+        printf("Unable to create renderer. Result code: %s\n", string_VkResult(result));
         goto shutdown;
     }
 
@@ -49,32 +53,17 @@ int main() {
         goto shutdown;
     }
 
-    result = RENDERER_select_ui_device(renderer);
+    VkFence image_fence;
+    result = create_fence(&renderer->render_device, &image_fence);
     if (result != VK_SUCCESS) {
-        printf("Unable to select ui device. Result code: %s\n", string_VkResult(result));
+        printf("Unable to create fence. Result code: %s\n", string_VkResult(result));
         goto shutdown;
     }
 
-    VkSurfaceKHR surface;
-    result = PLATFORM_create_surface(g_instance, window, &surface);
-    if (result != VK_SUCCESS) {
-        printf("Unable to create surface. Result code: %s\n", string_VkResult(result));
-        goto shutdown;
-    }
-
-    {
-        CpdWindowSize size = PLATFORM_get_window_size(window);
-        result = RENDERER_set_surface(renderer, surface, &size);
-        if (result != VK_SUCCESS) {
-            printf("Unable to initialize surface for rendering. Result code: %s\n", string_VkResult(result));
-            goto shutdown;
-        }
-    }
-
-    while (!PLATFORM_window_poll(window)) {
-        bool resized = PLATFORM_window_resized(window);
+    while (!PLATFORM_window_poll(g_window)) {
+        bool resized = PLATFORM_window_resized(g_window);
         if (resized) {
-            CpdWindowSize size = PLATFORM_get_window_size(window);
+            CpdWindowSize size = PLATFORM_get_window_size(g_window);
             
             result = RENDERER_update_surface_size(renderer, &size);
             if (result != VK_SUCCESS) {
@@ -87,6 +76,22 @@ int main() {
         if (result != VK_SUCCESS) {
             printf("Unable to reset command pools. Result code: %s\n", string_VkResult(result));
             break;
+        }
+
+        uint32_t index = 0;
+        result = renderer->render_device.vkAcquireNextImageKHR(
+            renderer->render_device.handle,
+            renderer->surface.swapchain.handle,
+            500000000,
+            VK_NULL_HANDLE,
+            image_fence,
+            &index);
+        if (result == VK_TIMEOUT) {
+            printf("Swapchain timed out\n");
+        }
+        else if (result != VK_SUCCESS) {
+            printf("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
+            goto shutdown;
         }
 
         VkCommandBufferBeginInfo begin_info = {
@@ -140,18 +145,43 @@ int main() {
     printf("Goodbye!\n");
 
 shutdown:
+    renderer->render_device.vkDestroyFence(renderer->render_device.handle, image_fence, VK_NULL_HANDLE);
     renderer->render_device.vkFreeCommandBuffers(renderer->render_device.handle, renderer->render_device.graphics_family.pool, 1, &buffer);
 
-    RENDERER_destroy(renderer);
-
-#pragma warning(push)
-#pragma warning(disable:6001)
-    vkDestroySurfaceKHR(g_instance, surface, VK_NULL_HANDLE);
-#pragma warning(pop)
-
+    destroy_renderer(renderer);
     vkDestroyInstance(g_instance, VK_NULL_HANDLE);
-    PLATFORM_window_destroy(window);
+
+    PLATFORM_window_destroy(g_window);
     PLATFORM_free_vulkan_lib();
+}
+
+VkResult create_renderer(CpdRenderer** renderer) {
+    *renderer = RENDERER_create(g_instance);
+    VkResult result = RENDERER_select_render_device(renderer);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    result = RENDERER_select_ui_device(*renderer);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    VkSurfaceKHR surface;
+    result = PLATFORM_create_surface(g_instance, g_window, &surface);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    CpdWindowSize size = PLATFORM_get_window_size(g_window);
+    return RENDERER_set_surface(*renderer, surface, &size);
+}
+
+void destroy_renderer(CpdRenderer* renderer) {
+    VkSurfaceKHR surface = renderer->surface.handle;
+
+    RENDERER_destroy(renderer);
+    vkDestroySurfaceKHR(g_instance, surface, VK_NULL_HANDLE);
 }
 
 void load_global_pointers() {
@@ -214,18 +244,6 @@ static VkResult validate_extensions(char** extensions, unsigned int extension_co
     return missing ? VK_ERROR_EXTENSION_NOT_PRESENT : VK_SUCCESS;
 }
 
-VkResult create_command_buffer(CpdDevice* cpeed_device, VkCommandPool pool, VkCommandBuffer* buffer) {
-    VkCommandBufferAllocateInfo allocate_info = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .pNext = VK_NULL_HANDLE,
-        .commandPool = pool,
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = 1
-    };
-
-    return cpeed_device->vkAllocateCommandBuffers(cpeed_device->handle, &allocate_info, buffer);
-}
-
 VkResult create_instance() {
     VkApplicationInfo app_info = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -281,6 +299,10 @@ VkResult create_instance() {
     result = vkCreateInstance(&create_info, VK_NULL_HANDLE, &g_instance);
 
     PLATFORM_free_vulkan_extensions(extensions);
+
+    if (result == VK_SUCCESS) {
+        load_instance_pointers();
+    }
 
     return result;
 }
