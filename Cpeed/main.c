@@ -5,15 +5,15 @@
 VkInstance g_instance;
 CpdWindow g_window;
 
-VkResult create_instance();
-VkResult create_renderer(CpdRenderer** renderer);
-VkResult create_fence(CpdDevice* device, VkFence* fence);
-VkResult create_command_buffer(CpdDevice* device, VkCommandPool pool, VkCommandBuffer* buffer);
+static VkResult create_instance();
+static VkResult create_renderer(CpdRenderer** renderer);
+static VkResult create_semaphores(CpdRenderer* renderer, VkSemaphore* acquire, VkSemaphore* render);
+static VkResult create_swapchain(CpdRenderer* renderer);
 
-void destroy_renderer(CpdRenderer* renderer);
+static void destroy_renderer(CpdRenderer* renderer);
 
-void load_global_pointers();
-void load_instance_pointers();
+static void load_global_pointers();
+static void load_instance_pointers();
 
 int main() {
     vkGetInstanceProcAddr = PLATFORM_load_vulkan_lib();
@@ -24,8 +24,8 @@ int main() {
 
     CpdWindowInfo windowInfo = {
         .title = "Cpeed",
-        .width = 800,
-        .height = 600
+        .size.width = 800,
+        .size.height = 600
     };
     g_window = PLATFORM_create_window(&windowInfo);
 
@@ -46,26 +46,29 @@ int main() {
         goto shutdown;
     }
 
+    result = create_swapchain(renderer);
+
     VkCommandBuffer buffer = VK_NULL_HANDLE;
-    result = create_command_buffer(&renderer->render_device, renderer->render_device.graphics_family.pool, &buffer);
+    result = create_primary_command_buffer(&renderer->render_device, renderer->render_device.graphics_family.pool, &buffer);
     if (result != VK_SUCCESS) {
         printf("Unable to create command buffer. Result code: %s\n", string_VkResult(result));
         goto shutdown;
     }
 
-    VkFence image_fence;
-    result = create_fence(&renderer->render_device, &image_fence);
+    VkSemaphore acquire_semaphore = VK_NULL_HANDLE;
+    VkSemaphore render_semaphore = VK_NULL_HANDLE;
+    result = create_semaphores(renderer, &acquire_semaphore, &render_semaphore);
     if (result != VK_SUCCESS) {
-        printf("Unable to create fence. Result code: %s\n", string_VkResult(result));
+        printf("Unable to create semaphores. Result code: %s\n", string_VkResult(result));
         goto shutdown;
     }
 
     while (!PLATFORM_window_poll(g_window)) {
         bool resized = PLATFORM_window_resized(g_window);
         if (resized) {
-            CpdWindowSize size = PLATFORM_get_window_size(g_window);
+            CpdSize size = PLATFORM_get_window_size(g_window);
             
-            result = RENDERER_update_surface_size(renderer, &size);
+            result = SWAPCHAIN_resize(&renderer->swapchain, &renderer->render_device, &renderer->surface, &size);
             if (result != VK_SUCCESS) {
                 printf("Unable to update surface size. Result code: %s\n", string_VkResult(result));
                 continue;
@@ -81,10 +84,10 @@ int main() {
         uint32_t index = 0;
         result = renderer->render_device.vkAcquireNextImageKHR(
             renderer->render_device.handle,
-            renderer->surface.swapchain.handle,
-            500000000,
+            renderer->swapchain.handle,
+            UINT64_MAX,
+            acquire_semaphore,
             VK_NULL_HANDLE,
-            image_fence,
             &index);
         if (result == VK_TIMEOUT) {
             printf("Swapchain timed out\n");
@@ -105,6 +108,11 @@ int main() {
             printf("Unable to begin command buffer. Result code: %s\n", string_VkResult(result));
             break;
         }
+
+        SWAPCHAIN_set_layout(&renderer->swapchain, &renderer->render_device, buffer,
+            VK_PIPELINE_STAGE_2_NONE_KHR,
+            VK_ACCESS_2_MEMORY_READ_BIT_KHR,
+            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
         result = renderer->render_device.vkEndCommandBuffer(buffer);
         if (result != VK_SUCCESS) {
@@ -136,6 +144,21 @@ int main() {
             printf("Unable to queue work. Result code: %s\n", string_VkResult(result));
         }
 
+        VkPresentInfoKHR present_info = {
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .pNext = VK_NULL_HANDLE,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = &acquire_semaphore,
+            .swapchainCount = 1,
+            .pSwapchains = &renderer->swapchain.handle,
+            .pImageIndices = &index,
+            .pResults = VK_NULL_HANDLE
+        };
+        result = renderer->render_device.vkQueuePresentKHR(renderer->render_device.graphics_family.queue, &present_info);
+        if (result != VK_SUCCESS) {
+            printf("Unable to present swapchain. Result code: %s\n", string_VkResult(result));
+        }
+
         result = RENDERER_wait_idle(renderer);
         if (result != VK_SUCCESS) {
             printf("Unable to wait for idle. Result code: %s\n", string_VkResult(result));
@@ -145,9 +168,12 @@ int main() {
     printf("Goodbye!\n");
 
 shutdown:
-    renderer->render_device.vkDestroyFence(renderer->render_device.handle, image_fence, VK_NULL_HANDLE);
+    renderer->render_device.vkDestroySemaphore(renderer->render_device.handle, acquire_semaphore, VK_NULL_HANDLE);
+    renderer->render_device.vkDestroySemaphore(renderer->render_device.handle, render_semaphore, VK_NULL_HANDLE);
+
     renderer->render_device.vkFreeCommandBuffers(renderer->render_device.handle, renderer->render_device.graphics_family.pool, 1, &buffer);
 
+    SWAPCHAIN_destroy(&renderer->swapchain, &renderer->render_device);
     destroy_renderer(renderer);
     vkDestroyInstance(g_instance, VK_NULL_HANDLE);
 
@@ -155,9 +181,9 @@ shutdown:
     PLATFORM_free_vulkan_lib();
 }
 
-VkResult create_renderer(CpdRenderer** renderer) {
+static VkResult create_renderer(CpdRenderer** renderer) {
     *renderer = RENDERER_create(g_instance);
-    VkResult result = RENDERER_select_render_device(renderer);
+    VkResult result = RENDERER_select_render_device(*renderer);
     if (result != VK_SUCCESS) {
         return result;
     }
@@ -173,23 +199,42 @@ VkResult create_renderer(CpdRenderer** renderer) {
         return result;
     }
 
-    CpdWindowSize size = PLATFORM_get_window_size(g_window);
-    return RENDERER_set_surface(*renderer, surface, &size);
+    return SURFACE_initialize(&(*renderer)->surface, &(*renderer)->render_device, surface);
 }
 
-void destroy_renderer(CpdRenderer* renderer) {
+static VkResult create_semaphores(CpdRenderer* renderer, VkSemaphore* acquire, VkSemaphore* render) {
+    VkResult result = create_semaphore(&renderer->render_device, acquire);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    result = create_semaphore(&renderer->render_device, render);
+    if (result != VK_SUCCESS) {
+        renderer->render_device.vkDestroySemaphore(renderer->render_device.handle, *acquire, VK_NULL_HANDLE);
+    }
+
+    return result;
+}
+
+static VkResult create_swapchain(CpdRenderer* renderer) {
+    CpdSize size = PLATFORM_get_window_size(g_window);
+
+    return SWAPCHAIN_create(&renderer->swapchain, &renderer->render_device, &renderer->surface, &size);
+}
+
+static void destroy_renderer(CpdRenderer* renderer) {
     VkSurfaceKHR surface = renderer->surface.handle;
 
     RENDERER_destroy(renderer);
     vkDestroySurfaceKHR(g_instance, surface, VK_NULL_HANDLE);
 }
 
-void load_global_pointers() {
+static void load_global_pointers() {
     GET_INSTANCE_PROC_ADDR(VK_NULL_HANDLE, vkCreateInstance);
     GET_INSTANCE_PROC_ADDR(VK_NULL_HANDLE, vkEnumerateInstanceExtensionProperties);
 }
 
-void load_instance_pointers() {
+static void load_instance_pointers() {
     GET_INSTANCE_PROC_ADDR(g_instance, vkDestroyInstance);
     GET_INSTANCE_PROC_ADDR(g_instance, vkEnumeratePhysicalDevices);
     GET_INSTANCE_PROC_ADDR(g_instance, vkGetPhysicalDeviceProperties);
@@ -244,7 +289,7 @@ static VkResult validate_extensions(char** extensions, unsigned int extension_co
     return missing ? VK_ERROR_EXTENSION_NOT_PRESENT : VK_SUCCESS;
 }
 
-VkResult create_instance() {
+static VkResult create_instance() {
     VkApplicationInfo app_info = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pNext = 0,
@@ -255,7 +300,7 @@ VkResult create_instance() {
         .applicationVersion = VK_API_VERSION_1_0
     };
 
-    CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_instance_extensions();
+    const CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_instance_extensions();
     if (extensions == 0) {
         printf("Unable to get required Vulkan instance extensions\n");
         return VK_ERROR_OUT_OF_HOST_MEMORY;

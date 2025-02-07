@@ -21,7 +21,7 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
     }
 
     HWND hWnd = CreateWindowExA(0, window_class, str, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT, info->width, info->height,
+        CW_USEDEFAULT, CW_USEDEFAULT, info->size.width, info->size.height,
         NULL, NULL, GetModuleHandleW(NULL), NULL);
 
     free(str);
@@ -77,11 +77,11 @@ bool PLATFORM_window_poll(CpdWindow window) {
     return should_close;
 }
 
-CpdWindowSize PLATFORM_get_window_size(CpdWindow window) {
+CpdSize PLATFORM_get_window_size(CpdWindow window) {
     RECT rectangle = { 0, 0, 0, 0 };
     GetClientRect((HWND)window, &rectangle);
     
-    return (CpdWindowSize){
+    return (CpdSize){
         .width = rectangle.right - rectangle.left,
         .height = rectangle.bottom - rectangle.top
     };

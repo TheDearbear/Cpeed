@@ -1,14 +1,15 @@
 #pragma once
 
+#include "general.h"
+
 typedef void* CpdWindow;
 
-// Reserverd for future use
+// Reserved for future use
 typedef unsigned int CpdWindowFlags;
 
 typedef struct CpdWindowInfo {
     char* title;
-    unsigned short width;
-    unsigned short height;
+    CpdSize size;
     CpdWindowFlags flags;
     CpdWindow* handle;
 } CpdWindowInfo;
