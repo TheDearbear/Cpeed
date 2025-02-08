@@ -89,7 +89,7 @@ int main() {
         VkCommandBufferBeginInfo begin_info = {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
             .pNext = VK_NULL_HANDLE,
-            .flags = 0,
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
             .pInheritanceInfo = VK_NULL_HANDLE
         };
         result = renderer->render_device.vkBeginCommandBuffer(buffer, &begin_info);
