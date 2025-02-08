@@ -81,19 +81,8 @@ int main() {
             break;
         }
 
-        uint32_t index = 0;
-        result = renderer->render_device.vkAcquireNextImageKHR(
-            renderer->render_device.handle,
-            renderer->swapchain.handle,
-            UINT64_MAX,
-            acquire_semaphore,
-            VK_NULL_HANDLE,
-            &index);
-        if (result == VK_TIMEOUT) {
-            printf("Swapchain timed out\n");
-        }
-        else if (result != VK_SUCCESS) {
-            printf("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
+        uint32_t index = RENDERER_acquire_next_image(renderer, acquire_semaphore, VK_NULL_HANDLE);
+        if (index == UINT32_MAX) {
             goto shutdown;
         }
 

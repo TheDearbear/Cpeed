@@ -227,3 +227,24 @@ VkResult RENDERER_wait_idle(CpdRenderer* renderer) {
 
     return result;
 }
+
+uint32_t RENDERER_acquire_next_image(CpdRenderer* renderer, VkSemaphore semaphore, VkFence fence) {
+    uint32_t index = 0;
+    VkResult result = renderer->render_device.vkAcquireNextImageKHR(
+        renderer->render_device.handle,
+        renderer->swapchain.handle,
+        UINT64_MAX,
+        semaphore,
+        fence,
+        &index);
+
+    if (result == VK_TIMEOUT) {
+        printf("Swapchain timed out\n");
+    }
+    else if (result != VK_SUCCESS) {
+        printf("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
+        return UINT32_MAX;
+    }
+
+    return index;
+}

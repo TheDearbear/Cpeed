@@ -29,6 +29,16 @@ static void init_device_functions(CpdDevice* cpeed_device) {
     GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateImageView);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyImageView);
 
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateRenderPass);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyRenderPass);
+
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateGraphicsPipelines);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateComputePipelines);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyPipeline);
+
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateFramebuffer);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyFramebuffer);
+
     GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateCommandPool);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyCommandPool);
 
@@ -39,8 +49,9 @@ static void init_device_functions(CpdDevice* cpeed_device) {
     GET_DEVICE_PROC_ADDR(cpeed_device, vkBeginCommandBuffer);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkEndCommandBuffer);
 
-    GET_DEVICE_PROC_ADDR(cpeed_device, vkCmdPipelineBarrier2KHR);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCmdBindPipeline);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkCmdClearColorImage);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCmdPipelineBarrier2KHR);
 }
 
 void DEVICE_destroy(CpdDevice* cpeed_device) {

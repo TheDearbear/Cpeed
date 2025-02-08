@@ -66,6 +66,22 @@ typedef struct CpdDevice {
     PFN_vkCreateImageView vkCreateImageView;
     PFN_vkDestroyImageView vkDestroyImageView;
 
+    // == Render Pass
+
+    PFN_vkCreateRenderPass vkCreateRenderPass;
+    PFN_vkDestroyRenderPass vkDestroyRenderPass;
+
+    // == Pipeline
+
+    PFN_vkCreateGraphicsPipelines vkCreateGraphicsPipelines;
+    PFN_vkCreateComputePipelines vkCreateComputePipelines;
+    PFN_vkDestroyPipeline vkDestroyPipeline;
+
+    // == Framebuffer
+
+    PFN_vkCreateFramebuffer vkCreateFramebuffer;
+    PFN_vkDestroyFramebuffer vkDestroyFramebuffer;
+
     // == Command Pool
 
     PFN_vkCreateCommandPool vkCreateCommandPool;
@@ -80,8 +96,9 @@ typedef struct CpdDevice {
     PFN_vkBeginCommandBuffer vkBeginCommandBuffer;
     PFN_vkEndCommandBuffer vkEndCommandBuffer;
 
-    PFN_vkCmdPipelineBarrier2KHR vkCmdPipelineBarrier2KHR;
+    PFN_vkCmdBindPipeline vkCmdBindPipeline;
     PFN_vkCmdClearColorImage vkCmdClearColorImage;
+    PFN_vkCmdPipelineBarrier2KHR vkCmdPipelineBarrier2KHR;
 } CpdDevice;
 
 void DEVICE_destroy(CpdDevice* cpeed_device);

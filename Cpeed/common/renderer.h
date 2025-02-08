@@ -22,3 +22,5 @@ VkResult RENDERER_select_ui_device(CpdRenderer* renderer);
 
 VkResult RENDERER_reset_pools(CpdRenderer* renderer);
 VkResult RENDERER_wait_idle(CpdRenderer* renderer);
+
+uint32_t RENDERER_acquire_next_image(CpdRenderer* renderer, VkSemaphore semaphore, VkFence fence);
