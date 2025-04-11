@@ -337,7 +337,7 @@ static VkResult create_instance() {
         .applicationVersion = VK_MAKE_API_VERSION(0, 0, 1, 0),
         .pEngineName = 0,
         .engineVersion = 0,
-        .applicationVersion = VK_API_VERSION_1_0
+        .apiVersion = VK_API_VERSION_1_0
     };
 
     const CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_instance_extensions();
