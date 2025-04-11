@@ -194,7 +194,10 @@ static void begin_rendering(CpdRenderer* renderer, VkCommandBuffer buffer) {
         .resolveMode = VK_RESOLVE_MODE_NONE_KHR,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue.color.uint32 = 0xFF0000FFu
+        .clearValue.color.float32[0] = 1.0f,
+        .clearValue.color.float32[1] = 0,
+        .clearValue.color.float32[2] = 0,
+        .clearValue.color.float32[3] = 1.0f
     };
     
     VkRenderingInfoKHR info = {
