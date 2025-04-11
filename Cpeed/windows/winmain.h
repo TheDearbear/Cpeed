@@ -10,5 +10,7 @@
 
 #include <windowsx.h>
 
-#define WND_OFFSET_SHOULD_CLOSE 0
-#define WND_OFFSET_RESIZED 4
+typedef struct WindowExtraData {
+    bool should_close;
+    bool resized;
+} WindowExtraData;

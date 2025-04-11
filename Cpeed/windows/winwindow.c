@@ -25,13 +25,22 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
         NULL, NULL, GetModuleHandleW(NULL), NULL);
 
     free(str);
-
-    if (hWnd != 0) {
-        windows_created++;
-        return (CpdWindow)hWnd;
+    
+    if (hWnd == 0) {
+        return 0;
     }
 
-    return 0;
+    WindowExtraData* data = (WindowExtraData*)malloc(sizeof(WindowExtraData));
+    if (data == 0) {
+        return 0;
+    }
+
+    data->resized = false;
+    data->should_close = false;
+    SetWindowLongPtrW(hWnd, GWLP_USERDATA, data);
+
+    windows_created++;
+    return (CpdWindow)hWnd;
 }
 
 void PLATFORM_window_show(CpdWindow window) {
@@ -43,6 +52,9 @@ void PLATFORM_window_hide(CpdWindow window) {
 }
 
 void PLATFORM_window_destroy(CpdWindow window) {
+    WindowExtraData* data = (WindowExtraData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
+    free(data);
+
     if (DestroyWindow((HWND)window) && --windows_created == 0) {
         UnregisterClassW(window_class, NULL);
         window_class = NULL;
@@ -56,25 +68,15 @@ bool PLATFORM_window_poll(CpdWindow window) {
         DispatchMessageW(&msg);
     }
 
-    LONG should_close = GetWindowLongW((HWND)window, WND_OFFSET_SHOULD_CLOSE);
+    WindowExtraData* data = (WindowExtraData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
 
-    DWORD err = GetLastError();
-    if (err != 0) {
-        wchar_t* buffer = NULL;
-        DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
-            FORMAT_MESSAGE_FROM_SYSTEM |
-            FORMAT_MESSAGE_IGNORE_INSERTS;
-
-        if (FormatMessageW(flags, NULL, err, 0, &buffer, 0, NULL) != 0) {
-            wprintf(buffer);
-            LocalFree(buffer);
-        }
-
+    if (data == 0) {
+        DWORD err = GetLastError();
         printf("Unable to read window state. Error code: %d\n", err);
         return true;
     }
 
-    return should_close;
+    return data->should_close;
 }
 
 CpdSize PLATFORM_get_window_size(CpdWindow window) {
@@ -88,10 +90,10 @@ CpdSize PLATFORM_get_window_size(CpdWindow window) {
 }
 
 bool PLATFORM_window_resized(CpdWindow window) {
-    bool resized = (bool)GetWindowLongW((HWND)window, WND_OFFSET_RESIZED);
-    if (resized) {
-        SetWindowLongW((HWND)window, WND_OFFSET_RESIZED, false);
-    }
+    WindowExtraData* data = (WindowExtraData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
+    
+    bool resized = data->resized;
+    data->resized = false;
 
     return resized;
 }
@@ -104,7 +106,6 @@ static void register_class() {
     WNDCLASSEXW wndClassExW = {
         .cbSize = sizeof(WNDCLASSEXW),
         .lpfnWndProc = wndProc,
-        .cbWndExtra = 2 * sizeof(LONG),
         .hInstance = GetModuleHandleW(NULL),
         .lpszClassName = L"Cpeed"
     };
@@ -113,7 +114,7 @@ static void register_class() {
 }
 
 static void close_window(HWND hWnd) {
-    SetWindowLongW(hWnd, WND_OFFSET_SHOULD_CLOSE, true);
+    ((WindowExtraData*)GetWindowLongPtrW(hWnd, GWLP_USERDATA))->should_close = true;
 }
 
 static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -128,7 +129,7 @@ static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 case SC_RESTORE:
                     {
                         DefWindowProcW(hWnd, uMsg, wParam, lParam);
-                        SetWindowLongW(hWnd, WND_OFFSET_RESIZED, true);
+                        ((WindowExtraData*)GetWindowLongPtrW(hWnd, GWLP_USERDATA))->resized = true;
                     }
                     return 0;
             }
@@ -152,7 +153,7 @@ static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             return 0;
 
         case WM_SIZING:
-            SetWindowLongW(hWnd, WND_OFFSET_RESIZED, true);
+            ((WindowExtraData*)GetWindowLongW(hWnd, GWLP_USERDATA))->resized = true;
             return 0;
 
         case WM_CREATE:
