@@ -58,6 +58,8 @@ VkResult SWAPCHAIN_create(CpdSwapchain* swapchain, CpdDevice* cpeed_device, CpdS
         return result;
     }
 
+    swapchain->size = *size;
+
     VkSwapchainCreateInfoKHR create_info = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext = VK_NULL_HANDLE,

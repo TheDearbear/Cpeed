@@ -1,10 +1,12 @@
 #pragma once
 
 #include "general.h"
+#include "image.h"
 #include "surface.h"
 
 typedef struct CpdSwapchain {
     VkSwapchainKHR handle;
+    CpdSize size;
     CpdImage* images;
     uint32_t image_count;
     uint32_t current_image;
