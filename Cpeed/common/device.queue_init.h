@@ -5,10 +5,6 @@
 
 #include "../vulkan.h"
 
-extern void get_physical_device_families(VkPhysicalDevice physical,
-    uint32_t* graphics, uint32_t* compute, uint32_t* transfer,
-    uint32_t* transfer_count, uint32_t* transfer_offset);
-
 extern bool allocate_queue_create_infos(
     uint32_t graphics, uint32_t compute, uint32_t transfer,
     uint32_t transfer_count, uint32_t* count, VkDeviceQueueCreateInfo** infos);

@@ -2,7 +2,6 @@
 #include <malloc.h>
 
 #include "renderer.h"
-#include "renderer.queue_init.h"
 #include "../platform.h"
 
 CpdRenderer* RENDERER_create(VkInstance instance) {
@@ -38,6 +37,63 @@ void RENDERER_destroy(CpdRenderer* renderer) {
     }
 
     free(renderer);
+}
+
+static uint32_t get_physical_device_family(
+    VkQueueFamilyProperties* properties, uint32_t count,
+    VkQueueFlagBits include_flags, VkQueueFlagBits exclude_flags
+) {
+    uint32_t result = UINT32_MAX;
+
+    for (uint32_t i = 0; i < count; i++) {
+        VkQueueFlags flags = properties[i].queueFlags;
+
+        if ((flags & include_flags) != 0) {
+            if (result == UINT32_MAX) {
+                result = i;
+            }
+            else if ((flags & exclude_flags) == 0) {
+                result = i;
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+
+static void get_physical_device_families(VkPhysicalDevice physical,
+    uint32_t* graphics, uint32_t* compute, uint32_t* transfer,
+    uint32_t* transfer_count, uint32_t* transfer_offset
+) {
+    uint32_t count;
+    vkGetPhysicalDeviceQueueFamilyProperties(physical, &count, VK_NULL_HANDLE);
+
+    VkQueueFamilyProperties* properties = (VkQueueFamilyProperties*)malloc(count * sizeof(VkQueueFamilyProperties));
+    if (properties == 0) {
+        return;
+    }
+
+    vkGetPhysicalDeviceQueueFamilyProperties(physical, &count, properties);
+
+    *graphics = get_physical_device_family(properties, count, VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT);
+    *compute = get_physical_device_family(properties, count, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    *transfer = get_physical_device_family(properties, count, VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+    *transfer_offset = 0;
+
+    if (*transfer != UINT32_MAX) {
+        *transfer_count = properties[*transfer].queueCount;
+
+        if (*transfer_count > 1 && (*transfer == *graphics || *transfer == *compute)) {
+            *transfer_count -= 1;
+            *transfer_offset += 1;
+        }
+    }
+    else {
+        *transfer_count = 0;
+    }
+
+    free(properties);
 }
 
 static bool try_initialize_render_device(VkPhysicalDevice physical_device, CpdDevice* cpeed_device, VkResult* result) {

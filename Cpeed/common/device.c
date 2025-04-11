@@ -2,6 +2,7 @@
 #include <malloc.h>
 
 #include "device.h"
+#include "device.queue_init.h"
 
 #define GET_DEVICE_PROC_ADDR(cpeed_device, name) cpeed_device->name = (PFN_ ## name)vkGetDeviceProcAddr(cpeed_device->handle, #name)
 
