@@ -41,7 +41,9 @@ void SWAPCHAIN_destroy(CpdSwapchain* swapchain, CpdDevice* cpeed_device) {
     }
 
     cpeed_device->vkDestroySwapchainKHR(cpeed_device->handle, swapchain->handle, VK_NULL_HANDLE);
-    free(swapchain->images);
+    if (swapchain->image_count > 0) {
+        free(swapchain->images);
+    }
 
     swapchain->handle = VK_NULL_HANDLE;
     swapchain->images = VK_NULL_HANDLE;

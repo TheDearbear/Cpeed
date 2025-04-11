@@ -32,6 +32,9 @@ int main() {
     load_global_pointers();
 
     VkResult result;
+    VkSemaphore acquire_semaphore = VK_NULL_HANDLE;
+    VkSemaphore render_semaphore = VK_NULL_HANDLE;
+    VkCommandBuffer buffer = VK_NULL_HANDLE;
 
     result = create_instance();
     if (result != VK_SUCCESS) {
@@ -48,15 +51,12 @@ int main() {
 
     result = create_swapchain(renderer);
 
-    VkCommandBuffer buffer = VK_NULL_HANDLE;
     result = create_primary_command_buffer(&renderer->render_device, renderer->render_device.graphics_family.pool, &buffer);
     if (result != VK_SUCCESS) {
         printf("Unable to create command buffer. Result code: %s\n", string_VkResult(result));
         goto shutdown;
     }
 
-    VkSemaphore acquire_semaphore = VK_NULL_HANDLE;
-    VkSemaphore render_semaphore = VK_NULL_HANDLE;
     result = create_semaphores(renderer, &acquire_semaphore, &render_semaphore);
     if (result != VK_SUCCESS) {
         printf("Unable to create semaphores. Result code: %s\n", string_VkResult(result));
@@ -81,7 +81,7 @@ int main() {
             break;
         }
 
-        uint32_t index = RENDERER_acquire_next_image(renderer, acquire_semaphore, VK_NULL_HANDLE);
+        uint32_t index = RENDERER_acquire_next_image(renderer);
         if (index == UINT32_MAX) {
             goto shutdown;
         }
@@ -100,7 +100,7 @@ int main() {
 
         SWAPCHAIN_set_layout(&renderer->swapchain, &renderer->render_device, buffer,
             VK_PIPELINE_STAGE_2_NONE_KHR,
-            VK_ACCESS_2_MEMORY_READ_BIT_KHR,
+            VK_ACCESS_2_NONE_KHR,
             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
         result = renderer->render_device.vkEndCommandBuffer(buffer);
@@ -116,6 +116,14 @@ int main() {
             .deviceMask = 0
         };
 
+        VkSemaphoreSubmitInfoKHR signal_info = {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO,
+            .pNext = VK_NULL_HANDLE,
+            .semaphore = render_semaphore,
+            .stageMask = VK_PIPELINE_STAGE_2_NONE_KHR,
+            .deviceIndex = 0
+        };
+
         VkSubmitInfo2KHR submit_info = {
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR,
             .pNext = VK_NULL_HANDLE,
@@ -124,8 +132,8 @@ int main() {
             .pWaitSemaphoreInfos = VK_NULL_HANDLE,
             .commandBufferInfoCount = 1,
             .pCommandBufferInfos = &buffer_submit_info,
-            .signalSemaphoreInfoCount = 0,
-            .pSignalSemaphoreInfos = VK_NULL_HANDLE
+            .signalSemaphoreInfoCount = 1,
+            .pSignalSemaphoreInfos = &signal_info
         };
 
         result = renderer->render_device.vkQueueSubmit2KHR(renderer->render_device.graphics_family.queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -137,7 +145,7 @@ int main() {
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .pNext = VK_NULL_HANDLE,
             .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &acquire_semaphore,
+            .pWaitSemaphores = &render_semaphore,
             .swapchainCount = 1,
             .pSwapchains = &renderer->swapchain.handle,
             .pImageIndices = &index,
@@ -146,11 +154,6 @@ int main() {
         result = renderer->render_device.vkQueuePresentKHR(renderer->render_device.graphics_family.queue, &present_info);
         if (result != VK_SUCCESS) {
             printf("Unable to present swapchain. Result code: %s\n", string_VkResult(result));
-        }
-
-        result = RENDERER_wait_idle(renderer);
-        if (result != VK_SUCCESS) {
-            printf("Unable to wait for idle. Result code: %s\n", string_VkResult(result));
         }
     }
 
@@ -208,11 +211,18 @@ static VkResult create_semaphores(CpdRenderer* renderer, VkSemaphore* acquire, V
 static VkResult create_swapchain(CpdRenderer* renderer) {
     CpdSize size = PLATFORM_get_window_size(g_window);
 
-    return SWAPCHAIN_create(&renderer->swapchain, &renderer->render_device, &renderer->surface, &size);
+    VkResult result = SWAPCHAIN_create(&renderer->swapchain, &renderer->render_device, &renderer->surface, &size);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    return create_fence(&renderer->render_device, &renderer->swapchain_image_fence);
 }
 
 static void destroy_renderer(CpdRenderer* renderer) {
     VkSurfaceKHR surface = renderer->surface.handle;
+
+    renderer->render_device.vkDestroyFence(renderer->render_device.handle, renderer->swapchain_image_fence, VK_NULL_HANDLE);
 
     RENDERER_destroy(renderer);
     vkDestroySurfaceKHR(g_instance, surface, VK_NULL_HANDLE);

@@ -15,6 +15,8 @@ CpdRenderer* RENDERER_create(VkInstance instance) {
     renderer->surface.handle = VK_NULL_HANDLE;
     renderer->render_device.handle = VK_NULL_HANDLE;
     renderer->ui_device.handle = VK_NULL_HANDLE;
+    renderer->swapchain.handle = VK_NULL_HANDLE;
+    renderer->swapchain.image_count = 0;
 
     return renderer;
 }
@@ -228,16 +230,31 @@ VkResult RENDERER_wait_idle(CpdRenderer* renderer) {
     return result;
 }
 
-uint32_t RENDERER_acquire_next_image(CpdRenderer* renderer, VkSemaphore semaphore, VkFence fence) {
+uint32_t RENDERER_acquire_next_image(CpdRenderer* renderer) {
+    VkResult result = renderer->render_device.vkResetFences(renderer->render_device.handle, 1, &renderer->swapchain_image_fence);
+    if (result != VK_SUCCESS) {
+        printf("Unable to reset swapchain image fence. Result code: %s\n", string_VkResult(result));
+        return UINT32_MAX;
+    }
+
     uint32_t index = 0;
-    VkResult result = renderer->render_device.vkAcquireNextImageKHR(
+    result = renderer->render_device.vkAcquireNextImageKHR(
         renderer->render_device.handle,
         renderer->swapchain.handle,
         UINT64_MAX,
-        semaphore,
-        fence,
+        VK_NULL_HANDLE,
+        renderer->swapchain_image_fence,
         &index);
 
+    if (result == VK_TIMEOUT) {
+        printf("Swapchain timed out\n");
+    }
+    else if (result != VK_SUCCESS) {
+        printf("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
+        return UINT32_MAX;
+    }
+
+    result = renderer->render_device.vkWaitForFences(renderer->render_device.handle, 1, &renderer->swapchain_image_fence, VK_TRUE, UINT64_MAX);
     if (result == VK_TIMEOUT) {
         printf("Swapchain timed out\n");
     }

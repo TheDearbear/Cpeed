@@ -8,7 +8,9 @@
 typedef struct CpdRenderer {
     VkInstance instance;
     CpdSurface surface;
+
     CpdSwapchain swapchain;
+    VkFence swapchain_image_fence;
 
     CpdDevice render_device;
     CpdDevice ui_device;
@@ -23,4 +25,4 @@ VkResult RENDERER_select_ui_device(CpdRenderer* renderer);
 VkResult RENDERER_reset_pools(CpdRenderer* renderer);
 VkResult RENDERER_wait_idle(CpdRenderer* renderer);
 
-uint32_t RENDERER_acquire_next_image(CpdRenderer* renderer, VkSemaphore semaphore, VkFence fence);
+uint32_t RENDERER_acquire_next_image(CpdRenderer* renderer);
