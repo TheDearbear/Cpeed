@@ -47,6 +47,9 @@ static void init_device_functions(CpdDevice* cpeed_device) {
     GET_DEVICE_PROC_ADDR(cpeed_device, vkFreeCommandBuffers);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkResetCommandPool);
 
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCmdBeginRenderingKHR);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCmdEndRenderingKHR);
+
     GET_DEVICE_PROC_ADDR(cpeed_device, vkBeginCommandBuffer);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkEndCommandBuffer);
 
@@ -97,9 +100,15 @@ static VkResult create_logical_device(
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+        .pNext = VK_NULL_HANDLE,
+        .dynamicRendering = VK_TRUE
+    };
+
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2_features = {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
-        .pNext = VK_NULL_HANDLE,
+        .pNext = &dynamic_rendering_features,
         .synchronization2 = VK_TRUE
     };
 

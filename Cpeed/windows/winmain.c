@@ -36,7 +36,7 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_instance_extensions() {
         return 0;
     }
 
-    const int extension_count = 1;
+    const int extension_count = 2;
 
     char** extensionNames = (char**)malloc(extension_count * sizeof(char*));
     if (extensionNames == 0) {
@@ -48,6 +48,7 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_instance_extensions() {
     extensions->extensions = extensionNames;
 
     extensionNames[0] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+    extensionNames[1] = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
 
     return extensions;
 }
@@ -58,7 +59,7 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_render_device_extensions() {
         return 0;
     }
 
-    const int extension_count = 2;
+    const int extension_count = 7;
 
     char** extensionNames = (char**)malloc(extension_count * sizeof(char*));
     if (extensionNames == 0) {
@@ -71,6 +72,11 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_render_device_extensions() {
 
     extensionNames[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
     extensionNames[1] = VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
+    extensionNames[2] = VK_KHR_MULTIVIEW_EXTENSION_NAME;
+    extensionNames[3] = VK_KHR_MAINTENANCE_2_EXTENSION_NAME;
+    extensionNames[4] = VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME;
+    extensionNames[5] = VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME;
+    extensionNames[6] = VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME;
 
     return extensions;
 }

@@ -12,6 +12,8 @@ static VkResult create_swapchain(CpdRenderer* renderer);
 
 static void destroy_renderer(CpdRenderer* renderer);
 
+static void begin_rendering(CpdRenderer* renderer, VkCommandBuffer buffer);
+
 static void load_global_pointers();
 static void load_instance_pointers();
 
@@ -99,6 +101,15 @@ int main() {
         }
 
         SWAPCHAIN_set_layout(&renderer->swapchain, &renderer->render_device, buffer,
+            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+        begin_rendering(renderer, buffer);
+
+        renderer->render_device.vkCmdEndRenderingKHR(buffer);
+
+        SWAPCHAIN_set_layout(&renderer->swapchain, &renderer->render_device, buffer,
             VK_PIPELINE_STAGE_2_NONE_KHR,
             VK_ACCESS_2_NONE_KHR,
             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
@@ -171,6 +182,33 @@ shutdown:
 
     PLATFORM_window_destroy(g_window);
     PLATFORM_free_vulkan_lib();
+}
+
+static void begin_rendering(CpdRenderer* renderer, VkCommandBuffer buffer) {
+    CpdImage* image = &renderer->swapchain.images[renderer->swapchain.current_image];
+
+    VkRenderingAttachmentInfoKHR attachment = {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+        .imageView = image->view,
+        .imageLayout = image->layout,
+        .resolveMode = VK_RESOLVE_MODE_NONE_KHR,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .clearValue.color.uint32 = 0xFF0000FFu
+    };
+    
+    VkRenderingInfoKHR info = {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
+        .renderArea.offset = (VkOffset2D){ 0, 0 },
+        .renderArea.extent.width = renderer->swapchain.size.width,
+        .renderArea.extent.height = renderer->swapchain.size.height,
+        .layerCount = 1,
+        .viewMask = 0,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &attachment
+    };
+
+    renderer->render_device.vkCmdBeginRenderingKHR(buffer, &info);
 }
 
 static VkResult create_renderer(CpdRenderer** renderer) {

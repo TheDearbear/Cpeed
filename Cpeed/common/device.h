@@ -88,6 +88,11 @@ typedef struct CpdDevice {
     PFN_vkDestroyCommandPool vkDestroyCommandPool;
     PFN_vkResetCommandPool vkResetCommandPool;
 
+    // == Dynamic Rendering
+
+    PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR;
+    PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR;
+
     // == Command Buffer
 
     PFN_vkAllocateCommandBuffers vkAllocateCommandBuffers;
