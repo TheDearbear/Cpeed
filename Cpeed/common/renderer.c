@@ -286,7 +286,7 @@ VkResult RENDERER_wait_idle(CpdRenderer* renderer) {
     return result;
 }
 
-uint32_t RENDERER_acquire_next_image(CpdRenderer* renderer) {
+uint32_t RENDERER_acquire_next_image(CpdRenderer* renderer, bool* should_wait_for_fence) {
     VkResult result = renderer->render_device.vkResetFences(renderer->render_device.handle, 1, &renderer->swapchain_image_fence);
     if (result != VK_SUCCESS) {
         printf("Unable to reset swapchain image fence. Result code: %s\n", string_VkResult(result));
@@ -302,19 +302,21 @@ uint32_t RENDERER_acquire_next_image(CpdRenderer* renderer) {
         renderer->swapchain_image_fence,
         &index);
 
-    if (result == VK_TIMEOUT) {
-        printf("Swapchain timed out\n");
-    }
-    else if (result != VK_SUCCESS) {
+    if (result != VK_SUCCESS && result != VK_NOT_READY && result != VK_SUBOPTIMAL_KHR) {
         printf("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
         return UINT32_MAX;
     }
 
-    result = renderer->render_device.vkWaitForFences(renderer->render_device.handle, 1, &renderer->swapchain_image_fence, VK_TRUE, UINT64_MAX);
-    if (result == VK_TIMEOUT) {
-        printf("Swapchain timed out\n");
+    if (should_wait_for_fence != 0) {
+        *should_wait_for_fence = result == VK_NOT_READY;
     }
-    else if (result != VK_SUCCESS) {
+
+    if (result != VK_NOT_READY || should_wait_for_fence != 0) {
+        return index;
+    }
+
+    result = renderer->render_device.vkWaitForFences(renderer->render_device.handle, 1, &renderer->swapchain_image_fence, VK_FALSE, UINT64_MAX);
+    if (result != VK_SUCCESS) {
         printf("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
         return UINT32_MAX;
     }

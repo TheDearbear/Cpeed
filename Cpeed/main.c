@@ -37,6 +37,7 @@ int main() {
     VkSemaphore acquire_semaphore = VK_NULL_HANDLE;
     VkSemaphore render_semaphore = VK_NULL_HANDLE;
     VkCommandBuffer buffer = VK_NULL_HANDLE;
+    VkFence render_fence = VK_NULL_HANDLE;
 
     result = create_instance();
     if (result != VK_SUCCESS) {
@@ -51,7 +52,17 @@ int main() {
         goto shutdown;
     }
 
+    result = create_fence(&renderer->render_device, &render_fence);
+    if (result != VK_SUCCESS) {
+        printf("Unable to create render fence. Result code: %s\n", string_VkResult(result));
+        goto shutdown;
+    }
+
     result = create_swapchain(renderer);
+    if (result != VK_SUCCESS) {
+        printf("Unable to create swapchain. Result code: %s\n", string_VkResult(result));
+        goto shutdown;
+    }
 
     result = create_primary_command_buffer(&renderer->render_device, renderer->render_device.graphics_family.pool, &buffer);
     if (result != VK_SUCCESS) {
@@ -83,8 +94,9 @@ int main() {
             break;
         }
 
-        uint32_t index = RENDERER_acquire_next_image(renderer);
-        if (index == UINT32_MAX) {
+        bool should_wait_for_swapchain_image = false;
+        renderer->swapchain.current_image = RENDERER_acquire_next_image(renderer, &should_wait_for_swapchain_image);
+        if (renderer->swapchain.current_image == UINT32_MAX) {
             goto shutdown;
         }
 
@@ -98,6 +110,14 @@ int main() {
         if (result != VK_SUCCESS) {
             printf("Unable to begin command buffer. Result code: %s\n", string_VkResult(result));
             break;
+        }
+
+        if (should_wait_for_swapchain_image) {
+            result = renderer->render_device.vkWaitForFences(renderer->render_device.handle, 1, &renderer->swapchain_image_fence, VK_FALSE, UINT64_MAX);
+            if (result != VK_SUCCESS) {
+                printf("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
+                goto shutdown;
+            }
         }
 
         SWAPCHAIN_set_layout(&renderer->swapchain, &renderer->render_device, buffer,
@@ -147,10 +167,17 @@ int main() {
             .pSignalSemaphoreInfos = &signal_info
         };
 
-        result = renderer->render_device.vkQueueSubmit2KHR(renderer->render_device.graphics_family.queue, 1, &submit_info, VK_NULL_HANDLE);
+        result = renderer->render_device.vkResetFences(renderer->render_device.handle, 1, &render_fence);
+        if (result != VK_SUCCESS) {
+            printf("Unable to reset render fence. Result code: %s\n", string_VkResult(result));
+        }
+
+        result = renderer->render_device.vkQueueSubmit2KHR(renderer->render_device.graphics_family.queue, 1, &submit_info, render_fence);
         if (result != VK_SUCCESS) {
             printf("Unable to queue work. Result code: %s\n", string_VkResult(result));
         }
+
+        renderer->render_device.vkWaitForFences(renderer->render_device.handle, 1, &render_fence, VK_TRUE, UINT64_MAX);
 
         VkPresentInfoKHR present_info = {
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -159,7 +186,7 @@ int main() {
             .pWaitSemaphores = &render_semaphore,
             .swapchainCount = 1,
             .pSwapchains = &renderer->swapchain.handle,
-            .pImageIndices = &index,
+            .pImageIndices = &renderer->swapchain.current_image,
             .pResults = VK_NULL_HANDLE
         };
         result = renderer->render_device.vkQueuePresentKHR(renderer->render_device.graphics_family.queue, &present_info);
@@ -175,6 +202,8 @@ shutdown:
     renderer->render_device.vkDestroySemaphore(renderer->render_device.handle, render_semaphore, VK_NULL_HANDLE);
 
     renderer->render_device.vkFreeCommandBuffers(renderer->render_device.handle, renderer->render_device.graphics_family.pool, 1, &buffer);
+
+    renderer->render_device.vkDestroyFence(renderer->render_device.handle, render_fence, VK_NULL_HANDLE);
 
     SWAPCHAIN_destroy(&renderer->swapchain, &renderer->render_device);
     destroy_renderer(renderer);

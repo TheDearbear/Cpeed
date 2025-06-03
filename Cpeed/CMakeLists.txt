@@ -3,7 +3,7 @@
 #
 
 # Add source to this project's executable.
-add_executable (Cpeed "main.c" "main.h" "platform.h" "common/window.h" "common/renderer.h" "common/renderer.c" "common/device.queue_init.c" "common/device.queue_init.h" "vulkan.h" "vulkan.c" "common/shortcuts.h" "common/shortcuts.c" "common/swapchain.h" "common/general.h" "common/swapchain.c" "common/general.c" "common/surface.h" "common/surface.c" "common/device.c" "common/device.h" "common/pipeline.h")
+add_executable (Cpeed "main.c" "main.h" "platform.h" "common/window.h" "common/renderer.h" "common/renderer.c" "common/device.queue_init.c" "common/device.queue_init.h" "vulkan.h" "vulkan.c" "common/shortcuts.h" "common/shortcuts.c" "common/swapchain.h" "common/general.h" "common/swapchain.c" "common/general.c" "common/surface.h" "common/surface.c" "common/device.c" "common/device.h" "common/image.h")
 
 target_include_directories(Cpeed PUBLIC "$ENV{VULKAN_SDK}/include")
 
