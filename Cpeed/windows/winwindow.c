@@ -44,11 +44,11 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
 }
 
 void PLATFORM_window_show(CpdWindow window) {
-    ShowWindow((HWND)window, 1);
+    ShowWindow((HWND)window, SW_NORMAL);
 }
 
 void PLATFORM_window_hide(CpdWindow window) {
-    ShowWindow((HWND)window, 0);
+    ShowWindow((HWND)window, SW_HIDE);
 }
 
 void PLATFORM_window_destroy(CpdWindow window) {
