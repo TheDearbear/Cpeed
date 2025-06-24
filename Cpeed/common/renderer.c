@@ -4,6 +4,8 @@
 #include "renderer.h"
 #include "../platform.h"
 
+typedef bool (*CpdDeviceInitializer)(VkPhysicalDevice, CpdDevice*, VkResult*);
+
 CpdRenderer* RENDERER_create(VkInstance instance) {
     CpdRenderer* renderer = (CpdRenderer*)malloc(sizeof(CpdRenderer));
     if (renderer == 0) {
@@ -109,7 +111,7 @@ static bool try_initialize_render_device(VkPhysicalDevice physical_device, CpdDe
         &transfer_queue_count, &transfer_queue_offset);
 
     if (graphics_family_index != UINT32_MAX && compute_family_index != UINT32_MAX && transfer_family_index != UINT32_MAX) {
-        CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_render_device_extensions();
+        const CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_render_device_extensions();
 
         for (unsigned int i = 0; i < extensions->count; i++) {
             printf("Enabling render device extension: %s\n", extensions->extensions[i]);
@@ -139,7 +141,7 @@ static bool try_initialize_ui_device(VkPhysicalDevice physical_device, CpdDevice
         &transfer_queue_count, &transfer_queue_offset);
 
     if (graphics_family_index != UINT32_MAX && compute_family_index != UINT32_MAX && transfer_family_index != UINT32_MAX) {
-        CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_ui_device_extensions();
+        const CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_ui_device_extensions();
 
         for (unsigned int i = 0; i < extensions->count; i++) {
             printf("Enabling ui device extension: %s\n", extensions->extensions[i]);
@@ -156,7 +158,11 @@ static bool try_initialize_ui_device(VkPhysicalDevice physical_device, CpdDevice
     return false;
 }
 
-VkResult RENDERER_select_render_device(CpdRenderer* renderer) {
+static VkResult device_selector(CpdRenderer* renderer,
+    VkPhysicalDeviceType targetType, VkPhysicalDeviceType secondaryType,
+    CpdDevice* cpeed_device, CpdMemoryAllocator* memory_allocator,
+    CpdDeviceInitializer device_initializer
+) {
     VkPhysicalDevice* devices;
     uint32_t count;
 
@@ -176,34 +182,34 @@ VkResult RENDERER_select_render_device(CpdRenderer* renderer) {
         return result;
     }
 
-    uint32_t performance_device_index = UINT32_MAX;
+    uint32_t select_index = UINT32_MAX;
     for (uint32_t i = 0; i < count; i++) {
         VkPhysicalDeviceProperties properties;
         vkGetPhysicalDeviceProperties(devices[i], &properties);
 
-        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-            performance_device_index = i;
+        if (properties.deviceType == targetType) {
+            select_index = i;
             break;
         }
 
-        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU && performance_device_index == UINT32_MAX) {
-            performance_device_index = i;
+        if (properties.deviceType == secondaryType && select_index == UINT32_MAX) {
+            select_index = i;
         }
     }
 
-    if (performance_device_index != UINT32_MAX) {
-        if (try_initialize_render_device(devices[performance_device_index], &renderer->render_device, &result)) {
+    if (select_index != UINT32_MAX) {
+        if (device_initializer(devices[select_index], cpeed_device, &result)) {
             free(devices);
             return result;
         }
     }
 
     for (uint32_t i = 0; i < count; i++) {
-        if (i == performance_device_index) {
+        if (i == select_index) {
             continue;
         }
 
-        if (try_initialize_render_device(devices[i], &renderer->render_device, &result)) {
+        if (device_initializer(devices[i], cpeed_device, &result)) {
             free(devices);
             return result;
         }
@@ -213,57 +219,18 @@ VkResult RENDERER_select_render_device(CpdRenderer* renderer) {
     return VK_ERROR_UNKNOWN;
 }
 
+VkResult RENDERER_select_render_device(CpdRenderer* renderer) {
+    return device_selector(renderer,
+        VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU,
+        &renderer->render_device, &renderer->render_allocator,
+        try_initialize_render_device);
+}
+
 VkResult RENDERER_select_ui_device(CpdRenderer* renderer) {
-    VkPhysicalDevice* devices;
-    uint32_t count;
-
-    VkResult result = vkEnumeratePhysicalDevices(renderer->instance, &count, VK_NULL_HANDLE);
-    if (result != VK_SUCCESS) {
-        return result;
-    }
-
-    devices = (VkPhysicalDevice*)malloc(count * sizeof(VkPhysicalDevice));
-    if (devices == 0) {
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    result = vkEnumeratePhysicalDevices(renderer->instance, &count, devices);
-    if (result != VK_SUCCESS) {
-        free(devices);
-        return result;
-    }
-
-    uint32_t iGPU_index = UINT32_MAX;
-    for (uint32_t i = 0; i < count; i++) {
-        VkPhysicalDeviceProperties properties;
-        vkGetPhysicalDeviceProperties(devices[i], &properties);
-
-        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-            iGPU_index = i;
-            break;
-        }
-    }
-
-    if (iGPU_index != UINT32_MAX) {
-        if (try_initialize_ui_device(devices[iGPU_index], &renderer->ui_device, &result)) {
-            free(devices);
-            return result;
-        }
-    }
-
-    for (uint32_t i = 0; i < count; i++) {
-        if (i == iGPU_index) {
-            continue;
-        }
-
-        if (try_initialize_ui_device(devices[i], &renderer->ui_device, &result)) {
-            free(devices);
-            return result;
-        }
-    }
-
-    free(devices);
-    return VK_ERROR_UNKNOWN;
+    return device_selector(renderer,
+        VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM,
+        &renderer->ui_device, &renderer->ui_allocator,
+        try_initialize_ui_device);
 }
 
 VkResult RENDERER_reset_pools(CpdRenderer* renderer) {

@@ -317,7 +317,7 @@ static void load_instance_pointers() {
     GET_INSTANCE_PROC_ADDR(g_instance, vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
 }
 
-static VkResult validate_extensions(char** extensions, unsigned int extension_count) {
+static VkResult validate_extensions(const char** extensions, unsigned int extension_count) {
     uint32_t property_count;
     VkResult result = vkEnumerateInstanceExtensionProperties(VK_NULL_HANDLE, &property_count, VK_NULL_HANDLE);
     if (result != VK_SUCCESS) {
@@ -378,7 +378,7 @@ static VkResult create_instance() {
     const int base_extension_count = 1;
 
     unsigned int all_extensions_count = extensions->count + base_extension_count;
-    char** all_extensions = (char**)malloc((size_t)all_extensions_count * sizeof(char*));
+    const char** all_extensions = (const char**)malloc((size_t)all_extensions_count * sizeof(char*));
     if (all_extensions == 0) {
         PLATFORM_free_vulkan_extensions(extensions);
         printf("Unable to get all required Vulkan instance extensions\n");

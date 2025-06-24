@@ -11,7 +11,7 @@ typedef enum CpdCompilePlatform {
 } CpdCompilePlatform;
 
 typedef struct CpdPlatformExtensions {
-    char** extensions;
+    const char** extensions;
     unsigned int count;
 } CpdPlatformExtensions;
 
@@ -30,7 +30,7 @@ extern const CpdPlatformExtensions* PLATFORM_alloc_vulkan_ui_device_extensions()
 
 extern VkResult PLATFORM_create_surface(VkInstance instance, CpdWindow window, VkSurfaceKHR* result);
 
-extern void PLATFORM_free_vulkan_extensions(CpdPlatformExtensions* extensions);
+extern void PLATFORM_free_vulkan_extensions(const CpdPlatformExtensions* extensions);
 
 // == Windowing
 

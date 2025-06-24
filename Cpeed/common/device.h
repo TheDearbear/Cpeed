@@ -108,7 +108,7 @@ typedef struct CpdDevice {
 
 void DEVICE_destroy(CpdDevice* cpeed_device);
 VkResult DEVICE_initialize(
-    CpdDevice* cpeed_device, VkPhysicalDevice physical, CpdPlatformExtensions* extensions,
+    CpdDevice* cpeed_device, VkPhysicalDevice physical, const CpdPlatformExtensions* extensions,
     uint32_t graphics, uint32_t compute, uint32_t transfer,
     uint32_t transfer_count, uint32_t transfer_offset
 );

@@ -4,7 +4,7 @@ void destroy_queue_create_infos(VkDeviceQueueCreateInfo* infos, uint32_t count) 
     for (uint32_t i = 0; i < count; i++) {
         #pragma warning(push)
         #pragma warning(disable: 6001)
-        free(infos[i].pQueuePriorities);
+        free((void*)infos[i].pQueuePriorities);
         #pragma warning(pop)
     }
 

@@ -90,7 +90,7 @@ static VkResult init_device_transfer_pool(CpdDevice* cpeed_device, CpdTransferQu
 }
 
 static VkResult create_logical_device(
-    VkPhysicalDevice physical, CpdPlatformExtensions* extensions,
+    VkPhysicalDevice physical, const CpdPlatformExtensions* extensions,
     uint32_t graphics, uint32_t compute, uint32_t transfer,
     uint32_t transfer_count, uint32_t transfer_offset, VkDevice* device
 ) {
@@ -131,7 +131,7 @@ static VkResult create_logical_device(
 }
 
 VkResult DEVICE_initialize(
-    CpdDevice* cpeed_device, VkPhysicalDevice physical, CpdPlatformExtensions* extensions,
+    CpdDevice* cpeed_device, VkPhysicalDevice physical, const CpdPlatformExtensions* extensions,
     uint32_t graphics, uint32_t compute, uint32_t transfer,
     uint32_t transfer_count, uint32_t transfer_offset
 ) {

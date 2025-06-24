@@ -38,7 +38,7 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_instance_extensions() {
 
     const int extension_count = 2;
 
-    char** extensionNames = (char**)malloc(extension_count * sizeof(char*));
+    const char** extensionNames = (const char**)malloc(extension_count * sizeof(char*));
     if (extensionNames == 0) {
         free(extensions);
         return 0;
@@ -61,7 +61,7 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_render_device_extensions() {
 
     const int extension_count = 7;
 
-    char** extensionNames = (char**)malloc(extension_count * sizeof(char*));
+    const char** extensionNames = (const char**)malloc(extension_count * sizeof(char*));
     if (extensionNames == 0) {
         free(extensions);
         return 0;
@@ -109,10 +109,10 @@ VkResult PLATFORM_create_surface(VkInstance instance, CpdWindow window, VkSurfac
     return vkCreateWin32SurfaceKHR(instance, &create_info, VK_NULL_HANDLE, surface);
 }
 
-void PLATFORM_free_vulkan_extensions(CpdPlatformExtensions* extensions) {
+void PLATFORM_free_vulkan_extensions(const CpdPlatformExtensions* extensions) {
     if (extensions->count > 0) {
         free(extensions->extensions);
     }
 
-    free(extensions);
+    free((void*)extensions);
 }
