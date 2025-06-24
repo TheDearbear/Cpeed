@@ -11,6 +11,8 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 
+Cpeed/linux/xdg-shell/
+
 # Produced by Visual Studio
 [Dd]ebug/
 [Dd]ebugPublic/

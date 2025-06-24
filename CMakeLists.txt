@@ -1,7 +1,7 @@
 # CMakeList.txt : Top-level CMake project file, do global configuration
 # and include sub-projects here.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.16)
 
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
@@ -19,7 +19,7 @@ add_subdirectory ("Cpeed")
 if (WIN32)
   add_subdirectory ("Cpeed/windows")
   target_link_libraries (Cpeed LINK_PUBLIC CpeedWindows)
-elseif (UNIX)
+elseif (LINUX)
   add_subdirectory ("Cpeed/linux")
   target_link_libraries (Cpeed LINK_PUBLIC CpeedLinux)
 endif (WIN32)

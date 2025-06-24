@@ -24,6 +24,4 @@ if (WIN32)
   target_link_libraries(Cpeed PUBLIC "$ENV{VULKAN_SDK}/lib/vulkan-1.lib")
 endif()
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET Cpeed PROPERTY C_STANDARD)
-endif()
+set_property(TARGET Cpeed PROPERTY C_STANDARD)
