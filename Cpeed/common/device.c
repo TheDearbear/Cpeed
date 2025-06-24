@@ -27,8 +27,20 @@ static void init_device_functions(CpdDevice* cpeed_device) {
     GET_DEVICE_PROC_ADDR(cpeed_device, vkQueueWaitIdle);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkQueueSubmit2KHR);
 
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateImage);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyImage);
+
     GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateImageView);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyImageView);
+
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkAllocateMemory);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkFreeMemory);
+    
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkMapMemory);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkUnmapMemory);
+
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkBindBufferMemory);
+    GET_DEVICE_PROC_ADDR(cpeed_device, vkBindImageMemory);
 
     GET_DEVICE_PROC_ADDR(cpeed_device, vkCreateRenderPass);
     GET_DEVICE_PROC_ADDR(cpeed_device, vkDestroyRenderPass);

@@ -11,7 +11,7 @@ add_executable (Cpeed
   "common/device.c" "common/device.h"
   "common/device.queue_init.c" "common/device.queue_init.h"
   "common/general.c" "common/general.h"
-  "common/image.h"
+  "common/image.c" "common/image.h"
   "common/renderer.c" "common/renderer.h"
   "common/shortcuts.c" "common/shortcuts.h"
   "common/surface.c" "common/surface.h"
