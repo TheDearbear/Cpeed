@@ -160,8 +160,7 @@ static bool try_initialize_ui_device(VkPhysicalDevice physical_device, CpdDevice
 
 static VkResult device_selector(CpdRenderer* renderer,
     VkPhysicalDeviceType targetType, VkPhysicalDeviceType secondaryType,
-    CpdDevice* cpeed_device, CpdMemoryAllocator* memory_allocator,
-    CpdDeviceInitializer device_initializer
+    CpdDevice* cpeed_device, CpdDeviceInitializer device_initializer
 ) {
     VkPhysicalDevice* devices;
     uint32_t count;
@@ -222,15 +221,13 @@ static VkResult device_selector(CpdRenderer* renderer,
 VkResult RENDERER_select_render_device(CpdRenderer* renderer) {
     return device_selector(renderer,
         VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU,
-        &renderer->render_device, &renderer->render_allocator,
-        try_initialize_render_device);
+        &renderer->render_device, try_initialize_render_device);
 }
 
 VkResult RENDERER_select_ui_device(CpdRenderer* renderer) {
     return device_selector(renderer,
         VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM,
-        &renderer->ui_device, &renderer->ui_allocator,
-        try_initialize_ui_device);
+        &renderer->ui_device, try_initialize_ui_device);
 }
 
 VkResult RENDERER_reset_pools(CpdRenderer* renderer) {
