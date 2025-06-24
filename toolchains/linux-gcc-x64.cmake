@@ -4,5 +4,8 @@ set(CMAKE_SYSTEM_PROCESSOR x64)
 set(CMAKE_C_COMPILER x86_64-linux-gnu-gcc)
 set(CMAKE_CXX_COMPILER x86_64-linux-gnu-g++)
 
+set(CMAKE_C_FLAGS "-O2 -Wall -Wextra")
+set(CMAKE_C_FLAGS_DEBUG "-gdwarf -Og -Wall -Wextra")
+
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
