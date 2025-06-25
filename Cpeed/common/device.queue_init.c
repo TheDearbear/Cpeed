@@ -2,10 +2,10 @@
 
 void destroy_queue_create_infos(VkDeviceQueueCreateInfo* infos, uint32_t count) {
     for (uint32_t i = 0; i < count; i++) {
-        #pragma warning(push)
-        #pragma warning(disable: 6001)
-        free((void*)infos[i].pQueuePriorities);
-        #pragma warning(pop)
+        const float* priorities = infos[i].pQueuePriorities;
+        if (priorities != 0) {
+            free((void*)priorities);
+        }
     }
 
     free(infos);
