@@ -36,7 +36,7 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_instance_extensions() {
         return 0;
     }
 
-    const int extension_count = 2;
+    const int extension_count = 1;
 
     const char** extensionNames = (const char**)malloc(extension_count * sizeof(char*));
     if (extensionNames == 0) {
@@ -48,44 +48,16 @@ const CpdPlatformExtensions* PLATFORM_alloc_vulkan_instance_extensions() {
     extensions->extensions = extensionNames;
 
     extensionNames[0] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
-    extensionNames[1] = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
 
     return extensions;
 }
 
-const CpdPlatformExtensions* PLATFORM_alloc_vulkan_render_device_extensions() {
-    CpdPlatformExtensions* extensions = (CpdPlatformExtensions*)malloc(sizeof(CpdPlatformExtensions));
-    if (extensions == 0) {
-        return 0;
+void PLATFORM_free_vulkan_extensions(const CpdPlatformExtensions* extensions) {
+    if (extensions->count > 0) {
+        free(extensions->extensions);
     }
 
-    const int extension_count = 3;
-
-    const char** extensionNames = (const char**)malloc(extension_count * sizeof(char*));
-    if (extensionNames == 0) {
-        free(extensions);
-        return 0;
-    }
-
-    extensions->count = extension_count;
-    extensions->extensions = extensionNames;
-
-    extensionNames[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
-    extensionNames[1] = VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
-    extensionNames[2] = VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME;
-
-    return extensions;
-}
-
-const CpdPlatformExtensions* PLATFORM_alloc_vulkan_ui_device_extensions() {
-    CpdPlatformExtensions* extensions = (CpdPlatformExtensions*)malloc(sizeof(CpdPlatformExtensions));
-    if (extensions == 0) {
-        return 0;
-    }
-
-    extensions->count = 0;
-
-    return extensions;
+    free((void*)extensions);
 }
 
 VkResult PLATFORM_create_surface(VkInstance instance, CpdWindow window, VkSurfaceKHR* surface) {
@@ -103,12 +75,4 @@ VkResult PLATFORM_create_surface(VkInstance instance, CpdWindow window, VkSurfac
     };
 
     return vkCreateWin32SurfaceKHR(instance, &create_info, VK_NULL_HANDLE, surface);
-}
-
-void PLATFORM_free_vulkan_extensions(const CpdPlatformExtensions* extensions) {
-    if (extensions->count > 0) {
-        free(extensions->extensions);
-    }
-
-    free((void*)extensions);
 }

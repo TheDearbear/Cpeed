@@ -372,7 +372,7 @@ static VkResult create_instance() {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    const int base_extension_count = 1;
+    const int base_extension_count = 2;
 
     unsigned int all_extensions_count = extensions->count + base_extension_count;
     const char** all_extensions = (const char**)malloc((size_t)all_extensions_count * sizeof(char*));
@@ -383,12 +383,16 @@ static VkResult create_instance() {
     }
 
     all_extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME;
+    all_extensions[1] = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
     for (unsigned int i = 0; i < extensions->count; i++) {
         all_extensions[i + base_extension_count] = extensions->extensions[i];
     }
 
+    PLATFORM_free_vulkan_extensions(extensions);
+
     VkResult result = validate_extensions(all_extensions, all_extensions_count);
     if (result != VK_SUCCESS) {
+        free(all_extensions);
         return result;
     }
 
@@ -409,7 +413,7 @@ static VkResult create_instance() {
 
     result = vkCreateInstance(&create_info, VK_NULL_HANDLE, &g_instance);
 
-    PLATFORM_free_vulkan_extensions(extensions);
+    free(all_extensions);
 
     if (result == VK_SUCCESS) {
         load_instance_pointers();

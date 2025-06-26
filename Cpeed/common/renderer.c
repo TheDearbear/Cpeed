@@ -6,6 +6,10 @@
 
 typedef bool (*CpdDeviceInitializer)(VkPhysicalDevice, CpdDevice*, VkResult*);
 
+static const CpdPlatformExtensions* alloc_render_device_extensions();
+static const CpdPlatformExtensions* alloc_ui_device_extensions();
+static void free_device_extensions(const CpdPlatformExtensions* extensions);
+
 CpdRenderer* RENDERER_create(VkInstance instance) {
     CpdRenderer* renderer = (CpdRenderer*)malloc(sizeof(CpdRenderer));
     if (renderer == 0) {
@@ -111,7 +115,7 @@ static bool try_initialize_render_device(VkPhysicalDevice physical_device, CpdDe
         &transfer_queue_count, &transfer_queue_offset);
 
     if (graphics_family_index != UINT32_MAX && compute_family_index != UINT32_MAX && transfer_family_index != UINT32_MAX) {
-        const CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_render_device_extensions();
+        const CpdPlatformExtensions* extensions = alloc_render_device_extensions();
 
         for (unsigned int i = 0; i < extensions->count; i++) {
             printf("Enabling render device extension: %s\n", extensions->extensions[i]);
@@ -121,7 +125,7 @@ static bool try_initialize_render_device(VkPhysicalDevice physical_device, CpdDe
             graphics_family_index, compute_family_index, transfer_family_index,
             transfer_queue_count, transfer_queue_offset);
 
-        PLATFORM_free_vulkan_extensions(extensions);
+        free_device_extensions(extensions);
         return true;
     }
 
@@ -141,7 +145,7 @@ static bool try_initialize_ui_device(VkPhysicalDevice physical_device, CpdDevice
         &transfer_queue_count, &transfer_queue_offset);
 
     if (graphics_family_index != UINT32_MAX && compute_family_index != UINT32_MAX && transfer_family_index != UINT32_MAX) {
-        const CpdPlatformExtensions* extensions = PLATFORM_alloc_vulkan_ui_device_extensions();
+        const CpdPlatformExtensions* extensions = alloc_ui_device_extensions();
 
         for (unsigned int i = 0; i < extensions->count; i++) {
             printf("Enabling ui device extension: %s\n", extensions->extensions[i]);
@@ -151,7 +155,7 @@ static bool try_initialize_ui_device(VkPhysicalDevice physical_device, CpdDevice
             graphics_family_index, compute_family_index, transfer_family_index,
             transfer_queue_count, transfer_queue_offset);
 
-        PLATFORM_free_vulkan_extensions(extensions);
+        free_device_extensions(extensions);
         return true;
     }
 
@@ -286,4 +290,47 @@ uint32_t RENDERER_acquire_next_image(CpdRenderer* renderer, bool* should_wait_fo
     }
 
     return index;
+}
+
+static const CpdPlatformExtensions* alloc_render_device_extensions() {
+    CpdPlatformExtensions* extensions = (CpdPlatformExtensions*)malloc(sizeof(CpdPlatformExtensions));
+    if (extensions == 0) {
+        return 0;
+    }
+
+    const int extension_count = 3;
+
+    const char** extensionNames = (const char**)malloc(extension_count * sizeof(char*));
+    if (extensionNames == 0) {
+        free(extensions);
+        return 0;
+    }
+
+    extensions->count = extension_count;
+    extensions->extensions = extensionNames;
+
+    extensionNames[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    extensionNames[1] = VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
+    extensionNames[2] = VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME;
+
+    return extensions;
+}
+
+static const CpdPlatformExtensions* alloc_ui_device_extensions() {
+    CpdPlatformExtensions* extensions = (CpdPlatformExtensions*)malloc(sizeof(CpdPlatformExtensions));
+    if (extensions == 0) {
+        return 0;
+    }
+
+    extensions->count = 0;
+
+    return extensions;
+}
+
+static void free_device_extensions(const CpdPlatformExtensions* extensions) {
+    if (extensions->count > 0) {
+        free(extensions->extensions);
+    }
+
+    free((void*)extensions);
 }

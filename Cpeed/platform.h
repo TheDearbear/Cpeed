@@ -25,12 +25,9 @@ extern PFN_vkGetInstanceProcAddr PLATFORM_load_vulkan_lib();
 extern void PLATFORM_free_vulkan_lib();
 
 extern const CpdPlatformExtensions* PLATFORM_alloc_vulkan_instance_extensions();
-extern const CpdPlatformExtensions* PLATFORM_alloc_vulkan_render_device_extensions();
-extern const CpdPlatformExtensions* PLATFORM_alloc_vulkan_ui_device_extensions();
+extern void PLATFORM_free_vulkan_extensions(const CpdPlatformExtensions* extensions);
 
 extern VkResult PLATFORM_create_surface(VkInstance instance, CpdWindow window, VkSurfaceKHR* result);
-
-extern void PLATFORM_free_vulkan_extensions(const CpdPlatformExtensions* extensions);
 
 // == Windowing
 
