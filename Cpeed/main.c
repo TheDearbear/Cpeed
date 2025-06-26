@@ -339,10 +339,7 @@ static VkResult validate_extensions(const char** extensions, unsigned int extens
     for (unsigned int i = 0; i < extension_count; i++) {
         bool found = false;
         for (uint32_t j = 0; j < property_count; j++) {
-            #pragma warning(push)
-            #pragma warning(disable:6385)
             if (strcmp(extensions[i], properties[j].extensionName) == 0) {
-            #pragma warning(pop)
                 found = true;
                 break;
             }
