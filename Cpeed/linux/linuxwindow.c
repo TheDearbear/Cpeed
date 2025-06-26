@@ -78,14 +78,6 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
     return (CpdWindow)window;
 }
 
-void PLATFORM_window_show(CpdWindow window) {
-    // TODO
-}
-
-void PLATFORM_window_hide(CpdWindow window) {
-    // TODO
-}
-
 void PLATFORM_window_destroy(CpdWindow window) {
     if (g_windows_created == 0) {
         return;

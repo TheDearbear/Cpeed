@@ -43,14 +43,6 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
     return (CpdWindow)hWnd;
 }
 
-void PLATFORM_window_show(CpdWindow window) {
-    ShowWindow((HWND)window, SW_NORMAL);
-}
-
-void PLATFORM_window_hide(CpdWindow window) {
-    ShowWindow((HWND)window, SW_HIDE);
-}
-
 void PLATFORM_window_destroy(CpdWindow window) {
     WindowExtraData* data = (WindowExtraData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
     free(data);

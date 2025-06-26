@@ -37,8 +37,6 @@ extern void PLATFORM_free_vulkan_extensions(const CpdPlatformExtensions* extensi
 extern CpdWindow PLATFORM_create_window(const CpdWindowInfo* info);
 extern void PLATFORM_window_destroy(CpdWindow window);
 
-extern void PLATFORM_window_show(CpdWindow window);
-extern void PLATFORM_window_hide(CpdWindow window);
 extern bool PLATFORM_window_poll(CpdWindow window);
 
 extern CpdSize PLATFORM_get_window_size(CpdWindow window);
