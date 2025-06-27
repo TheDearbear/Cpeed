@@ -45,7 +45,7 @@ int main() {
         return -1;
     }
 
-    CpdRenderer* renderer;
+    CpdRenderer* renderer = 0;
     result = create_renderer(&renderer);
     if (result != VK_SUCCESS) {
         printf("Unable to create renderer. Result code: %s\n", string_VkResult(result));
@@ -198,15 +198,20 @@ int main() {
     printf("Goodbye!\n");
 
 shutdown:
-    renderer->render_device.vkDestroySemaphore(renderer->render_device.handle, acquire_semaphore, VK_NULL_HANDLE);
-    renderer->render_device.vkDestroySemaphore(renderer->render_device.handle, render_semaphore, VK_NULL_HANDLE);
+    if (renderer != 0) {
+        if (renderer->render_device.handle != VK_NULL_HANDLE) {
+            renderer->render_device.vkDestroySemaphore(renderer->render_device.handle, acquire_semaphore, VK_NULL_HANDLE);
+            renderer->render_device.vkDestroySemaphore(renderer->render_device.handle, render_semaphore, VK_NULL_HANDLE);
 
-    renderer->render_device.vkFreeCommandBuffers(renderer->render_device.handle, renderer->render_device.graphics_family.pool, 1, &buffer);
+            renderer->render_device.vkFreeCommandBuffers(renderer->render_device.handle, renderer->render_device.graphics_family.pool, 1, &buffer);
 
-    renderer->render_device.vkDestroyFence(renderer->render_device.handle, render_fence, VK_NULL_HANDLE);
+            renderer->render_device.vkDestroyFence(renderer->render_device.handle, render_fence, VK_NULL_HANDLE);
 
-    SWAPCHAIN_destroy(&renderer->swapchain, &renderer->render_device);
-    destroy_renderer(renderer);
+            SWAPCHAIN_destroy(&renderer->swapchain, &renderer->render_device);
+        }
+
+        destroy_renderer(renderer);
+    }
     vkDestroyInstance(g_instance, VK_NULL_HANDLE);
 
     PLATFORM_window_destroy(g_window);
@@ -292,7 +297,9 @@ static VkResult create_swapchain(CpdRenderer* renderer) {
 static void destroy_renderer(CpdRenderer* renderer) {
     VkSurfaceKHR surface = renderer->surface.handle;
 
-    renderer->render_device.vkDestroyFence(renderer->render_device.handle, renderer->swapchain_image_fence, VK_NULL_HANDLE);
+    if (renderer->render_device.handle != VK_NULL_HANDLE) {
+        renderer->render_device.vkDestroyFence(renderer->render_device.handle, renderer->swapchain_image_fence, VK_NULL_HANDLE);
+    }
 
     RENDERER_destroy(renderer);
     vkDestroySurfaceKHR(g_instance, surface, VK_NULL_HANDLE);
