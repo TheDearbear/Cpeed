@@ -1,8 +1,8 @@
 #include "winmain.h"
 #include <stdio.h>
 
-static int windows_created;
-static ATOM window_class;
+static int windows_created = 0;
+static ATOM window_class = 0;
 
 static void register_class();
 static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -16,11 +16,11 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
 
     strcpy_s(str, len + 1, info->title);
 
-    if (window_class == NULL) {
+    if (window_class == 0) {
         register_class();
     }
 
-    HWND hWnd = CreateWindowExA(0, window_class, str, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+    HWND hWnd = CreateWindowExA(0, MAKEINTATOM(window_class), str, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         CW_USEDEFAULT, CW_USEDEFAULT, info->size.width, info->size.height,
         NULL, NULL, GetModuleHandleW(NULL), NULL);
 
@@ -37,7 +37,7 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
 
     data->resized = false;
     data->should_close = false;
-    SetWindowLongPtrW(hWnd, GWLP_USERDATA, data);
+    SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG_PTR)data);
 
     windows_created++;
     return (CpdWindow)hWnd;
@@ -48,8 +48,8 @@ void PLATFORM_window_destroy(CpdWindow window) {
     free(data);
 
     if (DestroyWindow((HWND)window) && --windows_created == 0) {
-        UnregisterClassW(window_class, NULL);
-        window_class = NULL;
+        UnregisterClassW((LPCWSTR)window_class, NULL);
+        window_class = 0;
     }
 }
 
@@ -76,8 +76,8 @@ CpdSize PLATFORM_get_window_size(CpdWindow window) {
     GetClientRect((HWND)window, &rectangle);
     
     return (CpdSize){
-        .width = rectangle.right - rectangle.left,
-        .height = rectangle.bottom - rectangle.top
+        .width = (unsigned short)(rectangle.right - rectangle.left),
+        .height = (unsigned short)(rectangle.bottom - rectangle.top)
     };
 }
 
@@ -91,7 +91,7 @@ bool PLATFORM_window_resized(CpdWindow window) {
 }
 
 static void register_class() {
-    if (window_class != NULL) {
+    if (window_class != 0) {
         return;
     }
 
@@ -145,7 +145,7 @@ static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             return 0;
 
         case WM_SIZING:
-            ((WindowExtraData*)GetWindowLongW(hWnd, GWLP_USERDATA))->resized = true;
+            ((WindowExtraData*)GetWindowLongPtrW(hWnd, GWLP_USERDATA))->resized = true;
             return 0;
 
         case WM_CREATE:
