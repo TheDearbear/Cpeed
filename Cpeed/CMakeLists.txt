@@ -18,10 +18,9 @@ add_executable (Cpeed
   "common/swapchain.c" "common/swapchain.h"
   "common/window.h")
 
-target_include_directories(Cpeed PUBLIC "$ENV{VULKAN_SDK}/include")
-
 if (WIN32)
+  target_include_directories(Cpeed PUBLIC "$ENV{VULKAN_SDK}/include")
   target_link_libraries(Cpeed PUBLIC "$ENV{VULKAN_SDK}/lib/vulkan-1.lib")
 endif()
 
-set_property(TARGET Cpeed PROPERTY C_STANDARD)
+set_property(TARGET Cpeed PROPERTY C_STANDARD 99)

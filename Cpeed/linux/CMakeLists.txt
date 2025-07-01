@@ -33,4 +33,4 @@ target_include_directories (CpeedLinux
 )
 target_link_libraries (CpeedLinux ${Wayland_LIBRARIES})
 
-set_property (TARGET CpeedLinux PROPERTY C_STANDARD)
+set_property (TARGET CpeedLinux PROPERTY C_STANDARD 99)
