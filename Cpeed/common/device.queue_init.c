@@ -11,7 +11,7 @@ void destroy_queue_create_infos(VkDeviceQueueCreateInfo* infos, uint32_t count) 
     free(infos);
 }
 
-bool allocate_queue_create_infos(
+VkResult allocate_queue_create_infos(
     uint32_t graphics, uint32_t compute, uint32_t transfer,
     uint32_t transfer_count, uint32_t* count, VkDeviceQueueCreateInfo** infos
 ) {
@@ -24,7 +24,7 @@ bool allocate_queue_create_infos(
     if (graphics == compute && graphics == transfer) {
         float* priorities = (float*)malloc(transfer_count * sizeof(float));
         if (priorities == 0) {
-            return false;
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
 
         for (uint32_t i = 0; i < transfer_count; i++) {
@@ -34,7 +34,7 @@ bool allocate_queue_create_infos(
         VkDeviceQueueCreateInfo* info = (VkDeviceQueueCreateInfo*)malloc(1 * sizeof(VkDeviceQueueCreateInfo));
         if (info == 0) {
             free(priorities);
-            return false;
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
 
         local_info.queueFamilyIndex = graphics;
@@ -45,7 +45,7 @@ bool allocate_queue_create_infos(
         *count = 1;
         *infos = info;
 
-        return true;
+        return VK_SUCCESS;
     }
     else if (graphics == compute || graphics == transfer || compute == transfer) {
         uint32_t first_count = transfer_count;
@@ -53,7 +53,7 @@ bool allocate_queue_create_infos(
 
         float* first_priorities = (float*)malloc(first_count * sizeof(float));
         if (first_priorities == 0) {
-            return false;
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
 
         for (uint32_t i = 0; i < first_count; i++) {
@@ -63,7 +63,7 @@ bool allocate_queue_create_infos(
         float* second_priorities = (float*)malloc(second_count * sizeof(float));
         if (second_priorities == 0) {
             free(first_priorities);
-            return false;
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
 
         for (uint32_t i = 0; i < second_count; i++) {
@@ -74,7 +74,7 @@ bool allocate_queue_create_infos(
         if (info == 0) {
             free(first_priorities);
             free(second_priorities);
-            return false;
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
 
         local_info.queueFamilyIndex = transfer;
@@ -90,25 +90,25 @@ bool allocate_queue_create_infos(
         *count = 2;
         *infos = info;
 
-        return true;
+        return VK_SUCCESS;
     }
 
     float* graphics_priorities = (float*)malloc(1 * sizeof(float));
     if (graphics_priorities == 0) {
-        return false;
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     float* compute_priorities = (float*)malloc(1 * sizeof(float));
     if (compute_priorities == 0) {
         free(graphics_priorities);
-        return false;
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     float* transfer_priorities = (float*)malloc(transfer_count * sizeof(float));
     if (transfer_priorities == 0) {
         free(graphics_priorities);
         free(compute_priorities);
-        return false;
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     graphics_priorities[0] = 1.0f;
@@ -119,11 +119,11 @@ bool allocate_queue_create_infos(
     }
 
     VkDeviceQueueCreateInfo* info = (VkDeviceQueueCreateInfo*)malloc(3 * sizeof(VkDeviceQueueCreateInfo));
-    if (info == false) {
+    if (info == 0) {
         free(graphics_priorities);
         free(compute_priorities);
         free(transfer_priorities);
-        return false;
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     local_info.queueFamilyIndex = graphics;
@@ -144,5 +144,5 @@ bool allocate_queue_create_infos(
     *count = 3;
     *infos = info;
 
-    return true;
+    return VK_SUCCESS;
 }

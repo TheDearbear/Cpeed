@@ -12,7 +12,7 @@ typedef enum CpdCompilePlatform {
 
 typedef struct CpdPlatformExtensions {
     const char** extensions;
-    unsigned int count;
+    uint32_t count;
 } CpdPlatformExtensions;
 
 // == Generic

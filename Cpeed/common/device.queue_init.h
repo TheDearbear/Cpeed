@@ -1,11 +1,10 @@
 #pragma once
 
 #include <malloc.h>
-#include <stdbool.h>
 
 #include "../vulkan.h"
 
-extern bool allocate_queue_create_infos(
+extern VkResult allocate_queue_create_infos(
     uint32_t graphics, uint32_t compute, uint32_t transfer,
     uint32_t transfer_count, uint32_t* count, VkDeviceQueueCreateInfo** infos);
 

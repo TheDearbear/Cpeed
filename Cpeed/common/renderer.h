@@ -7,6 +7,12 @@
 
 typedef struct CpdRenderer {
     VkInstance instance;
+
+    uint32_t api_version;
+    uint32_t target_version;
+
+    CpdInstanceVulkanExtensions instance_extensions;
+
     CpdSurface surface;
 
     CpdSwapchain swapchain;
@@ -16,7 +22,14 @@ typedef struct CpdRenderer {
     CpdDevice ui_device;
 } CpdRenderer;
 
-CpdRenderer* RENDERER_create(VkInstance instance);
+typedef struct CpdRendererInitParams {
+    VkInstance instance;
+    CpdInstanceVulkanExtensions* instance_extensions;
+    uint32_t api_version;
+    uint32_t max_api_version;
+} CpdRendererInitParams;
+
+CpdRenderer* RENDERER_create(CpdRendererInitParams* params);
 void RENDERER_destroy(CpdRenderer* renderer);
 
 VkResult RENDERER_select_render_device(CpdRenderer* renderer);
@@ -25,4 +38,4 @@ VkResult RENDERER_select_ui_device(CpdRenderer* renderer);
 VkResult RENDERER_reset_pools(CpdRenderer* renderer);
 VkResult RENDERER_wait_idle(CpdRenderer* renderer);
 
-uint32_t RENDERER_acquire_next_image(CpdRenderer* renderer, bool* should_wait_for_fence);
+VkResult RENDERER_acquire_next_image(CpdRenderer* renderer, bool wait_for_fence);

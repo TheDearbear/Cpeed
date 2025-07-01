@@ -31,6 +31,12 @@ typedef struct CpdDevice {
     CpdQueueFamily compute_family;
     CpdTransferQueueFamily transfer_family;
 
+    uint32_t api_version;
+    uint32_t target_version;
+
+    CpdVulkanExtension* extensions;
+    uint32_t extension_count;
+
     // == Logical Device
 
     PFN_vkGetDeviceQueue vkGetDeviceQueue;
@@ -59,7 +65,7 @@ typedef struct CpdDevice {
     // == Queue
 
     PFN_vkQueueWaitIdle vkQueueWaitIdle;
-    PFN_vkQueueSubmit2KHR vkQueueSubmit2KHR;
+    PFN_vkQueueSubmit2 vkQueueSubmit2;
 
     // == Image
 
@@ -104,8 +110,8 @@ typedef struct CpdDevice {
 
     // == Dynamic Rendering
 
-    PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR;
-    PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR;
+    PFN_vkCmdBeginRendering vkCmdBeginRendering;
+    PFN_vkCmdEndRendering vkCmdEndRendering;
 
     // == Command Buffer
 
@@ -117,14 +123,24 @@ typedef struct CpdDevice {
 
     PFN_vkCmdBindPipeline vkCmdBindPipeline;
     PFN_vkCmdClearColorImage vkCmdClearColorImage;
-    PFN_vkCmdPipelineBarrier2KHR vkCmdPipelineBarrier2KHR;
+    PFN_vkCmdPipelineBarrier2 vkCmdPipelineBarrier2;
 } CpdDevice;
 
+typedef struct CpdDeviceInitParams {
+    VkPhysicalDevice physical_device;
+
+    CpdVulkanExtension* device_extensions;
+    uint32_t device_extension_count;
+
+    uint32_t graphics_family;
+    uint32_t compute_family;
+    uint32_t transfer_family;
+
+    uint32_t transfer_count;
+    uint32_t transfer_offset;
+} CpdDeviceInitParams;
+
 void DEVICE_destroy(CpdDevice* cpeed_device);
-VkResult DEVICE_initialize(
-    CpdDevice* cpeed_device, VkPhysicalDevice physical, const CpdPlatformExtensions* extensions,
-    uint32_t graphics, uint32_t compute, uint32_t transfer,
-    uint32_t transfer_count, uint32_t transfer_offset
-);
+VkResult DEVICE_initialize(CpdDevice* cpeed_device, CpdDeviceInitParams* params);
 VkResult DEVICE_reset_pools(CpdDevice* cpeed_device, VkCommandPoolResetFlags flags, bool reset_transfer);
 VkResult DEVICE_wait_idle(CpdDevice* cpeed_device, bool wait_transfer);

@@ -4,10 +4,15 @@
 #include "image.h"
 #include "surface.h"
 
+typedef struct CpdSwapchainImage {
+    CpdImage image;
+    VkSemaphore semaphore;
+} CpdSwapchainImage;
+
 typedef struct CpdSwapchain {
     VkSwapchainKHR handle;
     CpdSize size;
-    CpdImage* images;
+    CpdSwapchainImage* images;
     uint32_t image_count;
     uint32_t current_image;
 } CpdSwapchain;

@@ -1,5 +1,6 @@
 #include <malloc.h>
 
+#include "shortcuts.h"
 #include "swapchain.h"
 
 static VkResult clamp_swapchain(CpdDevice* device, CpdSurface* surface, CpdSize* size, uint32_t* image_count) {
@@ -37,7 +38,8 @@ static VkResult clamp_swapchain(CpdDevice* device, CpdSurface* surface, CpdSize*
 
 void SWAPCHAIN_destroy(CpdSwapchain* swapchain, CpdDevice* cpeed_device) {
     for (uint32_t i = 0; i < swapchain->image_count; i++) {
-        cpeed_device->vkDestroyImageView(cpeed_device->handle, swapchain->images[i].view, VK_NULL_HANDLE);
+        cpeed_device->vkDestroyImageView(cpeed_device->handle, swapchain->images[i].image.view, VK_NULL_HANDLE);
+        cpeed_device->vkDestroySemaphore(cpeed_device->handle, swapchain->images[i].semaphore, VK_NULL_HANDLE);
     }
 
     cpeed_device->vkDestroySwapchainKHR(cpeed_device->handle, swapchain->handle, VK_NULL_HANDLE);
@@ -113,7 +115,7 @@ VkResult SWAPCHAIN_create(CpdSwapchain* swapchain, CpdDevice* cpeed_device, CpdS
             return result;
         }
 
-        swapchain->images = (CpdImage*)malloc(swapchain->image_count * sizeof(CpdImage));
+        swapchain->images = (CpdSwapchainImage*)malloc(swapchain->image_count * sizeof(CpdSwapchainImage));
         if (swapchain->images == 0) {
             SWAPCHAIN_destroy(swapchain, cpeed_device);
             free(images);
@@ -121,7 +123,8 @@ VkResult SWAPCHAIN_create(CpdSwapchain* swapchain, CpdDevice* cpeed_device, CpdS
         }
 
         for (uint32_t i = 0; i < swapchain->image_count; i++) {
-            CpdImage* image = &swapchain->images[i];
+            CpdImage* image = &swapchain->images[i].image;
+            VkSemaphore* semaphore = &swapchain->images[i].semaphore;
 
             image->handle = images[i];
             image->stage = VK_PIPELINE_STAGE_2_NONE_KHR;
@@ -163,6 +166,17 @@ VkResult SWAPCHAIN_create(CpdSwapchain* swapchain, CpdDevice* cpeed_device, CpdS
                 free(images);
                 return result;
             }
+
+            result = create_semaphore(cpeed_device, semaphore);
+            if (result != VK_SUCCESS) {
+                // Prevent destroying of uncreated views
+                swapchain->image_count = i;
+
+                cpeed_device->vkDestroyImageView(cpeed_device->handle, image->view, VK_NULL_HANDLE);
+                SWAPCHAIN_destroy(swapchain, cpeed_device);
+                free(images);
+                return result;
+            }
         }
 
         free(images);
@@ -190,7 +204,7 @@ void SWAPCHAIN_set_layout(CpdSwapchain* swapchain, CpdDevice* cpeed_device, VkCo
         .layerCount = VK_REMAINING_ARRAY_LAYERS
     };
 
-    CpdImage* image = &swapchain->images[swapchain->current_image];
+    CpdImage* image = &swapchain->images[swapchain->current_image].image;
 
     VkImageMemoryBarrier2KHR image_barrier = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR,
@@ -223,5 +237,5 @@ void SWAPCHAIN_set_layout(CpdSwapchain* swapchain, CpdDevice* cpeed_device, VkCo
     image->access = access;
     image->layout = layout;
 
-    cpeed_device->vkCmdPipelineBarrier2KHR(buffer, &dependency_info);
+    cpeed_device->vkCmdPipelineBarrier2(buffer, &dependency_info);
 }
