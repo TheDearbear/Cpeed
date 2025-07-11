@@ -7,6 +7,8 @@ add_executable (Cpeed
   "main.c" "main.h"
   "platform.h"
   "vulkan.c" "vulkan.h"
+
+  "common/rendering/rendering.c" "common/rendering/rendering.h"
   
   "common/device.c" "common/device.h"
   "common/device.queue_init.c" "common/device.queue_init.h"

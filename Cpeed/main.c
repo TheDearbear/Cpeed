@@ -1,3 +1,4 @@
+#include "common/rendering/rendering.h"
 #include "main.h"
 
 #define GET_INSTANCE_PROC_ADDR(instance, name) name = (PFN_ ## name)vkGetInstanceProcAddr(instance, #name)
@@ -17,8 +18,6 @@ static VkResult create_renderer(CpdRenderer** renderer, CpdRendererInitParams* p
 static VkResult create_swapchain(CpdRenderer* renderer);
 
 static void destroy_renderer(CpdRenderer* renderer);
-
-static void begin_rendering(CpdRenderer* renderer, VkCommandBuffer buffer);
 
 static void load_global_pointers();
 static void load_instance_pointers(CpdInstanceVulkanExtensions* extensions);
@@ -44,10 +43,6 @@ int main() {
 
     load_global_pointers();
 
-    VkResult result;
-    VkCommandBuffer buffer = VK_NULL_HANDLE;
-    VkFence render_fence = VK_NULL_HANDLE;
-
     CpdInstanceVulkanExtensions instance_extensions;
     initialize_vulkan_instance_extensions(&instance_extensions);
 
@@ -55,7 +50,7 @@ int main() {
         .instance_extensions = &instance_extensions
     };
 
-    result = create_instance(renderer_init_params.instance_extensions, &renderer_init_params.api_version, &renderer_init_params.max_api_version);
+    VkResult result = create_instance(renderer_init_params.instance_extensions, &renderer_init_params.api_version, &renderer_init_params.max_api_version);
     if (result != VK_SUCCESS) {
         printf("Unable to create Vulkan instance. Result code: %s\n", string_VkResult(result));
         return -1;
@@ -70,21 +65,15 @@ int main() {
         goto shutdown;
     }
 
-    result = create_fence(&renderer->render_device, &render_fence);
+    result = RENDERING_initialize(renderer);
     if (result != VK_SUCCESS) {
-        printf("Unable to create render fence. Result code: %s\n", string_VkResult(result));
+        printf("Unable to initialize rendering module. Result code: %s\n", string_VkResult(result));
         goto shutdown;
     }
 
     result = create_swapchain(renderer);
     if (result != VK_SUCCESS) {
         printf("Unable to create swapchain. Result code: %s\n", string_VkResult(result));
-        goto shutdown;
-    }
-
-    result = create_primary_command_buffer(&renderer->render_device, renderer->render_device.graphics_family.pool, &buffer);
-    if (result != VK_SUCCESS) {
-        printf("Unable to create command buffer. Result code: %s\n", string_VkResult(result));
         goto shutdown;
     }
 
@@ -98,6 +87,12 @@ int main() {
             result = SWAPCHAIN_resize(&renderer->swapchain, &renderer->render_device, &renderer->surface, &size);
             if (result != VK_SUCCESS) {
                 printf("Unable to update surface size. Result code: %s\n", string_VkResult(result));
+                continue;
+            }
+
+            result = RENDERING_resize(renderer, size);
+            if (result != VK_SUCCESS) {
+                printf("Unable to adapt for new surface size. Result code: %s\n", string_VkResult(result));
                 continue;
             }
         }
@@ -116,86 +111,13 @@ int main() {
             break;
         }
 
-        VkCommandBufferBeginInfo begin_info = {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-            .pNext = VK_NULL_HANDLE,
-            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-            .pInheritanceInfo = VK_NULL_HANDLE
-        };
-        result = renderer->render_device.vkBeginCommandBuffer(buffer, &begin_info);
+        result = RENDERING_frame(renderer, wait_for_fence);
         if (result != VK_SUCCESS) {
-            printf("Unable to begin command buffer. Result code: %s\n", string_VkResult(result));
+            printf("Unable to draw new frame. Result code: %s\n", string_VkResult(result));
             break;
         }
-
-        if (wait_for_fence) {
-            result = renderer->render_device.vkWaitForFences(renderer->render_device.handle, 1, &renderer->swapchain_image_fence, VK_FALSE, UINT64_MAX);
-            if (result != VK_SUCCESS) {
-                printf("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
-                break;
-            }
-        }
-
-        SWAPCHAIN_set_layout(&renderer->swapchain, &renderer->render_device, buffer,
-            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-        begin_rendering(renderer, buffer);
-
-        renderer->render_device.vkCmdEndRendering(buffer);
-
-        SWAPCHAIN_set_layout(&renderer->swapchain, &renderer->render_device, buffer,
-            VK_PIPELINE_STAGE_2_NONE,
-            VK_ACCESS_2_NONE,
-            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-        result = renderer->render_device.vkEndCommandBuffer(buffer);
-        if (result != VK_SUCCESS) {
-            printf("Unable to end command buffer. Result code: %s\n", string_VkResult(result));
-            break;
-        }
-
-        VkCommandBufferSubmitInfo buffer_submit_info = {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-            .pNext = 0,
-            .commandBuffer = buffer,
-            .deviceMask = 0
-        };
 
         VkSemaphore current_semaphore = renderer->swapchain.images[renderer->swapchain.current_image].semaphore;
-
-        VkSemaphoreSubmitInfoKHR signal_info = {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-            .pNext = 0,
-            .semaphore = current_semaphore,
-            .stageMask = VK_PIPELINE_STAGE_2_NONE,
-            .deviceIndex = 0
-        };
-
-        VkSubmitInfo2 submit_info = {
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-            .pNext = 0,
-            .flags = 0,
-            .waitSemaphoreInfoCount = 0,
-            .pWaitSemaphoreInfos = 0,
-            .commandBufferInfoCount = 1,
-            .pCommandBufferInfos = &buffer_submit_info,
-            .signalSemaphoreInfoCount = 1,
-            .pSignalSemaphoreInfos = &signal_info
-        };
-
-        result = renderer->render_device.vkResetFences(renderer->render_device.handle, 1, &render_fence);
-        if (result != VK_SUCCESS) {
-            printf("Unable to reset render fence. Result code: %s\n", string_VkResult(result));
-        }
-
-        result = renderer->render_device.vkQueueSubmit2(renderer->render_device.graphics_family.queue, 1, &submit_info, render_fence);
-        if (result != VK_SUCCESS) {
-            printf("Unable to queue work. Result code: %s\n", string_VkResult(result));
-        }
-
-        renderer->render_device.vkWaitForFences(renderer->render_device.handle, 1, &render_fence, VK_TRUE, UINT64_MAX);
 
         VkPresentInfoKHR present_info = {
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -221,9 +143,8 @@ shutdown:
     if (renderer != 0) {
         if (renderer->render_device.handle != VK_NULL_HANDLE) {
             DEVICE_wait_idle(&renderer->render_device, false);
-            renderer->render_device.vkFreeCommandBuffers(renderer->render_device.handle, renderer->render_device.graphics_family.pool, 1, &buffer);
-            renderer->render_device.vkDestroyFence(renderer->render_device.handle, render_fence, VK_NULL_HANDLE);
 
+            RENDERING_shutdown(renderer);
             SWAPCHAIN_destroy(&renderer->swapchain, &renderer->render_device);
         }
 
@@ -234,36 +155,6 @@ shutdown:
     PLATFORM_window_destroy(g_window);
     PLATFORM_free_vulkan_lib();
     PLATFORM_shutdown();
-}
-
-static void begin_rendering(CpdRenderer* renderer, VkCommandBuffer buffer) {
-    CpdImage* image = &renderer->swapchain.images[renderer->swapchain.current_image].image;
-
-    VkRenderingAttachmentInfo attachment = {
-        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView = image->view,
-        .imageLayout = image->layout,
-        .resolveMode = VK_RESOLVE_MODE_NONE,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue.color.float32[0] = 1.0f,
-        .clearValue.color.float32[1] = 0,
-        .clearValue.color.float32[2] = 0,
-        .clearValue.color.float32[3] = 1.0f
-    };
-    
-    VkRenderingInfo info = {
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-        .renderArea.offset = (VkOffset2D){ 0, 0 },
-        .renderArea.extent.width = renderer->swapchain.size.width,
-        .renderArea.extent.height = renderer->swapchain.size.height,
-        .layerCount = 1,
-        .viewMask = 0,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &attachment
-    };
-
-    renderer->render_device.vkCmdBeginRendering(buffer, &info);
 }
 
 static VkResult create_renderer(CpdRenderer** renderer, CpdRendererInitParams* params) {
