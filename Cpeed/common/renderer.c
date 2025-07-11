@@ -16,6 +16,8 @@ CpdRenderer* RENDERER_create(CpdRendererInitParams* params) {
     renderer->api_version = params->max_api_version;
     renderer->target_version = params->api_version;
     renderer->instance_extensions = *params->instance_extensions;
+    renderer->creation_time = PLATFORM_get_clock_usec();
+    renderer->last_frame_end = renderer->creation_time;
     renderer->surface.handle = VK_NULL_HANDLE;
     renderer->render_device.handle = VK_NULL_HANDLE;
     renderer->ui_device.handle = VK_NULL_HANDLE;

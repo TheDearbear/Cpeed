@@ -11,6 +11,9 @@ typedef struct CpdRenderer {
     uint32_t api_version;
     uint32_t target_version;
 
+    uint64_t creation_time;
+    uint64_t last_frame_end;
+
     CpdInstanceVulkanExtensions instance_extensions;
 
     CpdSurface surface;

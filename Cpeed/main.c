@@ -24,6 +24,11 @@ static void load_global_pointers();
 static void load_instance_pointers(CpdInstanceVulkanExtensions* extensions);
 
 int main() {
+    if (!PLATFORM_initialize()) {
+        printf("Unable to initialize platform-specific information\n");
+        return -1;
+    }
+
     vkGetInstanceProcAddr = PLATFORM_load_vulkan_lib();
     if (vkGetInstanceProcAddr == VK_NULL_HANDLE) {
         printf("Unable to load Vulkan library\n");
@@ -206,6 +211,8 @@ int main() {
         if (result != VK_SUCCESS) {
             printf("Unable to present swapchain. Result code: %s\n", string_VkResult(result));
         }
+
+        renderer->last_frame_end = PLATFORM_get_clock_usec();
     }
 
     printf("Goodbye!\n");
@@ -226,6 +233,7 @@ shutdown:
 
     PLATFORM_window_destroy(g_window);
     PLATFORM_free_vulkan_lib();
+    PLATFORM_shutdown();
 }
 
 static void begin_rendering(CpdRenderer* renderer, VkCommandBuffer buffer) {

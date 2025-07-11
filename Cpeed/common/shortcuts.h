@@ -2,6 +2,10 @@
 
 #include "renderer.h"
 
+inline double get_delta_time(CpdRenderer* cpeed_renderer, uint64_t current_time) {
+    return (double)(current_time - cpeed_renderer->last_frame_end) / 1000000;
+}
+
 inline VkResult create_fence(CpdDevice* cpeed_device, VkFence* fence) {
     VkFenceCreateInfo create_info = {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,

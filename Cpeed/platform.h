@@ -19,6 +19,12 @@ typedef struct CpdPlatformExtensions {
 
 extern CpdCompilePlatform PLATFORM_compile_platform();
 
+extern bool PLATFORM_initialize();
+
+extern void PLATFORM_shutdown();
+
+extern uint64_t PLATFORM_get_clock_usec();
+
 // == Vulkan
 
 extern PFN_vkGetInstanceProcAddr PLATFORM_load_vulkan_lib();

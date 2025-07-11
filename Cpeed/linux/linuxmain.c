@@ -6,6 +6,21 @@ CpdCompilePlatform PLATFORM_compile_platform() {
     return CpdCompilePlatform_Linux;
 }
 
+bool PLATFORM_initialize() {
+    return true;
+}
+
+void PLATFORM_shutdown() { }
+
+uint64_t PLATFORM_get_clock_usec() {
+    struct timespec clock;
+    if (clock_gettime(CLOCK_MONOTONIC, &clock) != 0) {
+        return 0;
+    }
+
+    return ((uint64_t)clock.tv_sec * 1000000) + (clock.tv_nsec / 1000);
+}
+
 PFN_vkGetInstanceProcAddr PLATFORM_load_vulkan_lib() {
     if (g_vulkan == (void*)0) {
         g_vulkan = dlopen("libvulkan.so.1", RTLD_LAZY);

@@ -1,9 +1,25 @@
 #include "winmain.h"
 
 HMODULE g_vulkan;
+LARGE_INTEGER counter_frequency;
 
 CpdCompilePlatform PLATFORM_compile_platform() {
     return CpdCompilePlatform_Windows;
+}
+
+bool PLATFORM_initialize() {
+    return QueryPerformanceFrequency(&counter_frequency) != 0;
+}
+
+void PLATFORM_shutdown() { }
+
+uint64_t PLATFORM_get_clock_usec() {
+    LARGE_INTEGER counter;
+    if (!QueryPerformanceCounter(&counter)) {
+        return 0;
+    }
+
+    return counter.QuadPart * 1000000 / counter_frequency.QuadPart;
 }
 
 PFN_vkGetInstanceProcAddr PLATFORM_load_vulkan_lib() {

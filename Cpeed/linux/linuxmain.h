@@ -4,6 +4,7 @@
 
 #include <dlfcn.h>
 #include <malloc.h>
+#include <time.h>
 
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
