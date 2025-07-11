@@ -8,23 +8,13 @@ static void register_class();
 static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
-    size_t len = strlen(info->title);
-    char* str = (char*)malloc((len + 1) * sizeof(char));
-    if (str == 0) {
-        return 0;
-    }
-
-    strcpy_s(str, len + 1, info->title);
-
     if (window_class == 0) {
         register_class();
     }
 
-    HWND hWnd = CreateWindowExA(0, MAKEINTATOM(window_class), str, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+    HWND hWnd = CreateWindowExA(0, MAKEINTATOM(window_class), info->title, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         CW_USEDEFAULT, CW_USEDEFAULT, info->size.width, info->size.height,
         NULL, NULL, GetModuleHandleW(NULL), NULL);
-
-    free(str);
     
     if (hWnd == 0) {
         return 0;

@@ -125,7 +125,7 @@ static VkResult init_device_transfer_pool(CpdDevice* cpeed_device, CpdTransferQu
     return cpeed_device->vkCreateCommandPool(cpeed_device->handle, &create_info, VK_NULL_HANDLE, &queue_family->pool);
 }
 
-static CpdPlatformExtensions* alloc_device_extensions(CpdDevice* cpeed_device, CpdDeviceInitParams* params, VkPhysicalDeviceProperties2* device_properties) {
+static CpdPlatformExtensions* alloc_device_extensions(CpdDevice* cpeed_device, CpdDeviceInitParams* params) {
     uint32_t property_count;
 
     VkResult result = vkEnumerateDeviceExtensionProperties(params->physical_device, 0, &property_count, 0);
@@ -222,7 +222,7 @@ static void free_device_extensions(CpdPlatformExtensions* extensions) {
     free(extensions);
 }
 
-static VkResult create_logical_device(CpdDevice* cpeed_device, CpdDeviceInitParams* params, VkPhysicalDeviceProperties2* properties) {
+static VkResult create_logical_device(CpdDevice* cpeed_device, CpdDeviceInitParams* params) {
     uint32_t queue_create_info_count = 0;
     VkDeviceQueueCreateInfo* queue_create_info = (VkDeviceQueueCreateInfo*)0;
     
@@ -235,7 +235,7 @@ static VkResult create_logical_device(CpdDevice* cpeed_device, CpdDeviceInitPara
         return result;
     }
 
-    CpdPlatformExtensions* extensions = alloc_device_extensions(cpeed_device, params, properties);
+    CpdPlatformExtensions* extensions = alloc_device_extensions(cpeed_device, params);
 
     CpdVulkanExtensionLoadMethod load_method = get_extension_load_method(cpeed_device, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     VulkanStructureChain* next;
@@ -282,7 +282,7 @@ static VkResult create_logical_device(CpdDevice* cpeed_device, CpdDeviceInitPara
         synchronization2_features->pNext = 0;
         synchronization2_features->synchronization2 = VK_TRUE;
 
-        next = dynamic_rendering_features;
+        next = (VulkanStructureChain*)dynamic_rendering_features;
     }
 
     VkDeviceCreateInfo create_info = {
@@ -327,7 +327,7 @@ VkResult DEVICE_initialize(CpdDevice* cpeed_device, CpdDeviceInitParams* params)
     cpeed_device->extensions = params->device_extensions;
     cpeed_device->extension_count = params->device_extension_count;
 
-    VkResult result = create_logical_device(cpeed_device, params, &physical_device_properties);
+    VkResult result = create_logical_device(cpeed_device, params);
     if (result != VK_SUCCESS) {
         return result;
     }
