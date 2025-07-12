@@ -27,6 +27,7 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
 
     data->resized = false;
     data->should_close = false;
+    data->minimized = false;
     SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG_PTR)data);
 
     windows_created++;
@@ -80,6 +81,10 @@ bool PLATFORM_window_resized(CpdWindow window) {
     return resized;
 }
 
+bool PLATFORM_window_present_allowed(CpdWindow window) {
+    return !((WindowExtraData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA))->minimized;
+}
+
 static void register_class() {
     if (window_class != 0) {
         return;
@@ -116,6 +121,15 @@ static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     return 0;
             }
             return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+
+        case WM_SIZE:
+            {
+                WindowExtraData* data = (WindowExtraData*)GetWindowLongPtrW(hWnd, GWLP_USERDATA);
+                if (data != 0) {
+                    data->minimized = wParam & SIZE_MINIMIZED != 0;
+                }
+            }
+            return 0;
 
         case WM_CLOSE:
             close_window(hWnd);

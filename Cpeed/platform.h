@@ -44,3 +44,5 @@ extern bool PLATFORM_window_poll(CpdWindow window);
 
 extern CpdSize PLATFORM_get_window_size(CpdWindow window);
 extern bool PLATFORM_window_resized(CpdWindow window);
+
+extern bool PLATFORM_window_present_allowed(CpdWindow window);

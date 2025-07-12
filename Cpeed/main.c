@@ -97,6 +97,12 @@ int main() {
             }
         }
 
+        renderer->render_settings->allow_render = PLATFORM_window_present_allowed(g_window);
+
+        if (!renderer->render_settings->allow_render || renderer->render_settings->force_disable_render) {
+            continue;
+        }
+
         result = RENDERER_reset_pools(renderer);
         if (result != VK_SUCCESS) {
             printf("Unable to reset command pools. Result code: %s\n", string_VkResult(result));

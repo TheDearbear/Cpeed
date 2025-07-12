@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -16,7 +17,7 @@ static void registry_global(
     const char* interface, uint32_t version
 );
 struct wl_registry_listener registry_listener = (struct wl_registry_listener) {
-        .global = registry_global
+    .global = registry_global
 };
 
 static void wm_base_ping(void* data, struct xdg_wm_base* xdg_wm_base, uint32_t serial);
@@ -40,31 +41,42 @@ static struct xdg_toplevel_listener top_level_listener = (struct xdg_toplevel_li
     .wm_capabilities = top_level_wm_capabilities
 };
 
+static void frame_done(void* data, struct wl_callback* wl_callback, uint32_t callback_data);
+static struct wl_callback_listener frame_listener = (struct wl_callback_listener){
+    .done = frame_done
+};
+
 CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
     if (g_compositor == 0 && !initialize_wayland()) {
         return 0;
     }
 
-    CpdWaylandWindow* window = (CpdWaylandWindow*)malloc(sizeof(CpdWaylandWindow));
-    if (window == 0) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)malloc(sizeof(CpdWaylandWindow));
+    if (wl_window == 0) {
         printf("%s", "Unable to allocate window\n");
         return 0;
     }
 
     struct wl_surface* surface = wl_compositor_create_surface(g_compositor);
 
+    struct wl_callback* callback = wl_surface_frame(surface);
+    wl_callback_add_listener(callback, &frame_listener, (void*)wl_window);
+
     struct xdg_surface* shell_surface = xdg_wm_base_get_xdg_surface(g_wm_base, surface);
     xdg_surface_add_listener(shell_surface, &surface_listener, 0);
 
     struct xdg_toplevel* top_level = xdg_surface_get_toplevel(shell_surface);
-    xdg_toplevel_add_listener(top_level, &top_level_listener, (void*)window);
+    xdg_toplevel_add_listener(top_level, &top_level_listener, (void*)wl_window);
 
-    window->surface = surface;
-    window->shell_surface = shell_surface;
-    window->top_level = top_level;
-    window->width = info->size.width;
-    window->height = info->size.height;
-    window->resized = false;
+    wl_window->surface = surface;
+    wl_window->callback = callback;
+    wl_window->shell_surface = shell_surface;
+    wl_window->top_level = top_level;
+    wl_window->width = info->size.width;
+    wl_window->height = info->size.height;
+    wl_window->resized = false;
+    wl_window->should_close = false;
+    wl_window->should_render = true;
 
     xdg_toplevel_set_title(top_level, info->title);
     xdg_toplevel_set_app_id(top_level, "Cpeed");
@@ -75,7 +87,7 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
 
     g_windows_created++;
 
-    return (CpdWindow)window;
+    return (CpdWindow)wl_window;
 }
 
 void PLATFORM_window_destroy(CpdWindow window) {
@@ -87,6 +99,7 @@ void PLATFORM_window_destroy(CpdWindow window) {
 
     xdg_toplevel_destroy(wl_window->top_level);
     xdg_surface_destroy(wl_window->shell_surface);
+    wl_callback_destroy(wl_window->callback);
     wl_surface_destroy(wl_window->surface);
 
     free(wl_window);
@@ -117,6 +130,20 @@ bool PLATFORM_window_poll(CpdWindow window) {
         return true;
     }
 
+    // This call is required as sometimes there are still some
+    // events present in the default queue
+    wl_display_dispatch_pending(g_display);
+
+    if (wl_display_prepare_read(g_display) == -1) {
+        printf("Unable to prepare for reading display events (%d)\n", errno);
+        return true;
+    }
+
+    if (wl_display_read_events(g_display) == -1) {
+        printf("%s", "Unable to read display events (%d)\n", errno);
+        return true;
+    }
+
     if (wl_display_dispatch_pending(g_display) == -1) {
         printf("%s", "Unable to dispatch events for Wayland display\n");
         return true;
@@ -144,6 +171,15 @@ bool PLATFORM_window_resized(CpdWindow window) {
 
     bool result = wl_window->resized;
     wl_window->resized = false;
+
+    return result;
+}
+
+bool PLATFORM_window_present_allowed(CpdWindow window) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
+
+    bool result = wl_window->should_render;
+    wl_window->should_render = false;
 
     return result;
 }
@@ -228,4 +264,16 @@ static void top_level_wm_capabilities(void* data, struct xdg_toplevel* xdg_tople
     }
 
     printf("%s", "\n");
+}
+
+static void frame_done(void* data, struct wl_callback* wl_callback, uint32_t callback_data) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)data;
+
+    wl_callback_destroy(wl_callback);
+
+    wl_window->callback = wl_surface_frame(wl_window->surface);
+
+    wl_callback_add_listener(wl_window->callback, &frame_listener, data);
+
+    wl_window->should_render = true;
 }

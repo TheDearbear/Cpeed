@@ -5,6 +5,11 @@
 #include "swapchain.h"
 #include "surface.h"
 
+typedef struct CpdRenderSettings {
+    bool allow_render;
+    bool force_disable_render;
+} CpdRenderSettings;
+
 typedef struct CpdRenderer {
     VkInstance instance;
 
@@ -20,6 +25,8 @@ typedef struct CpdRenderer {
 
     CpdSwapchain swapchain;
     VkFence swapchain_image_fence;
+
+    CpdRenderSettings* render_settings;
 
     CpdDevice render_device;
     CpdDevice ui_device;

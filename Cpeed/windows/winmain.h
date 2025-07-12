@@ -13,4 +13,5 @@
 typedef struct WindowExtraData {
     bool should_close;
     bool resized;
+    bool minimized;
 } WindowExtraData;
