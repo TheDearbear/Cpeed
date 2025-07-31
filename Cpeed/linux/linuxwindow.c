@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <malloc.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -119,6 +120,12 @@ void PLATFORM_window_destroy(CpdWindow window) {
     }
 }
 
+void PLATFORM_window_close(CpdWindow window) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
+
+    wl_window->should_close = true;
+}
+
 bool PLATFORM_window_poll(CpdWindow window) {
     if (g_display == 0) {
         return true;
@@ -140,7 +147,7 @@ bool PLATFORM_window_poll(CpdWindow window) {
     }
 
     if (wl_display_read_events(g_display) == -1) {
-        printf("%s", "Unable to read display events (%d)\n", errno);
+        printf("Unable to read display events (%d)\n", errno);
         return true;
     }
 

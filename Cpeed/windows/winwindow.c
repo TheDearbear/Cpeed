@@ -7,6 +7,8 @@ static ATOM window_class = 0;
 static void register_class();
 static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+#define GET_EXTRA_DATA(hWnd) ((WindowExtraData*)GetWindowLongPtrW(hWnd, GWLP_USERDATA))
+
 CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
     if (window_class == 0) {
         register_class();
@@ -35,13 +37,19 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
 }
 
 void PLATFORM_window_destroy(CpdWindow window) {
-    WindowExtraData* data = (WindowExtraData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
     free(data);
 
     if (DestroyWindow((HWND)window) && --windows_created == 0) {
         UnregisterClassW((LPCWSTR)window_class, NULL);
         window_class = 0;
     }
+}
+
+void PLATFORM_window_close(CpdWindow window) {
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
+
+    data->should_close = true;
 }
 
 bool PLATFORM_window_poll(CpdWindow window) {
@@ -51,7 +59,7 @@ bool PLATFORM_window_poll(CpdWindow window) {
         DispatchMessageW(&msg);
     }
 
-    WindowExtraData* data = (WindowExtraData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     if (data == 0) {
         DWORD err = GetLastError();
@@ -73,7 +81,7 @@ CpdSize PLATFORM_get_window_size(CpdWindow window) {
 }
 
 bool PLATFORM_window_resized(CpdWindow window) {
-    WindowExtraData* data = (WindowExtraData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
     
     bool resized = data->resized;
     data->resized = false;
@@ -82,7 +90,9 @@ bool PLATFORM_window_resized(CpdWindow window) {
 }
 
 bool PLATFORM_window_present_allowed(CpdWindow window) {
-    return !((WindowExtraData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA))->minimized;
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
+
+    return !data->minimized;
 }
 
 static void register_class() {
@@ -94,37 +104,30 @@ static void register_class() {
         .cbSize = sizeof(WNDCLASSEXW),
         .lpfnWndProc = wndProc,
         .hInstance = GetModuleHandleW(NULL),
+        .hCursor = LoadImageW(NULL, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED),
         .lpszClassName = L"Cpeed"
     };
 
     window_class = RegisterClassExW(&wndClassExW);
 }
 
-static void close_window(HWND hWnd) {
-    ((WindowExtraData*)GetWindowLongPtrW(hWnd, GWLP_USERDATA))->should_close = true;
-}
-
 static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_SYSCOMMAND:
-            switch (wParam & 0xFFF0) {
+            switch (GET_SC_WPARAM(wParam)) {
                 case SC_CLOSE:
-                    close_window(hWnd);
-                    return 0;
+                    goto wndProc_close;
 
                 case SC_MAXIMIZE:
                 case SC_RESTORE:
-                    {
-                        DefWindowProcW(hWnd, uMsg, wParam, lParam);
-                        ((WindowExtraData*)GetWindowLongPtrW(hWnd, GWLP_USERDATA))->resized = true;
-                    }
-                    return 0;
+                    DefWindowProcW(hWnd, uMsg, wParam, lParam);
+                    goto wndProc_sizing;
             }
             return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 
         case WM_SIZE:
             {
-                WindowExtraData* data = (WindowExtraData*)GetWindowLongPtrW(hWnd, GWLP_USERDATA);
+                WindowExtraData* data = GET_EXTRA_DATA(hWnd);
                 if (data != 0) {
                     data->minimized = wParam & SIZE_MINIMIZED != 0;
                 }
@@ -132,27 +135,21 @@ static LRESULT wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             return 0;
 
         case WM_CLOSE:
-            close_window(hWnd);
+        wndProc_close:
+            PLATFORM_window_close((CpdWindow)hWnd);
             return 0;
 
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;
 
-        case WM_PAINT:
-            {
-                PAINTSTRUCT ps;
-                HDC hdc = BeginPaint(hWnd, &ps);
-                FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-                EndPaint(hWnd, &ps);
-            }
-            return 0;
-
         case WM_SIZING:
-            ((WindowExtraData*)GetWindowLongPtrW(hWnd, GWLP_USERDATA))->resized = true;
-            return 0;
+        wndProc_sizing:
+            {
+                WindowExtraData* data = GET_EXTRA_DATA(hWnd);
 
-        case WM_CREATE:
+                data->resized = true;
+            }
             return 0;
 
         default:

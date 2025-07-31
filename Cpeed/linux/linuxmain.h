@@ -2,10 +2,6 @@
 
 #define VK_USE_PLATFORM_WAYLAND_KHR
 
-#include <dlfcn.h>
-#include <malloc.h>
-#include <time.h>
-
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
 #include "xdg-shell/client.h"

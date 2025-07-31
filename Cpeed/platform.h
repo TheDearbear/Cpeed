@@ -40,6 +40,8 @@ extern VkResult PLATFORM_create_surface(VkInstance instance, CpdWindow window, V
 extern CpdWindow PLATFORM_create_window(const CpdWindowInfo* info);
 extern void PLATFORM_window_destroy(CpdWindow window);
 
+extern void PLATFORM_window_close(CpdWindow window);
+
 extern bool PLATFORM_window_poll(CpdWindow window);
 
 extern CpdSize PLATFORM_get_window_size(CpdWindow window);

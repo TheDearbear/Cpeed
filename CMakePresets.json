@@ -8,8 +8,7 @@
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "installDir": "${sourceDir}/out/install/${presetName}",
             "cacheVariables": {
-                "CMAKE_C_COMPILER": "cl.exe",
-                "CMAKE_CXX_COMPILER": "cl.exe"
+                "CMAKE_C_COMPILER": "cl.exe"
             },
             "condition": {
                 "type": "equals",
@@ -25,8 +24,7 @@
             "installDir": "${sourceDir}/out/install/${presetName}",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++",
-                "CMAKE_MAKE_PROGRAM":  "make"
+                "CMAKE_MAKE_PROGRAM": "ninja"
             },
             "condition": {
                 "type": "equals",
@@ -50,7 +48,10 @@
             "name": "linux-x64-debug",
             "displayName": "Linux x64 Debug",
             "inherits": "linux-base",
-            "architecture": "x64",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
@@ -71,7 +72,10 @@
             "name": "linux-arm64-debug",
             "displayName": "Linux arm64 Debug",
             "inherits": "linux-base",
-            "architecture": "ARM64",
+            "architecture": {
+                "value": "ARM64",
+                "strategy": "external"
+            },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }

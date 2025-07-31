@@ -1,3 +1,7 @@
+#include <dlfcn.h>
+#include <malloc.h>
+#include <time.h>
+
 #include "linuxmain.h"
 
 void* g_vulkan;

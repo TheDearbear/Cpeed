@@ -31,6 +31,7 @@ CpdRenderer* RENDERER_create(CpdRendererInitParams* params) {
     renderer->ui_device.handle = VK_NULL_HANDLE;
     renderer->swapchain.handle = VK_NULL_HANDLE;
     renderer->swapchain.image_count = 0;
+    renderer->swapchain_image_fence = VK_NULL_HANDLE;
     renderer->render_settings = render_settings;
 
     return renderer;

@@ -264,6 +264,7 @@ static VkResult create_logical_device(CpdDevice* cpeed_device, CpdDeviceInitPara
         
         if (dynamic_rendering_features == 0 || synchronization2_features == 0) {
             free(dynamic_rendering_features);
+            free(synchronization2_features);
 
             destroy_queue_create_infos(queue_create_info, queue_create_info_count);
             free_device_extensions(extensions);

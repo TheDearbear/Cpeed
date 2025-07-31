@@ -158,7 +158,10 @@ shutdown:
     }
     vkDestroyInstance(g_instance, VK_NULL_HANDLE);
 
-    PLATFORM_window_destroy(g_window);
+    if (g_window != 0) {
+        PLATFORM_window_destroy(g_window);
+    }
+
     PLATFORM_free_vulkan_lib();
     PLATFORM_shutdown();
 }

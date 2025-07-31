@@ -11,7 +11,7 @@ endif()
 
 cmake_policy(SET CMP0079 NEW)
 
-project ("Cpeed")
+project ("Cpeed" C)
 
 # Include sub-projects.
 add_subdirectory ("Cpeed")
