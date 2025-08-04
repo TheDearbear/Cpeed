@@ -7,9 +7,11 @@ find_package (Wayland REQUIRED Client)
 find_package (WaylandProtocols REQUIRED)
 find_package (WaylandScanner REQUIRED)
 
+find_package(Vulkan REQUIRED)
+
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell")
 
-message("-- Generating client header for xdg-shell...")
+message("-- Generating client header for xdg-shell")
 
 execute_process (
 	COMMAND ${WaylandScanner_EXECUTABLE} "client-header"
@@ -17,7 +19,7 @@ execute_process (
 		OUTPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/client.h"
 )
 
-message("-- Generating code for xdg-shell...")
+message("-- Generating code for xdg-shell")
 
 execute_process (
 	COMMAND ${WaylandScanner_EXECUTABLE} "private-code"
@@ -28,7 +30,7 @@ execute_process (
 target_sources (CpeedLinux PRIVATE "xdg-shell/private.c")
 
 target_include_directories (CpeedLinux
-	PUBLIC "$ENV{VULKAN_SDK}/include"
+	PRIVATE ${Vulkan_INCLUDE_DIRS}
 	PRIVATE ${Wayland_INCLUDE_DIRS}
 )
 target_link_libraries (CpeedLinux ${Wayland_LIBRARIES})
