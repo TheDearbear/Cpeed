@@ -1,4 +1,4 @@
-add_library (CpeedLinux STATIC "linuxmain.h" "linuxmain.c" "linuxwindow.c")
+add_library (CpeedLinux STATIC "linuxmain.h" "linuxmain.c" "linuxwindow.c" "linuxinput.h" "linuxinput.c")
 
 find_package (ECM REQUIRED NO_MODULE)
 set (CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
@@ -8,6 +8,7 @@ find_package (WaylandProtocols REQUIRED)
 find_package (WaylandScanner REQUIRED)
 
 find_package(Vulkan REQUIRED)
+find_package(X11 REQUIRED COMPONENTS xkbcommon)
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell")
 
@@ -32,7 +33,8 @@ target_sources (CpeedLinux PRIVATE "xdg-shell/private.c")
 target_include_directories (CpeedLinux
 	PRIVATE ${Vulkan_INCLUDE_DIRS}
 	PRIVATE ${Wayland_INCLUDE_DIRS}
+	PRIVATE ${X11_xkbcommon_INCLUDE_PATH}
 )
-target_link_libraries (CpeedLinux ${Wayland_LIBRARIES})
+target_link_libraries (CpeedLinux ${Wayland_LIBRARIES} ${X11_xkbcommon_LIB} m)
 
 set_property (TARGET CpeedLinux PROPERTY C_STANDARD 99)

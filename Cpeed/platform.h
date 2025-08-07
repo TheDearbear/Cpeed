@@ -2,8 +2,9 @@
 
 #include <stdbool.h>
 
-#include "common/window.h"
+#include "input.h"
 #include "vulkan.h"
+#include "window.h"
 
 typedef enum CpdCompilePlatform {
     CpdCompilePlatform_Windows,
@@ -48,3 +49,11 @@ extern CpdSize PLATFORM_get_window_size(CpdWindow window);
 extern bool PLATFORM_window_resized(CpdWindow window);
 
 extern bool PLATFORM_window_present_allowed(CpdWindow window);
+
+// == Input
+
+extern bool PLATFORM_set_input_mode(CpdWindow window, CpdInputMode mode);
+extern CpdInputMode PLATFORM_get_input_mode(CpdWindow window);
+
+extern bool PLATFORM_get_events(CpdWindow window, const CpdInputEvent** events, uint32_t* size);
+extern void PLATFORM_clear_event_queue(CpdWindow window);

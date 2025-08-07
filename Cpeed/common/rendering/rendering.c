@@ -6,6 +6,11 @@
 VkCommandBuffer buffer = VK_NULL_HANDLE;
 VkFence render_fence = VK_NULL_HANDLE;
 
+float brightness_red = 1.0f;
+float brightness_green = 1.0f;
+float brightness_blue = 1.0f;
+float brightness_step = 0.05f;
+
 VkResult RENDERING_initialize(CpdRenderer* cpeed_renderer) {
     VkResult result = create_fence(&cpeed_renderer->render_device, &render_fence);
     if (result != VK_SUCCESS) {
@@ -26,6 +31,55 @@ VkResult RENDERING_resize(CpdRenderer* cpeed_renderer, CpdSize new_size) {
     return VK_SUCCESS;
 }
 
+void RENDERING_input(CpdRenderer* cpeed_renderer, CpdWindow window, const CpdInputEvent* events, uint32_t event_count) {
+    for (uint32_t i = 0; i < event_count; i++) {
+        const CpdInputEvent* event = &events[i];
+
+        if (event->type == CpdInputEventType_ButtonPress) {
+            if (event->data.button_press.pressed) {
+                if (event->data.button_press.key_code == CpdKeyCode_Numpad7 && brightness_red < 1.0f) {
+                    brightness_red += brightness_step;
+                    printf("New red brightness: %.2f\n", brightness_red);
+                }
+                else if (event->data.button_press.key_code == CpdKeyCode_Numpad4 && brightness_red > 0.0f) {
+                    brightness_red -= brightness_step;
+                    printf("New red brightness: %.2f\n", brightness_red);
+                }
+                else if (event->data.button_press.key_code == CpdKeyCode_Numpad8 && brightness_green < 1.0f) {
+                    brightness_green += brightness_step;
+                    printf("New green brightness: %.2f\n", brightness_green);
+                }
+                else if (event->data.button_press.key_code == CpdKeyCode_Numpad5 && brightness_green > 0.0f) {
+                    brightness_green -= brightness_step;
+                    printf("New green brightness: %.2f\n", brightness_green);
+                }
+                else if (event->data.button_press.key_code == CpdKeyCode_Numpad9 && brightness_blue < 1.0f) {
+                    brightness_blue += brightness_step;
+                    printf("New blue brightness: %.2f\n", brightness_blue);
+                }
+                else if (event->data.button_press.key_code == CpdKeyCode_Numpad6 && brightness_blue > 0.0f) {
+                    brightness_blue -= brightness_step;
+                    printf("New blue brightness: %.2f\n", brightness_blue);
+                }
+            }
+            else if (event->data.button_press.key_code == CpdKeyCode_Escape) {
+                PLATFORM_window_close(window);
+            }
+        }
+        else if (event->type == CpdInputEventType_Clipboard) {
+            if (event->data.clipboard.action_type == CpdClipboardActionType_Paste) {
+                printf("Paste data\n");
+            }
+            else if (event->data.button_press.key_code == CpdClipboardActionType_Copy) {
+                printf("Copy data\n");
+            }
+            else if (event->data.button_press.key_code == CpdClipboardActionType_Cut) {
+                printf("Cut data\n");
+            }
+        }
+    }
+}
+
 static void begin_rendering(CpdRenderer* cpeed_renderer, VkCommandBuffer buffer) {
     CpdImage* image = &cpeed_renderer->swapchain.images[cpeed_renderer->swapchain.current_image].image;
 
@@ -36,9 +90,9 @@ static void begin_rendering(CpdRenderer* cpeed_renderer, VkCommandBuffer buffer)
         .resolveMode = VK_RESOLVE_MODE_NONE,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue.color.float32[0] = 1.0f,
-        .clearValue.color.float32[1] = 0,
-        .clearValue.color.float32[2] = 0,
+        .clearValue.color.float32[0] = brightness_red,
+        .clearValue.color.float32[1] = brightness_green,
+        .clearValue.color.float32[2] = brightness_blue,
         .clearValue.color.float32[3] = 1.0f
     };
 

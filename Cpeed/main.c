@@ -37,7 +37,8 @@ int main() {
     CpdWindowInfo windowInfo = {
         .title = "Cpeed",
         .size.width = 800,
-        .size.height = 600
+        .size.height = 600,
+        .input_mode = CpdInputMode_KeyCode
     };
     g_window = PLATFORM_create_window(&windowInfo);
 
@@ -95,6 +96,12 @@ int main() {
                 printf("Unable to adapt for new surface size. Result code: %s\n", string_VkResult(result));
                 continue;
             }
+        }
+
+        const CpdInputEvent* input_events = 0;
+        uint32_t input_event_count = 0;
+        if (PLATFORM_get_events(g_window, &input_events, &input_event_count)) {
+            RENDERING_input(renderer, g_window, input_events, input_event_count);
         }
 
         renderer->render_settings->allow_render = PLATFORM_window_present_allowed(g_window);

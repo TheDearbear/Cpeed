@@ -5,16 +5,24 @@
 #include "linuxmain.h"
 
 void* g_vulkan;
+struct xkb_context* g_xkb_context;
 
 CpdCompilePlatform PLATFORM_compile_platform() {
     return CpdCompilePlatform_Linux;
 }
 
 bool PLATFORM_initialize() {
-    return true;
+    g_xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+
+    return g_xkb_context != 0;
 }
 
-void PLATFORM_shutdown() { }
+void PLATFORM_shutdown() {
+    if (g_xkb_context != 0) {
+        xkb_context_unref(g_xkb_context);
+        g_xkb_context = 0;
+    }
+}
 
 uint64_t PLATFORM_get_clock_usec() {
     struct timespec clock;

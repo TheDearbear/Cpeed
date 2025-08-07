@@ -4,9 +4,11 @@
 
 # Add source to this project's executable.
 add_executable (Cpeed
+  "input.h"
   "main.c" "main.h"
   "platform.h"
   "vulkan.c" "vulkan.h"
+  "window.h"
 
   "common/rendering/rendering.c" "common/rendering/rendering.h"
   
@@ -18,7 +20,10 @@ add_executable (Cpeed
   "common/shortcuts.c" "common/shortcuts.h"
   "common/surface.c" "common/surface.h"
   "common/swapchain.c" "common/swapchain.h"
-  "common/window.h")
+
+  "input/clipboard.h"
+  "input/keyboard.h"
+  "input/mouse.h")
 
 find_package(Vulkan REQUIRED)
 

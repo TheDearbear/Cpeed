@@ -1,6 +1,6 @@
 #pragma once
 
-#include "general.h"
+#include "common/general.h"
 
 typedef void* CpdWindow;
 
@@ -11,5 +11,5 @@ typedef struct CpdWindowInfo {
     char* title;
     CpdSize size;
     CpdWindowFlags flags;
-    CpdWindow* handle;
+    CpdInputMode input_mode;
 } CpdWindowInfo;

@@ -3,15 +3,19 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "linuxinput.h"
 #include "linuxmain.h"
 
 static int g_windows_created;
+static CpdWaylandWindowListNode* g_windows_list;
+
 static struct wl_compositor* g_compositor;
 static struct wl_registry* g_registry;
 static struct xdg_wm_base* g_wm_base;
 
 struct wl_display* g_display;
 
+static void cleanup_input_queue(CpdInputEvent* events, uint32_t size);
 static bool initialize_wayland();
 static void registry_global(
     void* data, struct wl_registry* wl_registry, uint32_t name,
@@ -47,14 +51,110 @@ static struct wl_callback_listener frame_listener = (struct wl_callback_listener
     .done = frame_done
 };
 
-CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
-    if (g_compositor == 0 && !initialize_wayland()) {
+static CpdWaylandWindowListNode* add_window_to_list(CpdWaylandWindow* window) {
+    for (CpdWaylandWindowListNode* current_node = g_windows_list; current_node != 0; current_node = current_node->next) {
+        if (current_node->window == window) {
+            return current_node;
+        }
+    }
+
+    CpdWaylandWindowListNode* node = (CpdWaylandWindowListNode*)malloc(sizeof(CpdWaylandWindowListNode));
+    if (node == 0) {
         return 0;
     }
 
+    node->previous = 0;
+    node->next = 0;
+    node->window = window;
+
+    if (g_windows_list == 0) {
+        g_windows_list = node;
+        return node;
+    }
+
+    CpdWaylandWindowListNode* current_node = g_windows_list;
+    while (current_node->next != 0) {
+        current_node = current_node->next;
+    }
+
+    current_node->next = node;
+    node->previous = current_node;
+
+    return node;
+}
+
+static void remove_window_from_list(CpdWaylandWindow* window) {
+    if (g_windows_list == 0) {
+        return;
+    }
+
+    if (g_windows_list->next == 0 && g_windows_list->window == window) {
+        free(g_windows_list);
+        g_windows_list = 0;
+        return;
+    }
+
+    CpdWaylandWindowListNode* current_node = g_windows_list;
+    do {
+        if (current_node->window == window) {
+            if (current_node->previous != 0) {
+                current_node->previous->next = current_node->next;
+            }
+
+            if (current_node->next != 0) {
+                current_node->next->previous = current_node->previous;
+            }
+
+            free(current_node);
+            break;
+        }
+
+        current_node = current_node->next;
+    } while (current_node != 0);
+}
+
+CpdWaylandWindow* find_window_by_surface(struct wl_surface* surface) {
+    for (CpdWaylandWindowListNode* current_node = g_windows_list; current_node != 0; current_node = current_node->next) {
+        if (current_node->window->surface == surface) {
+            return current_node->window;
+        }
+    }
+
+    return 0;
+}
+
+CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)malloc(sizeof(CpdWaylandWindow));
     if (wl_window == 0) {
         printf("%s", "Unable to allocate window\n");
+        return 0;
+    }
+
+    CpdInputEvent* input_queue = (CpdInputEvent*)malloc(INPUT_QUEUE_BASE_SIZE * sizeof(CpdInputEvent));
+    CpdInputEvent* input_swap_queue = (CpdInputEvent*)malloc(INPUT_QUEUE_BASE_SIZE * sizeof(CpdInputEvent));
+    if (input_queue == 0 || input_swap_queue == 0) {
+        free(input_queue);
+        free(input_swap_queue);
+        free(wl_window);
+        printf("%s", "Unable to allocate window data\n");
+        return 0;
+    }
+
+    CpdWaylandWindowListNode* node = add_window_to_list(wl_window);
+    if (node == 0) {
+        free(input_queue);
+        free(input_swap_queue);
+        free(wl_window);
+        printf("%s", "Unable to allocate list node for window\n");
+        return 0;
+    }
+
+    if (g_compositor == 0 && !initialize_wayland()) {
+        remove_window_from_list(wl_window);
+
+        free(input_queue);
+        free(input_swap_queue);
+        free(wl_window);
         return 0;
     }
 
@@ -73,11 +173,25 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
     wl_window->callback = callback;
     wl_window->shell_surface = shell_surface;
     wl_window->top_level = top_level;
+
+    wl_window->input_mode = info->input_mode;
+    wl_window->input_queue_size = 0;
+    wl_window->input_swap_queue_size = 0;
+    wl_window->input_queue_max_size = INPUT_QUEUE_BASE_SIZE;
+    wl_window->input_queue = input_queue;
+    wl_window->input_swap_queue = input_swap_queue;
+
     wl_window->width = info->size.width;
     wl_window->height = info->size.height;
+
+    wl_window->mouse_x = 0;
+    wl_window->mouse_y = 0;
+
     wl_window->resized = false;
     wl_window->should_close = false;
     wl_window->should_render = true;
+    wl_window->resize_swap_queue = false;
+    wl_window->first_mouse_event = true;
 
     xdg_toplevel_set_title(top_level, info->title);
     xdg_toplevel_set_app_id(top_level, "Cpeed");
@@ -98,16 +212,37 @@ void PLATFORM_window_destroy(CpdWindow window) {
 
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
 
+    if (g_current_pointer_focus == wl_window) {
+        g_current_pointer_focus = 0;
+    }
+
+    if (g_current_keyboard_focus == wl_window) {
+        g_current_keyboard_focus = 0;
+    }
+
     xdg_toplevel_destroy(wl_window->top_level);
     xdg_surface_destroy(wl_window->shell_surface);
     wl_callback_destroy(wl_window->callback);
     wl_surface_destroy(wl_window->surface);
 
+    cleanup_input_queue(wl_window->input_queue, wl_window->input_queue_size);
+    cleanup_input_queue(wl_window->input_swap_queue, wl_window->input_swap_queue_size);
+
+    remove_window_from_list(wl_window);
+
+    free(wl_window->input_queue);
+    free(wl_window->input_swap_queue);
     free(wl_window);
     
     if (--g_windows_created == 0) {
         xdg_wm_base_destroy(g_wm_base);
         g_wm_base = 0;
+
+        destroy_pointer();
+        destroy_keyboard();
+
+        wl_seat_destroy(g_seat);
+        g_seat = 0;
 
         wl_compositor_destroy(g_compositor);
         g_compositor = 0;
@@ -191,12 +326,88 @@ bool PLATFORM_window_present_allowed(CpdWindow window) {
     return result;
 }
 
+bool PLATFORM_set_input_mode(CpdWindow window, CpdInputMode mode) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
+
+    if (wl_window->input_queue_size != 0) {
+        return false;
+    }
+
+    wl_window->input_mode = mode;
+    return true;
+}
+
+CpdInputMode PLATFORM_get_input_mode(CpdWindow window) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
+
+    return wl_window->input_mode;
+}
+
+bool PLATFORM_get_events(CpdWindow window, const CpdInputEvent** events, uint32_t* size) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
+
+    if (wl_window->input_queue_size == 0) {
+        return false;
+    }
+
+    if (wl_window->resize_swap_queue) {
+        CpdInputEvent* swap_queue = (CpdInputEvent*)malloc(wl_window->input_queue_max_size * sizeof(CpdInputEvent));
+
+        if (swap_queue == 0) {
+            return false;
+        }
+
+        free(wl_window->input_swap_queue);
+        wl_window->input_swap_queue = swap_queue;
+        wl_window->resize_swap_queue = false;
+    }
+
+    *events = wl_window->input_queue;
+    *size = wl_window->input_queue_size;
+
+    uint32_t temp_size = wl_window->input_queue_size;
+    wl_window->input_queue_size = wl_window->input_swap_queue_size;
+    wl_window->input_swap_queue_size = temp_size;
+
+    CpdInputEvent* temp_queue = wl_window->input_queue;
+    wl_window->input_queue = wl_window->input_swap_queue;
+    wl_window->input_swap_queue = temp_queue;
+
+    PLATFORM_clear_event_queue(window);
+
+    return true;
+}
+
+void PLATFORM_clear_event_queue(CpdWindow window) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
+
+    cleanup_input_queue(wl_window->input_queue, wl_window->input_queue_size);
+
+    wl_window->input_queue_size = 0;
+}
+
+static void cleanup_input_queue(CpdInputEvent* events, uint32_t size) {
+    for (uint32_t i = 0; i < size; i++) {
+        CpdInputEvent* event = &events[i];
+
+        if (event->type == CpdInputEventType_TextInput) {
+            free(event->data.text_input.text);
+            event->data.text_input.text = 0;
+        }
+    }
+}
+
 static void registry_global(
     void* data, struct wl_registry* wl_registry, uint32_t name,
     const char* interface, uint32_t version
 ) {
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
         g_compositor = (struct wl_compositor*)wl_registry_bind(wl_registry, name, &wl_compositor_interface, version);
+    }
+    else if (strcmp(interface, wl_seat_interface.name) == 0) {
+        g_seat = (struct wl_seat*)wl_registry_bind(wl_registry, name, &wl_seat_interface, version);
+
+        wl_seat_add_listener(g_seat, &seat_listener, 0);
     }
     else if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
         g_wm_base = (struct xdg_wm_base*)wl_registry_bind(wl_registry, name, &xdg_wm_base_interface, version);
