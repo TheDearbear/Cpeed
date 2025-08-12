@@ -41,6 +41,7 @@ typedef struct CpdWaylandWindow {
     uint64_t should_render : 1;
     uint64_t resize_swap_queue : 1;
     uint64_t first_mouse_event : 1;
+    uint64_t maximized : 1;
 } CpdWaylandWindow;
 
 typedef struct CpdWaylandWindowListNode {

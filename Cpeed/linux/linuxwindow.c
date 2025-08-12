@@ -192,6 +192,7 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
     wl_window->should_render = true;
     wl_window->resize_swap_queue = false;
     wl_window->first_mouse_event = true;
+    wl_window->maximized = false;
 
     xdg_toplevel_set_title(top_level, info->title);
     xdg_toplevel_set_app_id(top_level, "Cpeed");
@@ -451,6 +452,18 @@ static void surface_configure(void* data, struct xdg_surface* xdg_surface, uint3
 }
 
 static void top_level_configure(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height, struct wl_array* states) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)data;
+    bool maximized = false;
+
+    const int32_t* state;
+    wl_array_for_each(state, states) {
+        if (*state == XDG_TOPLEVEL_STATE_MAXIMIZED) {
+            maximized = true;
+        }
+    }
+
+    wl_window->maximized = maximized;
+
     top_level_configure_bounds(data, xdg_toplevel, width, height);
 }
 
@@ -463,9 +476,18 @@ static void top_level_close(void* data, struct xdg_toplevel* xdg_toplevel) {
 static void top_level_configure_bounds(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)data;
 
-    if (width != 0 && height != 0) {
-        wl_window->width = min_i32(width, wl_window->width);
-        wl_window->height = min_i32(height, wl_window->height);
+    if (!wl_window->maximized) {
+        width = min_i32(width, wl_window->width);
+        height = min_i32(height, wl_window->height);
+    }
+
+    if (width != 0 && width != wl_window->width) {
+        wl_window->width = width;
+        wl_window->resized = true;
+    }
+
+    if (height != 0 && height != wl_window->height) {
+        wl_window->height = height;
         wl_window->resized = true;
     }
 }
@@ -477,8 +499,9 @@ static void top_level_wm_capabilities(void* data, struct xdg_toplevel* xdg_tople
 
     printf("%s", "Window capabilities:");
 
-    for (uint32_t i = 0; i < capabilities->size; i++) {
-        printf(" %d", ((uint32_t*)capabilities->data)[i]);
+    const uint32_t* capability;
+    wl_array_for_each(capability, capabilities) {
+        printf(" %d", *capability);
     }
 
     printf("%s", "\n");
