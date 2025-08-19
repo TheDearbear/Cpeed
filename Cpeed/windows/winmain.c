@@ -7,11 +7,11 @@ CpdCompilePlatform PLATFORM_compile_platform() {
     return CpdCompilePlatform_Windows;
 }
 
-bool PLATFORM_initialize() {
+bool initialize_platform() {
     return QueryPerformanceFrequency(&counter_frequency) != 0;
 }
 
-void PLATFORM_shutdown() { }
+void shutdown_platform() { }
 
 uint64_t PLATFORM_get_clock_usec() {
     LARGE_INTEGER counter;

@@ -23,7 +23,7 @@ static void load_global_pointers();
 static void load_instance_pointers(CpdInstanceVulkanExtensions* extensions);
 
 int main() {
-    if (!PLATFORM_initialize()) {
+    if (!initialize_platform()) {
         printf("Unable to initialize platform-specific information\n");
         return -1;
     }
@@ -100,7 +100,7 @@ int main() {
 
         const CpdInputEvent* input_events = 0;
         uint32_t input_event_count = 0;
-        if (PLATFORM_get_events(g_window, &input_events, &input_event_count)) {
+        if (get_window_input_events(g_window, &input_events, &input_event_count)) {
             RENDERING_input(renderer, g_window, input_events, input_event_count);
         }
 
@@ -170,7 +170,7 @@ shutdown:
     }
 
     PLATFORM_free_vulkan_lib();
-    PLATFORM_shutdown();
+    shutdown_platform();
 }
 
 static VkResult create_renderer(CpdRenderer** renderer, CpdRendererInitParams* params) {

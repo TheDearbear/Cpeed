@@ -1,6 +1,9 @@
-#include "winmain.h"
 #include <math.h>
 #include <stdio.h>
+#include <windows.h>
+
+#include "../platform/input.h"
+#include "winmain.h"
 
 static int windows_created = 0;
 static ATOM window_class = 0;
@@ -126,7 +129,7 @@ bool PLATFORM_window_present_allowed(CpdWindow window) {
     return !data->minimized;
 }
 
-bool PLATFORM_set_input_mode(CpdWindow window, CpdInputMode mode) {
+bool set_window_input_mode(CpdWindow window, CpdInputMode mode) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     if (data->input_queue_size != 0) {
@@ -137,13 +140,13 @@ bool PLATFORM_set_input_mode(CpdWindow window, CpdInputMode mode) {
     return true;
 }
 
-CpdInputMode PLATFORM_get_input_mode(CpdWindow window) {
+CpdInputMode get_window_input_mode(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     return data->input_mode;
 }
 
-bool PLATFORM_get_events(CpdWindow window, const CpdInputEvent** events, uint32_t* size) {
+bool get_window_input_events(CpdWindow window, const CpdInputEvent** events, uint32_t* size) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     if (data->input_queue_size == 0) {
@@ -173,12 +176,12 @@ bool PLATFORM_get_events(CpdWindow window, const CpdInputEvent** events, uint32_
     data->input_queue = data->input_swap_queue;
     data->input_swap_queue = temp_queue;
 
-    PLATFORM_clear_event_queue(window);
+    clear_window_event_queue(window);
 
     return true;
 }
 
-void PLATFORM_clear_event_queue(CpdWindow window) {
+void clear_window_event_queue(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     cleanup_input_queue(data->input_queue, data->input_queue_size);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../vulkan.h"
+#include <stdint.h>
 
 typedef struct CpdSize {
     unsigned short width;

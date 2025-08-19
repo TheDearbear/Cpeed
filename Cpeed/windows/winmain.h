@@ -7,6 +7,7 @@
 
 #include "../vulkan.h"
 #include "../platform.h"
+#include "../input.h"
 
 #include <windowsx.h>
 

@@ -7,6 +7,8 @@
 
 #include "vulkan.h"
 #include "platform.h"
+#include "platform/init.h"
+#include "platform/input.h"
 #include "common/renderer.h"
 #include "common/shortcuts.h"
 #include "common/surface.h"

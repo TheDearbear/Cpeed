@@ -8,7 +8,6 @@ add_executable (Cpeed
   "main.c" "main.h"
   "platform.h"
   "vulkan.c" "vulkan.h"
-  "window.h"
 
   "common/rendering/rendering.c" "common/rendering/rendering.h"
   
@@ -23,7 +22,11 @@ add_executable (Cpeed
 
   "input/clipboard.h"
   "input/keyboard.h"
-  "input/mouse.h")
+  "input/mouse.h"
+
+  "platform/init.h"
+  "platform/input.h"
+  "platform/window.h")
 
 find_package(Vulkan REQUIRED)
 

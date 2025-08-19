@@ -3,34 +3,25 @@
 #include <time.h>
 
 #include "linuxmain.h"
+#include "linuxwayland.h"
 
 void* g_vulkan;
-struct xkb_context* g_xkb_context;
 
 CpdCompilePlatform PLATFORM_compile_platform() {
     return CpdCompilePlatform_Linux;
 }
 
-bool PLATFORM_initialize() {
-    g_xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-
-    return g_xkb_context != 0;
-}
-
-void PLATFORM_shutdown() {
-    if (g_xkb_context != 0) {
-        xkb_context_unref(g_xkb_context);
-        g_xkb_context = 0;
-    }
-}
-
-uint64_t PLATFORM_get_clock_usec() {
+uint64_t get_clock() {
     struct timespec clock;
     if (clock_gettime(CLOCK_MONOTONIC, &clock) != 0) {
         return 0;
     }
 
     return ((uint64_t)clock.tv_sec * 1000000) + (clock.tv_nsec / 1000);
+}
+
+uint64_t PLATFORM_get_clock_usec() {
+    return get_clock();
 }
 
 PFN_vkGetInstanceProcAddr PLATFORM_load_vulkan_lib() {
@@ -104,4 +95,15 @@ VkResult PLATFORM_create_surface(VkInstance instance, CpdWindow window, VkSurfac
     };
 
     return vkCreateWaylandSurfaceKHR(instance, &create_info, VK_NULL_HANDLE, surface);
+}
+
+void cleanup_input_queue(CpdInputEvent* events, uint32_t size) {
+    for (uint32_t i = 0; i < size; i++) {
+        CpdInputEvent* event = &events[i];
+
+        if (event->type == CpdInputEventType_TextInput) {
+            free(event->data.text_input.text);
+            event->data.text_input.text = 0;
+        }
+    }
 }
