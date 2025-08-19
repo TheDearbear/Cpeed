@@ -9,12 +9,23 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
+cmake_policy(SET CMP0069 NEW)
 cmake_policy(SET CMP0079 NEW)
+
+include(CheckIPOSupported)
 
 project ("Cpeed" C)
 
 # Include sub-projects.
 add_subdirectory ("Cpeed")
+
+check_ipo_supported(RESULT ipo_supported)
+if (ipo_supported)
+  set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+  message("-- IPO is enabled")
+else()
+  message("-- IPO is NOT enabled")
+endif()
 
 if (WIN32)
   add_subdirectory ("Cpeed/windows")
