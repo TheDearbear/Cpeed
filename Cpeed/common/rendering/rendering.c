@@ -70,10 +70,10 @@ void RENDERING_input(CpdRenderer* cpeed_renderer, CpdWindow window, const CpdInp
             if (event->data.clipboard.action_type == CpdClipboardActionType_Paste) {
                 printf("Paste data\n");
             }
-            else if (event->data.button_press.key_code == CpdClipboardActionType_Copy) {
+            else if (event->data.clipboard.action_type == CpdClipboardActionType_Copy) {
                 printf("Copy data\n");
             }
-            else if (event->data.button_press.key_code == CpdClipboardActionType_Cut) {
+            else if (event->data.clipboard.action_type == CpdClipboardActionType_Cut) {
                 printf("Cut data\n");
             }
         }
