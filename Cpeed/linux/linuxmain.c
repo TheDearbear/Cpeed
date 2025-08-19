@@ -1,7 +1,10 @@
+#define VK_USE_PLATFORM_WAYLAND_KHR
+
 #include <dlfcn.h>
 #include <malloc.h>
 #include <time.h>
 
+#include "../platform.h"
 #include "linuxmain.h"
 #include "linuxwayland.h"
 

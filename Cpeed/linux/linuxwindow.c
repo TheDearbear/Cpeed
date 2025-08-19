@@ -2,6 +2,7 @@
 #include <malloc.h>
 #include <stdio.h>
 
+#include "../platform/window.h"
 #include "../input.h"
 #include "linuxmain.h"
 #include "linuxwayland.h"

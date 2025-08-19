@@ -16,6 +16,12 @@ extern struct wl_seat_listener g_seat_listener;
 
 extern struct xkb_context* g_xkb_context;
 
+typedef struct CpdPressedButton {
+    struct CpdPressedButton* next;
+    uint64_t time;
+    CpdKeyCode key_code;
+} CpdPressedButton;
+
 typedef struct CpdWaylandKeyboard {
     struct wl_keyboard* keyboard;
     struct xkb_keymap* keymap;
