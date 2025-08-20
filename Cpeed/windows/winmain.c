@@ -1,17 +1,13 @@
 #include "winmain.h"
 
 HMODULE g_vulkan;
-LARGE_INTEGER counter_frequency;
+
+LARGE_INTEGER g_counter_frequency;
+ATOM g_window_class;
 
 CpdCompilePlatform PLATFORM_compile_platform() {
     return CpdCompilePlatform_Windows;
 }
-
-bool initialize_platform() {
-    return QueryPerformanceFrequency(&counter_frequency) != 0;
-}
-
-void shutdown_platform() { }
 
 uint64_t PLATFORM_get_clock_usec() {
     LARGE_INTEGER counter;
@@ -19,7 +15,7 @@ uint64_t PLATFORM_get_clock_usec() {
         return 0;
     }
 
-    return counter.QuadPart * 1000000 / counter_frequency.QuadPart;
+    return counter.QuadPart * 1000000 / g_counter_frequency.QuadPart;
 }
 
 PFN_vkGetInstanceProcAddr PLATFORM_load_vulkan_lib() {
@@ -91,4 +87,15 @@ VkResult PLATFORM_create_surface(VkInstance instance, CpdWindow window, VkSurfac
     };
 
     return vkCreateWin32SurfaceKHR(instance, &create_info, VK_NULL_HANDLE, surface);
+}
+
+void cleanup_input_queue(CpdInputEvent* queue, uint32_t size) {
+    for (uint32_t i = 0; i < size; i++) {
+        CpdInputEvent* event = &queue[i];
+
+        if (event->type == CpdInputEventType_TextInput) {
+            free(event->data.text_input.text);
+            event->data.text_input.text = 0;
+        }
+    }
 }
