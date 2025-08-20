@@ -10,21 +10,17 @@
 
 void* g_vulkan;
 
-CpdCompilePlatform PLATFORM_compile_platform() {
+CpdCompilePlatform compile_platform() {
     return CpdCompilePlatform_Linux;
 }
 
-uint64_t get_clock() {
+uint64_t get_clock_usec() {
     struct timespec clock;
     if (clock_gettime(CLOCK_MONOTONIC, &clock) != 0) {
         return 0;
     }
 
     return ((uint64_t)clock.tv_sec * 1000000) + (clock.tv_nsec / 1000);
-}
-
-uint64_t PLATFORM_get_clock_usec() {
-    return get_clock();
 }
 
 PFN_vkGetInstanceProcAddr PLATFORM_load_vulkan_lib() {

@@ -5,11 +5,11 @@ HMODULE g_vulkan;
 LARGE_INTEGER g_counter_frequency;
 ATOM g_window_class;
 
-CpdCompilePlatform PLATFORM_compile_platform() {
+CpdCompilePlatform compile_platform() {
     return CpdCompilePlatform_Windows;
 }
 
-uint64_t PLATFORM_get_clock_usec() {
+uint64_t get_clock_usec() {
     LARGE_INTEGER counter;
     if (!QueryPerformanceCounter(&counter)) {
         return 0;

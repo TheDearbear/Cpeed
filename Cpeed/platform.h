@@ -15,11 +15,9 @@ typedef struct CpdPlatformExtensions {
     uint32_t count;
 } CpdPlatformExtensions;
 
-// == Generic
+extern CpdCompilePlatform compile_platform();
 
-extern CpdCompilePlatform PLATFORM_compile_platform();
-
-extern uint64_t PLATFORM_get_clock_usec();
+extern uint64_t get_clock_usec();
 
 // == Vulkan
 

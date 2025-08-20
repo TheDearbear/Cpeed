@@ -41,4 +41,3 @@ typedef struct CpdWaylandWindow {
 } CpdWaylandWindow;
 
 void cleanup_input_queue(CpdInputEvent* events, uint32_t size);
-uint64_t get_clock();

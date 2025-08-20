@@ -147,7 +147,7 @@ int main() {
             printf("Unable to present swapchain. Result code: %s\n", string_VkResult(result));
         }
 
-        renderer->last_frame_end = PLATFORM_get_clock_usec();
+        renderer->last_frame_end = get_clock_usec();
     }
 
     printf("Goodbye!\n");

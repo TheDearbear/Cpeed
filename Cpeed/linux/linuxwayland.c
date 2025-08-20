@@ -453,7 +453,7 @@ static void add_mouse_button_event(CpdWaylandWindow* wl_window, CpdMouseButtonTy
     wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_MouseButtonPress,
         .modifiers = g_keyboard.modifiers,
-        .time = get_clock(),
+        .time = get_clock_usec(),
         .data.mouse_button_press.button = type,
         .data.mouse_button_press.pressed = pressed
     };
@@ -464,7 +464,7 @@ static void add_button_press_event(CpdWaylandWindow* wl_window, CpdKeyCode keyCo
         return;
     }
 
-    uint64_t moment = get_clock();
+    uint64_t moment = get_clock_usec();
     CpdPressedButton* entry = find_entry_by_key_code(keyCode);
 
     if (!pressed && entry != 0)
@@ -523,7 +523,7 @@ static void add_char_input_event(CpdWaylandWindow* wl_window, uint32_t character
     wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_CharInput,
         .modifiers = g_keyboard.modifiers,
-        .time = get_clock(),
+        .time = get_clock_usec(),
         .data.char_input.character = character,
         .data.char_input.length = length
     };
@@ -537,7 +537,7 @@ static void add_mouse_scroll_event(CpdWaylandWindow* wl_window, enum wl_pointer_
     wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_MouseScroll,
         .modifiers = g_keyboard.modifiers,
-        .time = get_clock(),
+        .time = get_clock_usec(),
         .data.mouse_scroll.vertical_scroll = axis == WL_POINTER_AXIS_VERTICAL_SCROLL ? value : 0,
         .data.mouse_scroll.horizontal_scroll = axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL ? value : 0
     };
@@ -549,7 +549,7 @@ static void add_current_mouse_event(CpdWaylandWindow* wl_window) {
     }
 
     g_current_pointer_event.modifiers = g_keyboard.modifiers;
-    g_current_pointer_event.time = get_clock();
+    g_current_pointer_event.time = get_clock_usec();
 
     wl_window->input_queue[wl_window->input_queue_size++] = g_current_pointer_event;
 
@@ -572,7 +572,7 @@ void insert_repeating_key_events(CpdWaylandWindow* wl_window) {
         return;
     }
 
-    uint64_t moment = get_clock();
+    uint64_t moment = get_clock_usec();
     uint64_t from_time = wl_window->last_repeating_key_events_insert_time;
     uint32_t new_events = 0;
 
