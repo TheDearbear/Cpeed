@@ -20,6 +20,8 @@ typedef struct CpdPressedButton {
     struct CpdPressedButton* next;
     uint64_t time;
     CpdKeyCode key_code;
+    xkb_keycode_t xkb_key_code;
+    uint32_t current_presses;
 } CpdPressedButton;
 
 typedef struct CpdWaylandKeyboard {
@@ -36,10 +38,11 @@ typedef struct CpdWaylandKeyboard {
     uint32_t mods_locked;
     uint32_t group;
 
-    int32_t repeat_delay;
-    int32_t repeat_rate;
-    bool server_side_repeating;
+    uint32_t repeat_delay;
+    uint32_t repeat_rate;
 } CpdWaylandKeyboard;
 
-extern void destroy_pointer();
-extern void destroy_keyboard();
+void destroy_pointer();
+void destroy_keyboard();
+
+void insert_repeating_key_events(CpdWaylandWindow* wl_window);

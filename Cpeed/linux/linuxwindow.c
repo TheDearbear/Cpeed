@@ -84,6 +84,8 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
     wl_window->mouse_x = 0;
     wl_window->mouse_y = 0;
 
+    wl_window->last_repeating_key_events_insert_time = 0;
+
     wl_window->resized = false;
     wl_window->should_close = false;
     wl_window->should_render = true;

@@ -52,5 +52,6 @@ typedef union CpdInputEventData {
 typedef struct CpdInputEvent {
     CpdInputEventType type;
     CpdInputModifierKeyFlags modifiers;
+    uint64_t time;
     CpdInputEventData data;
 } CpdInputEvent;

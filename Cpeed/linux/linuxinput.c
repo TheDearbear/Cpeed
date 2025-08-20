@@ -2,6 +2,7 @@
 
 #include "../platform/input.h"
 #include "linuxmain.h"
+#include "linuxwayland.h"
 
 bool set_window_input_mode(CpdWindow window, CpdInputMode mode) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
@@ -22,6 +23,8 @@ CpdInputMode get_window_input_mode(CpdWindow window) {
 
 bool get_window_input_events(CpdWindow window, const CpdInputEvent** events, uint32_t* size) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
+
+    insert_repeating_key_events(wl_window);
 
     if (wl_window->input_queue_size == 0) {
         return false;

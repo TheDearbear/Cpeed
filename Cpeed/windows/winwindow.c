@@ -255,6 +255,7 @@ static LRESULT add_button_press_to_queue(WindowExtraData* data, LPARAM lParam, C
     data->input_queue[data->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_ButtonPress,
         .modifiers = data->current_key_modifiers,
+        .time = PLATFORM_get_clock_usec(),
         .data.button_press.key_code = keyCode,
         .data.button_press.pressed = (HIWORD(lParam) & KF_UP) == 0
     };
@@ -270,6 +271,7 @@ static LRESULT add_mouse_scroll_to_queue(WindowExtraData* data, int32_t vertical
     data->input_queue[data->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_MouseScroll,
         .modifiers = data->current_key_modifiers,
+        .time = PLATFORM_get_clock_usec(),
         .data.mouse_scroll.vertical_scroll = vertical,
         .data.mouse_scroll.horizontal_scroll = horizontal
     };
@@ -285,6 +287,7 @@ static LRESULT add_char_input_to_queue(WindowExtraData* data, uint32_t character
     data->input_queue[data->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_CharInput,
         .modifiers = data->current_key_modifiers,
+        .time = PLATFORM_get_clock_usec(),
         .data.char_input.character = character,
         .data.char_input.length = length
     };
@@ -300,6 +303,7 @@ static LRESULT add_mouse_button_press_to_queue(WindowExtraData* data, CpdMouseBu
     data->input_queue[data->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_MouseButtonPress,
         .modifiers = data->current_key_modifiers,
+        .time = PLATFORM_get_clock_usec(),
         .data.mouse_button_press.button = button,
         .data.mouse_button_press.pressed = pressed
     };
@@ -326,6 +330,7 @@ static LRESULT add_mouse_move_to_queue(WindowExtraData* data, int16_t new_x, int
     data->input_queue[data->input_queue_size++] = (CpdInputEvent){
         .type = CpdInputEventType_MouseMove,
         .modifiers = data->current_key_modifiers,
+        .time = PLATFORM_get_clock_usec(),
         .data.mouse_move.x_pos = new_x,
         .data.mouse_move.y_pos = new_y,
         .data.mouse_move.x_move = delta_x,

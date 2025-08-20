@@ -30,6 +30,8 @@ typedef struct CpdWaylandWindow {
     int32_t mouse_x;
     int32_t mouse_y;
 
+    uint64_t last_repeating_key_events_insert_time;
+
     uint64_t resized : 1;
     uint64_t should_close : 1;
     uint64_t should_render : 1;

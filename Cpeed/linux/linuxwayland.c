@@ -36,13 +36,16 @@ static CpdWaylandKeyboard g_keyboard;
 static bool resize_input_queue_if_need(CpdWaylandWindow* window, uint32_t new_events);
 static void queue_mouse_move_event(CpdWaylandWindow* wl_window, wl_fixed_t surface_x, wl_fixed_t surface_y);
 static void add_mouse_button_event(CpdWaylandWindow* wl_window, CpdMouseButtonType type, bool pressed);
-static void add_button_press_event(CpdWaylandWindow* wl_window, CpdKeyCode keyCode, bool pressed);
+static void add_button_press_event(CpdWaylandWindow* wl_window, CpdKeyCode keyCode, xkb_keycode_t xkbKeyCode, bool pressed);
 static void add_char_input_event(CpdWaylandWindow* wl_window, uint32_t character, uint32_t length);
 static void add_mouse_scroll_event(CpdWaylandWindow* wl_window, enum wl_pointer_axis axis, int32_t value);
 static void add_current_mouse_event(CpdWaylandWindow* wl_window);
 
 static void sync_keyboard_modifiers();
 static CpdKeyCode map_key_code(uint32_t keyCode);
+
+static CpdPressedButton* find_entry_by_key_code(CpdKeyCode keyCode);
+static CpdPressedButton* find_entry_before(CpdPressedButton* entry);
 
 static void noop() {}
 
@@ -91,7 +94,6 @@ void destroy_keyboard() {
 
     g_keyboard.repeat_delay = 0;
     g_keyboard.repeat_rate = 0;
-    g_keyboard.server_side_repeating = false;
 }
 
 
@@ -171,7 +173,7 @@ static void pointer_axis_scroll(void* data, struct wl_pointer* wl_pointer, uint3
     add_mouse_scroll_event(g_current_keyboard_focus, (enum wl_pointer_axis)axis, value);
 }
 
-static struct wl_pointer_listener pointer_listener_new = (struct wl_pointer_listener){
+static struct wl_pointer_listener pointer_listener_new = (struct wl_pointer_listener) {
     .enter = pointer_enter,
     .leave = pointer_leave,
     .motion = pointer_motion,
@@ -185,7 +187,7 @@ static struct wl_pointer_listener pointer_listener_new = (struct wl_pointer_list
     .axis_relative_direction = noop
 };
 
-static struct wl_pointer_listener pointer_listener_old = (struct wl_pointer_listener){
+static struct wl_pointer_listener pointer_listener_old = (struct wl_pointer_listener) {
     .enter = pointer_enter,
     .leave = pointer_leave,
     .motion = pointer_motion,
@@ -269,7 +271,7 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
 
         CpdKeyCode keyCode = map_key_code(key);
         if (keyCode != CpdKeyCode_Invalid) {
-            add_button_press_event(g_current_keyboard_focus, keyCode, pressed);
+            add_button_press_event(g_current_keyboard_focus, keyCode, (xkb_keycode_t)(key + 8), pressed);
         }
     }
 
@@ -324,13 +326,11 @@ static void sync_keyboard_modifiers() {
 }
 
 static void keyboard_repeat_info(void* data, struct wl_keyboard* wl_keyboard, int32_t rate, int32_t delay) {
-    g_keyboard.repeat_rate = rate;
-    g_keyboard.repeat_delay = delay;
-
-    g_keyboard.server_side_repeating = wl_keyboard_get_version(wl_keyboard) >= 10 && rate == 0;
+    g_keyboard.repeat_rate = (uint32_t)rate;
+    g_keyboard.repeat_delay = (uint32_t)delay;
 }
 
-static struct wl_keyboard_listener keyboard_listener = (struct wl_keyboard_listener){
+static struct wl_keyboard_listener keyboard_listener = (struct wl_keyboard_listener) {
     .keymap = keyboard_keymap,
     .enter = keyboard_enter,
     .leave = keyboard_leave,
@@ -375,7 +375,7 @@ static void seat_name(void* data, struct wl_seat* wl_seat, const char* name) {
     printf("Wayland seat name: %s\n", name);
 }
 
-struct wl_seat_listener g_seat_listener = (struct wl_seat_listener){
+struct wl_seat_listener g_seat_listener = (struct wl_seat_listener) {
     .capabilities = seat_capabilities,
     .name = seat_name
 };
@@ -447,22 +447,66 @@ static void add_mouse_button_event(CpdWaylandWindow* wl_window, CpdMouseButtonTy
         return;
     }
 
-    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent){
+    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_MouseButtonPress,
         .modifiers = g_keyboard.modifiers,
+        .time = get_clock(),
         .data.mouse_button_press.button = type,
         .data.mouse_button_press.pressed = pressed
     };
 }
 
-static void add_button_press_event(CpdWaylandWindow* wl_window, CpdKeyCode keyCode, bool pressed) {
+static void add_button_press_event(CpdWaylandWindow* wl_window, CpdKeyCode keyCode, xkb_keycode_t xkbKeyCode, bool pressed) {
     if (!resize_input_queue_if_need(wl_window, 1)) {
         return;
     }
 
-    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent){
+    uint64_t moment = get_clock();
+    CpdPressedButton* entry = find_entry_by_key_code(keyCode);
+
+    if (!pressed && entry != 0)
+    {
+        CpdPressedButton* previous = find_entry_before(entry);
+
+        if (--entry->current_presses == 0) {
+            if (previous == 0) {
+                g_keyboard.pressed_buttons = entry->next;
+            }
+            else {
+                previous->next = entry->next;
+            }
+
+            free(entry);
+        }
+    }
+    else if (pressed && entry == 0) {
+        entry = (CpdPressedButton*)malloc(sizeof(CpdPressedButton));
+        if (entry != 0) {
+            entry->next = 0;
+            entry->time = moment;
+            entry->key_code = keyCode;
+            entry->xkb_key_code = xkbKeyCode;
+            entry->current_presses = 1;
+
+            if (g_keyboard.pressed_buttons == 0) {
+                g_keyboard.pressed_buttons = entry;
+            }
+            else {
+                CpdPressedButton* lastEntry = find_entry_before(0);
+                lastEntry->next = entry;
+            }
+        }
+    }
+    else if (pressed) {
+        entry->time = moment;
+        entry->current_presses++;
+        return;
+    }
+
+    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_ButtonPress,
         .modifiers = g_keyboard.modifiers,
+        .time = moment,
         .data.button_press.key_code = keyCode,
         .data.button_press.pressed = pressed
     };
@@ -473,9 +517,10 @@ static void add_char_input_event(CpdWaylandWindow* wl_window, uint32_t character
         return;
     }
 
-    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent){
+    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_CharInput,
         .modifiers = g_keyboard.modifiers,
+        .time = get_clock(),
         .data.char_input.character = character,
         .data.char_input.length = length
     };
@@ -486,9 +531,10 @@ static void add_mouse_scroll_event(CpdWaylandWindow* wl_window, enum wl_pointer_
         return;
     }
 
-    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent){
+    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_MouseScroll,
         .modifiers = g_keyboard.modifiers,
+        .time = get_clock(),
         .data.mouse_scroll.vertical_scroll = axis == WL_POINTER_AXIS_VERTICAL_SCROLL ? value : 0,
         .data.mouse_scroll.horizontal_scroll = axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL ? value : 0
     };
@@ -500,6 +546,7 @@ static void add_current_mouse_event(CpdWaylandWindow* wl_window) {
     }
 
     g_current_pointer_event.modifiers = g_keyboard.modifiers;
+    g_current_pointer_event.time = get_clock();
 
     wl_window->input_queue[wl_window->input_queue_size++] = g_current_pointer_event;
 
@@ -509,6 +556,96 @@ static void add_current_mouse_event(CpdWaylandWindow* wl_window) {
     }
 
     g_current_pointer_event.type = CpdInputEventType_None;
+}
+
+static void shift_input_event_right(CpdWaylandWindow* wl_window, uint32_t start_index, uint32_t shift_size) {
+    for (uint32_t i = wl_window->input_queue_size; i >= start_index; i--) {
+        wl_window->input_queue[i + shift_size] = wl_window->input_queue[i];
+    }
+}
+
+void insert_repeating_key_events(CpdWaylandWindow* wl_window) {
+    if (g_keyboard.repeat_rate == 0 || g_keyboard.pressed_buttons == 0) {
+        return;
+    }
+
+    uint64_t moment = get_clock();
+    uint64_t from_time = wl_window->last_repeating_key_events_insert_time;
+    uint32_t new_events = 0;
+
+    for (CpdPressedButton* current = g_keyboard.pressed_buttons; current != 0; current = current->next) {
+        uint64_t repeat_start = current->time + (uint64_t)g_keyboard.repeat_delay * 1000;
+        uint64_t rate_fraction = 1000000 / g_keyboard.repeat_rate;
+
+        if (from_time > repeat_start) {
+            uint64_t diff = from_time - repeat_start;
+            uint64_t remainder = diff % rate_fraction;
+
+            if (remainder != 0) {
+                diff += rate_fraction - remainder;
+            }
+
+            repeat_start += diff;
+        }
+
+        if (repeat_start > moment) {
+            continue;
+        }
+
+        uint64_t time_diff = moment - repeat_start;
+
+        new_events += (uint32_t)((float)(time_diff * g_keyboard.repeat_rate) / 1000000);
+    }
+
+    if (new_events == 0 || !resize_input_queue_if_need(wl_window, new_events)) {
+        return;
+    }
+
+    wl_window->last_repeating_key_events_insert_time = moment;
+
+    for (CpdPressedButton* current = g_keyboard.pressed_buttons; current != 0; current = current->next) {
+        uint64_t repeat_start = current->time + (uint64_t)g_keyboard.repeat_delay * 1000;
+        uint64_t rate_fraction = 1000000 / g_keyboard.repeat_rate;
+
+        if (from_time > repeat_start) {
+            uint64_t diff = from_time - repeat_start;
+            uint64_t remainder = diff % rate_fraction;
+
+            if (remainder != 0) {
+                diff += rate_fraction - remainder;
+            }
+
+            repeat_start += diff;
+        }
+
+        uint64_t character = 0;
+        uint32_t length = xkb_state_key_get_utf8(g_keyboard.state, current->xkb_key_code, (char*)&character, sizeof(uint32_t));
+
+        if (length == 0) {
+            continue;
+        }
+
+        for (uint64_t time = repeat_start; time <= moment; time += rate_fraction) {
+            uint32_t insert_index = wl_window->input_queue_size;
+
+            for (uint32_t event = 0; event < wl_window->input_queue_size; event++) {
+                if (wl_window->input_queue[event].time > time) {
+                    shift_input_event_right(wl_window, event, 1);
+                    insert_index = event;
+                    break;
+                }
+            }
+
+            wl_window->input_queue_size++;
+            wl_window->input_queue[insert_index] = (CpdInputEvent) {
+                .type = CpdInputEventType_CharInput,
+                .modifiers = g_keyboard.modifiers,
+                .time = time,
+                .data.char_input.character = character,
+                .data.char_input.length = length
+            };
+        }
+    }
 }
 
 
@@ -617,4 +754,27 @@ static CpdKeyCode map_key_code(uint32_t keyCode) {
 
     default: return CpdKeyCode_Invalid;
     }
+}
+
+static CpdPressedButton* find_entry_by_key_code(CpdKeyCode keyCode) {
+    CpdPressedButton* entry = g_keyboard.pressed_buttons;
+    while (entry != 0 && entry->key_code != keyCode) {
+        entry = entry->next;
+    }
+
+    return entry;
+}
+
+static CpdPressedButton* find_entry_before(CpdPressedButton* entry) {
+    CpdPressedButton* current = g_keyboard.pressed_buttons;
+
+    if (current == 0 || current == entry) {
+        return 0;
+    }
+
+    while (current != 0 && current->next != entry) {
+        current = current->next;
+    }
+
+    return current;
 }
