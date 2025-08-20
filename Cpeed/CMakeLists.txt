@@ -26,6 +26,7 @@ add_executable (Cpeed
 
   "platform/init.h"
   "platform/input.h"
+  "platform/lock.h"
   "platform/window.h")
 
 find_package(Vulkan REQUIRED)

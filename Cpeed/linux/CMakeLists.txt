@@ -1,6 +1,7 @@
 add_library (CpeedLinux STATIC
     "linuxinit.c"
     "linuxinput.c" 
+    "linuxlock.c"
     "linuxmain.c" "linuxmain.h"
     "linuxwayland.c" "linuxwayland.h"
     "linuxwindow.c"
