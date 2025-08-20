@@ -276,7 +276,6 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
 
     bool isCharInput = state == WL_KEYBOARD_KEY_STATE_PRESSED || state == WL_KEYBOARD_KEY_STATE_REPEATED;
 
-    // TODO: Client-side repeat support
     if (g_current_keyboard_focus->input_mode == CpdInputMode_Text && isCharInput) {
         uint64_t character = 0;
         uint32_t length = xkb_state_key_get_utf8(g_keyboard.state, (xkb_keycode_t)(key + 8), (char*)&character, sizeof(uint32_t));
@@ -568,7 +567,7 @@ static void shift_input_event_right(CpdWaylandWindow* wl_window, uint32_t start_
 }
 
 void insert_repeating_key_events(CpdWaylandWindow* wl_window) {
-    if (g_keyboard.repeat_rate == 0 || g_keyboard.pressed_buttons == 0) {
+    if (g_keyboard.repeat_rate == 0 || g_keyboard.pressed_buttons == 0 || wl_window->input_mode != CpdInputMode_Text) {
         return;
     }
 
