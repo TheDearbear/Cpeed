@@ -1,6 +1,5 @@
 #include <linux/input-event-codes.h>
 #include <malloc.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/mman.h>
@@ -393,8 +392,12 @@ static bool resize_input_queue_if_need(CpdWaylandWindow* window, uint32_t new_ev
         return true;
     }
 
-    uint32_t step_multiplier = (uint32_t)ceil((double)(new_size - window->input_queue_max_size) / INPUT_QUEUE_SIZE_STEP);
-    uint32_t new_max_size = window->input_queue_max_size + (step_multiplier * INPUT_QUEUE_SIZE_STEP);
+    uint32_t new_max_size = new_size;
+    uint32_t remainder = new_max_size % INPUT_QUEUE_SIZE_STEP;
+
+    if (remainder != 0) {
+        new_max_size += INPUT_QUEUE_SIZE_STEP - remainder;
+    }
 
     CpdInputEvent* new_input_queue = (CpdInputEvent*)malloc(new_max_size * sizeof(CpdInputEvent));
     if (new_input_queue == 0) {

@@ -1,4 +1,3 @@
-#include <math.h>
 #include <stdio.h>
 #include <windows.h>
 
@@ -223,8 +222,12 @@ static bool resize_input_queue_if_need(WindowExtraData* data, uint32_t new_event
         return true;
     }
 
-    uint32_t step_multiplier = (uint32_t)ceil((double)(new_size - data->input_queue_max_size) / INPUT_QUEUE_SIZE_STEP);
-    uint32_t new_max_size = data->input_queue_max_size + (step_multiplier * INPUT_QUEUE_SIZE_STEP);
+    uint32_t new_max_size = new_size;
+    uint32_t remainder = new_max_size % INPUT_QUEUE_SIZE_STEP;
+
+    if (remainder != 0) {
+        new_max_size += INPUT_QUEUE_SIZE_STEP - remainder;
+    }
 
     CpdInputEvent* new_input_queue = (CpdInputEvent*)malloc(new_max_size * sizeof(CpdInputEvent));
     if (new_input_queue == 0) {

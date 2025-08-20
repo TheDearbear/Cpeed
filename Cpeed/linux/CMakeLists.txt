@@ -41,6 +41,6 @@ target_include_directories (CpeedLinux
     PRIVATE ${Wayland_INCLUDE_DIRS}
     PRIVATE ${X11_xkbcommon_INCLUDE_PATH}
 )
-target_link_libraries (CpeedLinux ${Wayland_LIBRARIES} ${X11_xkbcommon_LIB} m)
+target_link_libraries (CpeedLinux ${Wayland_LIBRARIES} ${X11_xkbcommon_LIB})
 
 set_property (TARGET CpeedLinux PROPERTY C_STANDARD 99)
