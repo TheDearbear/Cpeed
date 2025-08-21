@@ -1,5 +1,7 @@
+#include <malloc.h>
 #include <stdio.h>
 
+#include "../platform/window.h"
 #include "winmain.h"
 
 CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {

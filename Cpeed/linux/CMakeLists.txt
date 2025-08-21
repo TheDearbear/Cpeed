@@ -1,11 +1,13 @@
 add_library (CpeedLinux STATIC
-    "linuxinit.c"
-    "linuxinput.c" 
-    "linuxlock.c"
-    "linuxmain.c" "linuxmain.h"
-    "linuxwayland.c" "linuxwayland.h"
-    "linuxwindow.c"
-    "linuxwindowlist.c" "linuxwindowlist.h")
+  "backend/vulkan.c"
+
+  "linuxinit.c"
+  "linuxinput.c" 
+  "linuxlock.c"
+  "linuxmain.c" "linuxmain.h"
+  "linuxwayland.c" "linuxwayland.h"
+  "linuxwindow.c"
+  "linuxwindowlist.c" "linuxwindowlist.h")
 
 find_package (ECM REQUIRED NO_MODULE)
 set (CMAKE_MODULE_PATH ${ECM_MODULE_PATH})

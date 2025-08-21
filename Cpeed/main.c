@@ -28,7 +28,7 @@ int main() {
         return -1;
     }
 
-    vkGetInstanceProcAddr = PLATFORM_load_vulkan_lib();
+    vkGetInstanceProcAddr = load_vulkan_lib();
     if (vkGetInstanceProcAddr == VK_NULL_HANDLE) {
         printf("Unable to load Vulkan library\n");
         return -1;
@@ -169,7 +169,7 @@ shutdown:
         PLATFORM_window_destroy(g_window);
     }
 
-    PLATFORM_free_vulkan_lib();
+    free_vulkan_lib();
     shutdown_platform();
 }
 
@@ -187,7 +187,7 @@ static VkResult create_renderer(CpdRenderer** renderer, CpdRendererInitParams* p
     }
 
     VkSurfaceKHR surface;
-    result = PLATFORM_create_surface(params->instance, g_window, &surface);
+    result = create_vulkan_surface(params->instance, g_window, &surface);
     if (result != VK_SUCCESS) {
         return result;
     }
@@ -328,7 +328,7 @@ static VkResult create_instance(CpdInstanceVulkanExtensions* instance_extensions
         }
     }
 
-    const CpdPlatformExtensions* platform_extensions = PLATFORM_alloc_vulkan_instance_extensions();
+    const CpdVulkanExtensions* platform_extensions = alloc_vulkan_instance_extensions();
     uint32_t platform_extensions_count = platform_extensions->count;
 
     const uint32_t base_extension_count = 1;
@@ -344,7 +344,7 @@ static VkResult create_instance(CpdInstanceVulkanExtensions* instance_extensions
         all_extensions[base_extension_count + i] = platform_extensions->extensions[i];
     }
 
-    PLATFORM_free_vulkan_extensions(platform_extensions);
+    free_vulkan_extensions(platform_extensions);
 
     uint32_t copied_extensions = 0;
     for (uint32_t i = 0; i < extension_count && copied_extensions < loaded_from_extension; i++) {

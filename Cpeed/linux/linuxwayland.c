@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <xkbcommon/xkbcommon-names.h>
 
+#include "../platform.h"
 #include "linuxmain.h"
 #include "linuxwayland.h"
 #include "linuxwindowlist.h"

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../platform/window.h"
 #include "../../input.h"
 #include "../../vulkan.h"
 #include "../general.h"

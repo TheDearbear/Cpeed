@@ -24,6 +24,8 @@ add_executable (Cpeed
   "input/keyboard.h"
   "input/mouse.h"
 
+  "platform/backend/vulkan.h"
+
   "platform/init.h"
   "platform/input.h"
   "platform/lock.h"

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <malloc.h>
 
+#include "../platform/backend/vulkan.h"
 #include "device.h"
 #include "device.queue_init.h"
 
@@ -125,7 +126,7 @@ static VkResult init_device_transfer_pool(CpdDevice* cpeed_device, CpdTransferQu
     return cpeed_device->vkCreateCommandPool(cpeed_device->handle, &create_info, VK_NULL_HANDLE, &queue_family->pool);
 }
 
-static CpdPlatformExtensions* alloc_device_extensions(CpdDevice* cpeed_device, CpdDeviceInitParams* params) {
+static CpdVulkanExtensions* alloc_device_extensions(CpdDevice* cpeed_device, CpdDeviceInitParams* params) {
     uint32_t property_count;
 
     VkResult result = vkEnumerateDeviceExtensionProperties(params->physical_device, 0, &property_count, 0);
@@ -177,7 +178,7 @@ static CpdPlatformExtensions* alloc_device_extensions(CpdDevice* cpeed_device, C
 
     free(properties);
 
-    CpdPlatformExtensions* platform_extensions = (CpdPlatformExtensions*)malloc(sizeof(CpdPlatformExtensions));
+    CpdVulkanExtensions* platform_extensions = (CpdVulkanExtensions*)malloc(sizeof(CpdVulkanExtensions));
     if (platform_extensions == 0) {
         return 0;
     }
@@ -214,7 +215,7 @@ static CpdPlatformExtensions* alloc_device_extensions(CpdDevice* cpeed_device, C
     return platform_extensions;
 }
 
-static void free_device_extensions(CpdPlatformExtensions* extensions) {
+static void free_device_extensions(CpdVulkanExtensions* extensions) {
     if (extensions->count > 0) {
         free(extensions->extensions);
     }
@@ -235,7 +236,7 @@ static VkResult create_logical_device(CpdDevice* cpeed_device, CpdDeviceInitPara
         return result;
     }
 
-    CpdPlatformExtensions* extensions = alloc_device_extensions(cpeed_device, params);
+    CpdVulkanExtensions* extensions = alloc_device_extensions(cpeed_device, params);
 
     CpdVulkanExtensionLoadMethod load_method = get_extension_load_method(cpeed_device, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     VulkanStructureChain* next;

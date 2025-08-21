@@ -1,3 +1,5 @@
+#include <malloc.h>
+
 #include "../platform/input.h"
 #include "winmain.h"
 

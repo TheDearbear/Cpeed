@@ -1,3 +1,7 @@
+#include <malloc.h>
+#include <windowsx.h>
+
+#include "../platform/window.h"
 #include "winmain.h"
 #include "winproc.h"
 

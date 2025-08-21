@@ -7,6 +7,7 @@
 
 #include "vulkan.h"
 #include "platform.h"
+#include "platform/backend/vulkan.h"
 #include "platform/init.h"
 #include "platform/input.h"
 #include "common/renderer.h"

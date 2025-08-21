@@ -1,10 +1,12 @@
 add_library (CpeedWindows STATIC
-    "wininit.c"
-    "wininput.c"
-    "winlock.c"
-    "winmain.c" "winmain.h"
-    "winproc.c" "winproc.h"
-    "winwindow.c")
+  "backend/vulkan.c"
+
+  "wininit.c"
+  "wininput.c"
+  "winlock.c"
+  "winmain.c" "winmain.h"
+  "winproc.c" "winproc.h"
+  "winwindow.c")
 
 find_package(Vulkan REQUIRED)
 

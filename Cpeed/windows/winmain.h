@@ -1,15 +1,10 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
-#define VK_USE_PLATFORM_WIN32_KHR
 
-#include <malloc.h>
+#include <windows.h>
 
-#include "../vulkan.h"
-#include "../platform.h"
 #include "../input.h"
-
-#include <windowsx.h>
 
 #define INPUT_QUEUE_BASE_SIZE 16
 #define INPUT_QUEUE_SIZE_STEP 16
