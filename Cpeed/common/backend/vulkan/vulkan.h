@@ -1,9 +1,16 @@
 #pragma once
 
-#define VK_NO_PROTOTYPES
-
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_enum_string_helper.h>
+
+#define GET_INSTANCE_PROC_ADDR(instance, name) name = (PFN_ ## name)vkGetInstanceProcAddr(instance, #name)
+#define GET_INSTANCE_PROC_ADDR_SUFFIX(instance, name, suffix) name = (PFN_ ## name)vkGetInstanceProcAddr(instance, #name suffix)
+
+#define GET_INSTANCE_PROC_ADDR_EXTENSION(instance, name, suffix, extension) { \
+    if ((extension).load_method == CpdVulkanExtensionLoadMethod_FromCore) { GET_INSTANCE_PROC_ADDR(instance, name); } \
+    else if ((extension).load_method == CpdVulkanExtensionLoadMethod_FromExtension) { GET_INSTANCE_PROC_ADDR_SUFFIX(instance, name, suffix); } \
+    else { name = VK_NULL_HANDLE; } \
+}
 
 typedef enum CpdVulkanExtensionLoadMethod {
     CpdVulkanExtensionLoadMethod_NotLoaded = 0,

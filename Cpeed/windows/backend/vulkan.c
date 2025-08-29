@@ -1,7 +1,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 
+#include "../../common/backend/vulkan/vulkan.h"
 #include "../../platform/backend/vulkan.h"
-#include "../../vulkan.h"
 #include "../winmain.h"
 
 HMODULE g_vulkan_lib;

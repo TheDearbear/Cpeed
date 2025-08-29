@@ -8,8 +8,8 @@ add_library (CpeedWindows STATIC
   "winproc.c" "winproc.h"
   "winwindow.c")
 
-find_package(Vulkan REQUIRED)
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/EnableVulkanBackend.cmake")
 
-target_include_directories(CpeedWindows PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_sources(Cpeed PRIVATE "../main.c")
 
 set_property(TARGET CpeedWindows PROPERTY C_STANDARD 99)

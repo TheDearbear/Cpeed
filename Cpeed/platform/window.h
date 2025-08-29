@@ -17,14 +17,16 @@ typedef struct CpdWindowInfo {
     CpdInputMode input_mode;
 } CpdWindowInfo;
 
-extern CpdWindow PLATFORM_create_window(const CpdWindowInfo* info);
-extern void PLATFORM_window_destroy(CpdWindow window);
+extern CpdWindow create_window(const CpdWindowInfo* info);
+extern void destroy_window(CpdWindow window);
 
-extern void PLATFORM_window_close(CpdWindow window);
+extern void close_window(CpdWindow window);
 
-extern bool PLATFORM_window_poll(CpdWindow window);
+extern bool poll_window(CpdWindow window);
 
-extern CpdSize PLATFORM_get_window_size(CpdWindow window);
-extern bool PLATFORM_window_resized(CpdWindow window);
+extern CpdSize window_size(CpdWindow window);
+extern bool window_resized(CpdWindow window);
 
-extern bool PLATFORM_window_present_allowed(CpdWindow window);
+extern bool window_present_allowed(CpdWindow window);
+
+extern bool multiple_windows_supported();

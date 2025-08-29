@@ -2,7 +2,7 @@
 
 #include <malloc.h>
 
-#include "../vulkan.h"
+#include "vulkan.h"
 
 extern VkResult allocate_queue_create_infos(
     uint32_t graphics, uint32_t compute, uint32_t transfer,

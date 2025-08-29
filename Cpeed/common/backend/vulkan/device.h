@@ -2,8 +2,8 @@
 
 #include <stdbool.h>
 
-#include "../vulkan.h"
-#include "../platform.h"
+#include "../../../platform.h"
+#include "vulkan.h"
 
 typedef struct CpdTransferQueue {
     uint64_t bytes_queued;

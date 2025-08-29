@@ -561,7 +561,7 @@ static void add_current_mouse_event(CpdWaylandWindow* wl_window) {
     g_current_pointer_event.type = CpdInputEventType_None;
 }
 
-static void shift_input_event_right(CpdWaylandWindow* wl_window, uint32_t start_index, uint32_t shift_size) {
+static void shift_input_events_right(CpdWaylandWindow* wl_window, uint32_t start_index, uint32_t shift_size) {
     for (uint32_t i = wl_window->input_queue_size; i >= start_index; i--) {
         wl_window->input_queue[i + shift_size] = wl_window->input_queue[i];
     }
@@ -633,7 +633,7 @@ void insert_repeating_key_events(CpdWaylandWindow* wl_window) {
 
             for (uint32_t event = 0; event < wl_window->input_queue_size; event++) {
                 if (wl_window->input_queue[event].time > time) {
-                    shift_input_event_right(wl_window, event, 1);
+                    shift_input_events_right(wl_window, event, 1);
                     insert_index = event;
                     break;
                 }

@@ -35,7 +35,11 @@ void RENDERING_input(CpdRenderer* cpeed_renderer, CpdWindow window, const CpdInp
     for (uint32_t i = 0; i < event_count; i++) {
         const CpdInputEvent* event = &events[i];
 
-        if (event->type == CpdInputEventType_ButtonPress) {
+        if (event->type == CpdInputEventType_CharInput) {
+            uint64_t text = event->data.char_input.character;
+            printf("Char input: %s (%d bytes)\n", (char*)&text, event->data.char_input.length);
+        }
+        else if (event->type == CpdInputEventType_ButtonPress) {
             if (event->data.button_press.pressed) {
                 if (event->data.button_press.key_code == CpdKeyCode_Numpad7 && brightness_red < 1.0f) {
                     brightness_red += brightness_step;
@@ -63,7 +67,7 @@ void RENDERING_input(CpdRenderer* cpeed_renderer, CpdWindow window, const CpdInp
                 }
             }
             else if (event->data.button_press.key_code == CpdKeyCode_Escape) {
-                PLATFORM_window_close(window);
+                close_window(window);
             }
         }
         else if (event->type == CpdInputEventType_Clipboard) {
@@ -110,7 +114,7 @@ static void begin_rendering(CpdRenderer* cpeed_renderer, VkCommandBuffer buffer)
     cpeed_renderer->render_device.vkCmdBeginRendering(buffer, &info);
 }
 
-VkResult RENDERING_frame(CpdRenderer* cpeed_renderer, bool wait_for_next_image) {
+VkResult RENDERING_frame(CpdRenderer* cpeed_renderer) {
     VkCommandBufferBeginInfo begin_info = {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
             .pNext = VK_NULL_HANDLE,
@@ -124,7 +128,7 @@ VkResult RENDERING_frame(CpdRenderer* cpeed_renderer, bool wait_for_next_image) 
         return result;
     }
 
-    if (wait_for_next_image) {
+    if (cpeed_renderer->swapchain.wait_for_acquire) {
         result = cpeed_renderer->render_device.vkWaitForFences(cpeed_renderer->render_device.handle, 1, &cpeed_renderer->swapchain_image_fence, VK_FALSE, UINT64_MAX);
         if (result != VK_SUCCESS) {
             printf("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));

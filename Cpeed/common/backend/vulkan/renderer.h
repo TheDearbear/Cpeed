@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../vulkan.h"
+#include "vulkan.h"
 #include "device.h"
 #include "swapchain.h"
 #include "surface.h"

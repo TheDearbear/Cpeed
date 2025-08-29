@@ -228,7 +228,7 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
     case WM_CLOSE:
     wndProc_close:
-        PLATFORM_window_close((CpdWindow)hWnd);
+        close_window((CpdWindow)hWnd);
         return 0;
 
     case WM_DESTROY:

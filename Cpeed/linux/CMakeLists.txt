@@ -16,8 +16,11 @@ find_package (Wayland REQUIRED Client)
 find_package (WaylandProtocols REQUIRED)
 find_package (WaylandScanner REQUIRED)
 
-find_package(Vulkan REQUIRED)
 find_package(X11 REQUIRED COMPONENTS xkbcommon)
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/EnableVulkanBackend.cmake")
+
+target_sources(Cpeed PRIVATE "../main.c")
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell")
 
@@ -40,7 +43,6 @@ execute_process (
 target_sources (CpeedLinux PRIVATE "xdg-shell/private.c")
 
 target_include_directories (CpeedLinux
-    PRIVATE ${Vulkan_INCLUDE_DIRS}
     PRIVATE ${Wayland_INCLUDE_DIRS}
     PRIVATE ${X11_xkbcommon_INCLUDE_PATH}
 )

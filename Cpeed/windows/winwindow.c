@@ -4,7 +4,7 @@
 #include "../platform/window.h"
 #include "winmain.h"
 
-CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
+CpdWindow create_window(const CpdWindowInfo* info) {
     WindowExtraData* data = (WindowExtraData*)malloc(sizeof(WindowExtraData));
     CpdInputEvent* input_queue = (CpdInputEvent*)malloc(INPUT_QUEUE_BASE_SIZE * sizeof(CpdInputEvent));
     CpdInputEvent* input_swap_queue = (CpdInputEvent*)malloc(INPUT_QUEUE_BASE_SIZE * sizeof(CpdInputEvent));
@@ -49,7 +49,7 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
     return (CpdWindow)hWnd;
 }
 
-void PLATFORM_window_destroy(CpdWindow window) {
+void destroy_window(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     cleanup_input_queue(data->input_queue, data->input_queue_size);
@@ -62,13 +62,13 @@ void PLATFORM_window_destroy(CpdWindow window) {
     DestroyWindow((HWND)window);
 }
 
-void PLATFORM_window_close(CpdWindow window) {
+void close_window(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     data->should_close = true;
 }
 
-bool PLATFORM_window_poll(CpdWindow window) {
+bool poll_window(CpdWindow window) {
     MSG msg;
     while (PeekMessageW(&msg, (HWND)window, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
@@ -86,7 +86,7 @@ bool PLATFORM_window_poll(CpdWindow window) {
     return data->should_close;
 }
 
-CpdSize PLATFORM_get_window_size(CpdWindow window) {
+CpdSize window_size(CpdWindow window) {
     RECT rectangle = { 0, 0, 0, 0 };
     GetClientRect((HWND)window, &rectangle);
     
@@ -96,7 +96,7 @@ CpdSize PLATFORM_get_window_size(CpdWindow window) {
     };
 }
 
-bool PLATFORM_window_resized(CpdWindow window) {
+bool window_resized(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
     
     bool resized = data->resized;
@@ -105,8 +105,12 @@ bool PLATFORM_window_resized(CpdWindow window) {
     return resized;
 }
 
-bool PLATFORM_window_present_allowed(CpdWindow window) {
+bool window_present_allowed(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     return !data->minimized;
+}
+
+bool multiple_windows_supported() {
+    return true;
 }

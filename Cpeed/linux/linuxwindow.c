@@ -29,7 +29,7 @@ static struct wl_callback_listener frame_listener = (struct wl_callback_listener
     .done = frame_done
 };
 
-CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
+CpdWindow create_window(const CpdWindowInfo* info) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)malloc(sizeof(CpdWaylandWindow));
     if (wl_window == 0) {
         printf("%s", "Unable to allocate window\n");
@@ -103,7 +103,7 @@ CpdWindow PLATFORM_create_window(const CpdWindowInfo* info) {
     return (CpdWindow)wl_window;
 }
 
-void PLATFORM_window_destroy(CpdWindow window) {
+void destroy_window(CpdWindow window) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
 
     if (g_current_pointer_focus == wl_window) {
@@ -129,13 +129,13 @@ void PLATFORM_window_destroy(CpdWindow window) {
     free(wl_window);
 }
 
-void PLATFORM_window_close(CpdWindow window) {
+void close_window(CpdWindow window) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
 
     wl_window->should_close = true;
 }
 
-bool PLATFORM_window_poll(CpdWindow window) {
+bool poll_window(CpdWindow window) {
     if (g_display == 0) {
         return true;
     }
@@ -173,7 +173,7 @@ bool PLATFORM_window_poll(CpdWindow window) {
     return wl_window->should_close;
 }
 
-CpdSize PLATFORM_get_window_size(CpdWindow window) {
+CpdSize window_size(CpdWindow window) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
 
     return (CpdSize) {
@@ -182,7 +182,7 @@ CpdSize PLATFORM_get_window_size(CpdWindow window) {
     };
 }
 
-bool PLATFORM_window_resized(CpdWindow window) {
+bool window_resized(CpdWindow window) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
 
     bool result = wl_window->resized;
@@ -191,13 +191,17 @@ bool PLATFORM_window_resized(CpdWindow window) {
     return result;
 }
 
-bool PLATFORM_window_present_allowed(CpdWindow window) {
+bool window_present_allowed(CpdWindow window) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
 
     bool result = wl_window->should_render;
     wl_window->should_render = false;
 
     return result;
+}
+
+bool multiple_windows_supported() {
+    return true;
 }
 
 static void surface_configure(void* data, struct xdg_surface* xdg_surface, uint32_t serial) {
