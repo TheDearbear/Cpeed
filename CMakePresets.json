@@ -33,6 +33,17 @@
             }
         },
         {
+            "name": "uwp",
+            "displayName": "UWP",
+            "inherits": "windows-base",
+            "generator": "Visual Studio 18 2026",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_SYSTEM_NAME": "WindowsStore",
+                "CMAKE_SYSTEM_VERSION": "10.0"
+            }
+        },
+        {
             "name": "windows-x64-debug",
             "displayName": "Windows x64 Debug",
             "inherits": "windows-base",

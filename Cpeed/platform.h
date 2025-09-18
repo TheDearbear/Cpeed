@@ -4,6 +4,7 @@
 
 typedef enum CpdCompilePlatform {
     CpdCompilePlatform_Windows,
+    CpdCompilePlatform_UWP,
     CpdCompilePlatform_Linux
 } CpdCompilePlatform;
 
