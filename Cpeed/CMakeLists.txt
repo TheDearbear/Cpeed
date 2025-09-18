@@ -11,6 +11,7 @@ add_executable (Cpeed
   "common/general.c" "common/general.h"
 
   "input/clipboard.h"
+  "input/gamepad.h"
   "input/keyboard.h"
   "input/mouse.h"
 

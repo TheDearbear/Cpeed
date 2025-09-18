@@ -41,3 +41,4 @@ typedef struct CpdWaylandWindow {
 } CpdWaylandWindow;
 
 void cleanup_input_queue(CpdInputEvent* events, uint32_t size);
+bool resize_input_queue_if_need(CpdWaylandWindow* window, uint32_t new_events);

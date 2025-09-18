@@ -1,6 +1,7 @@
 #include <string.h>
 #include <xkbcommon/xkbcommon.h>
 
+#include "linuxevent.h"
 #include "linuxwayland.h"
 #include "../platform/init.h"
 
@@ -44,6 +45,10 @@ bool initialize_platform() {
         return false;
     }
 
+    if (!init_events()) {
+        return false;
+    }
+
     g_display = wl_display_connect(0);
 
     if (g_display == 0) {
@@ -63,6 +68,8 @@ void shutdown_platform() {
         xkb_context_unref(g_xkb_context);
         g_xkb_context = 0;
     }
+
+    shutdown_events();
 
     if (g_wm_base != 0) {
         xdg_wm_base_destroy(g_wm_base);

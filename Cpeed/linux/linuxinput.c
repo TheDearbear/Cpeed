@@ -1,6 +1,7 @@
 #include <malloc.h>
 
 #include "../platform/input.h"
+#include "linuxevent.h"
 #include "linuxmain.h"
 #include "linuxwayland.h"
 
@@ -64,4 +65,47 @@ void clear_window_event_queue(CpdWindow window) {
     cleanup_input_queue(wl_window->input_queue, wl_window->input_queue_size);
 
     wl_window->input_queue_size = 0;
+}
+
+uint16_t get_gamepad_count(CpdWindow window) {
+    uint16_t count = 0;
+    for (CpdEventDevice* current = g_event_devices; current != 0; current = current->next) {
+        count++;
+    }
+
+    return count;
+}
+
+CpdGamepadStickPosition get_gamepad_stick_position(CpdWindow window, uint16_t gamepad_index, CpdGamepadStick stick) {
+    CpdEventDevice* device = g_event_devices;
+
+    for (uint16_t i = 0; i < gamepad_index; i++) {
+        device = device->next;
+    }
+
+    if (stick == CpdGamepadStick_Left) {
+        return (CpdGamepadStickPosition) {
+            .x = (float)(uint16_t)(device->left_stick_x + INT16_MIN) * 2 / UINT16_MAX - 1.0f,
+            .y = (float)(uint16_t)(device->left_stick_y + INT16_MIN) * -2 / UINT16_MAX + 1.0f
+        };
+    }
+    else {
+        return (CpdGamepadStickPosition) {
+            .x = (float)(uint16_t)(device->right_stick_x + INT16_MIN) * 2 / UINT16_MAX - 1.0f,
+            .y = (float)(uint16_t)(device->right_stick_y + INT16_MIN) * -2 / UINT16_MAX + 1.0f
+        };
+    }
+}
+
+CpdGamepadTriggersPosition get_gamepad_triggers_position(CpdWindow window, uint16_t gamepad_index) {
+    CpdEventDevice* device = g_event_devices;
+
+    for (uint16_t i = 0; i < gamepad_index; i++) {
+        device = device->next;
+    }
+
+    return (CpdGamepadTriggersPosition) {
+        .left = (float)device->left_trigger / 1023,
+        .right= (float)device->right_trigger / 1023
+    };
 }

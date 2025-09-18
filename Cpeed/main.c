@@ -74,7 +74,6 @@ int main() {
 
     printf("Goodbye!\n");
 
-shutdown:
     implementation.shutdown_window(backend);
 
     implementation.shutdown_backend();

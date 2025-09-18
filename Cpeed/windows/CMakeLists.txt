@@ -12,4 +12,6 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/EnableVulkanBackend.cmake")
 
 target_sources(Cpeed PRIVATE "../main.c")
 
+target_link_libraries(CpeedWindows gameinput)
+
 set_property(TARGET CpeedWindows PROPERTY C_STANDARD 99)

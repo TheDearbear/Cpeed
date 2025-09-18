@@ -2,7 +2,7 @@
 #include <time.h>
 
 #include "../platform.h"
-#include "../input.h"
+#include "linuxmain.h"
 
 CpdCompilePlatform compile_platform() {
     return CpdCompilePlatform_Linux;
@@ -30,4 +30,38 @@ void cleanup_input_queue(CpdInputEvent* events, uint32_t size) {
             event->data.text_input.text = 0;
         }
     }
+}
+
+bool resize_input_queue_if_need(CpdWaylandWindow* window, uint32_t new_events) {
+    uint32_t new_size = window->input_queue_size + new_events;
+
+    if (window->input_queue_max_size >= new_size) {
+        return true;
+    }
+
+    uint32_t new_max_size = new_size;
+    uint32_t remainder = new_max_size % INPUT_QUEUE_SIZE_STEP;
+
+    if (remainder != 0) {
+        new_max_size += INPUT_QUEUE_SIZE_STEP - remainder;
+    }
+
+    CpdInputEvent* new_input_queue = (CpdInputEvent*)malloc(new_max_size * sizeof(CpdInputEvent));
+    if (new_input_queue == 0) {
+        return false;
+    }
+
+    for (uint32_t i = 0; i < window->input_queue_size; i++) {
+        new_input_queue[i] = window->input_queue[i];
+    }
+
+    CpdInputEvent* old_input_queue = window->input_queue;
+
+    window->input_queue = new_input_queue;
+    window->input_queue_max_size = new_max_size;
+    window->resize_swap_queue = true;
+
+    free(old_input_queue);
+
+    return true;
 }

@@ -2,7 +2,7 @@
 
 #include "linuxwindowlist.h"
 
-static CpdWaylandWindowListNode* g_windows_list;
+CpdWaylandWindowListNode* g_windows_list;
 
 CpdWaylandWindowListNode* add_window_to_list(CpdWaylandWindow* window) {
     for (CpdWaylandWindowListNode* current_node = g_windows_list; current_node != 0; current_node = current_node->next) {

@@ -1,7 +1,9 @@
 #include <malloc.h>
 #include <stdio.h>
 
+#include "../platform/input.h"
 #include "../platform/window.h"
+#include "../platform.h"
 #include "winmain.h"
 
 CpdWindow create_window(const CpdWindowInfo* info) {
@@ -43,8 +45,25 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     data->minimized = false;
     data->resize_swap_queue = false;
     data->first_mouse_event = true;
+    data->focused = true;
     
     SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG_PTR)data);
+
+    uint16_t count = get_gamepad_count((CpdWindow)hWnd);
+    if (!resize_input_queue_if_need(data, count)) {
+        destroy_window((CpdWindow)hWnd);
+        return 0;
+    }
+
+    for (uint16_t i = 0; i < count; i++) {
+        data->input_queue[data->input_queue_size++] = (CpdInputEvent){
+            .type = CpdInputEventType_GamepadConnect,
+            .modifiers = data->current_key_modifiers,
+            .time = get_clock_usec(),
+            .data.gamepad_connect.status = CpdGamepadConnectStatus_Connected,
+            .data.gamepad_connect.gamepad_index = i
+        };
+    }
 
     return (CpdWindow)hWnd;
 }
@@ -68,6 +87,137 @@ void close_window(CpdWindow window) {
     data->should_close = true;
 }
 
+static bool add_gamepad_trigger_to_queue(WindowExtraData* data, CpdGamepadTrigger trigger, uint16_t index) {
+    if (!resize_input_queue_if_need(data, 1)) {
+        return false;
+    }
+
+    data->input_queue[data->input_queue_size++] = (CpdInputEvent) {
+        .type = CpdInputEventType_GamepadTrigger,
+        .modifiers = data->current_key_modifiers,
+        .time = get_clock_usec(),
+        .data.gamepad_trigger.trigger = trigger,
+        .data.gamepad_trigger.gamepad_index = index
+    };
+
+    return true;
+}
+
+static bool add_gamepad_stick_to_queue(WindowExtraData* data, CpdGamepadStick stick, uint16_t index) {
+    if (!resize_input_queue_if_need(data, 1)) {
+        return false;
+    }
+
+    data->input_queue[data->input_queue_size++] = (CpdInputEvent){
+        .type = CpdInputEventType_GamepadStick,
+        .modifiers = data->current_key_modifiers,
+        .time = get_clock_usec(),
+        .data.gamepad_stick.stick = stick,
+        .data.gamepad_stick.gamepad_index = index
+    };
+
+    return true;
+}
+
+static bool add_gamepad_button_press_to_queue(WindowExtraData* data, CpdGamepadButtonType button, uint16_t index, bool pressed) {
+    if (!resize_input_queue_if_need(data, 1)) {
+        return false;
+    }
+
+    data->input_queue[data->input_queue_size++] = (CpdInputEvent){
+        .type = CpdInputEventType_GamepadButtonPress,
+        .modifiers = data->current_key_modifiers,
+        .time = get_clock_usec(),
+        .data.gamepad_button_press.button = button,
+        .data.gamepad_button_press.gamepad_index = index,
+        .data.gamepad_button_press.pressed = pressed
+    };
+
+    return true;
+}
+
+static inline void check_gamepad_button(WindowExtraData* data,
+    GameInputGamepadState* current, GameInputGamepadState* last_used_state,
+    GameInputGamepadButtons from_button, CpdGamepadButtonType to_button,
+    uint16_t index
+) {
+    if ((current->buttons & from_button) != (last_used_state->buttons & from_button)) {
+        bool pressed = (current->buttons & from_button) != 0;
+
+        if (add_gamepad_button_press_to_queue(data, to_button, index, pressed)) {
+            if (pressed) {
+                last_used_state->buttons |= from_button;
+            }
+            else {
+                last_used_state->buttons &= ~from_button;
+            }
+        }
+    }
+}
+
+static void poll_gamepads(WindowExtraData* data) {
+    static float x = 0.0f;
+    static float y = 0.0f;
+
+    if (g_gamepads == 0 || !data->focused) {
+        return;
+    }
+
+    uint16_t index = 0;
+    for (CpdGamepad* gamepad = g_gamepads; gamepad != 0; index++) {
+        IGameInputReading* reading;
+        HRESULT result = IGameInput_GetCurrentReading(g_game_input, GameInputKindGamepad, gamepad->device, &reading);
+
+        if (SUCCEEDED(result)) {
+            GameInputGamepadState state;
+            GameInputGamepadState* last_used_state = &gamepad->last_used_state;
+
+            if (IGameInputReading_GetGamepadState(reading, &state)) {
+                if (state.leftTrigger != last_used_state->leftTrigger && add_gamepad_trigger_to_queue(data, CpdGamepadTrigger_Left, index)) {
+                    last_used_state->leftTrigger = state.leftTrigger;
+                }
+
+                if (state.rightTrigger != last_used_state->rightTrigger && add_gamepad_trigger_to_queue(data, CpdGamepadTrigger_Right, index)) {
+                    last_used_state->rightTrigger = state.rightTrigger;
+                }
+
+                if ((state.leftThumbstickX != last_used_state->leftThumbstickX || state.leftThumbstickY != last_used_state->leftThumbstickY) &&
+                    add_gamepad_stick_to_queue(data, CpdGamepadStick_Left, index)
+                ) {
+                    last_used_state->leftThumbstickX = state.leftThumbstickX;
+                    last_used_state->leftThumbstickY = state.leftThumbstickY;
+                }
+
+                if ((state.rightThumbstickX != last_used_state->rightThumbstickX || state.rightThumbstickY != last_used_state->rightThumbstickY) &&
+                    add_gamepad_stick_to_queue(data, CpdGamepadStick_Right, index)
+                ) {
+                    last_used_state->rightThumbstickX = state.rightThumbstickX;
+                    last_used_state->rightThumbstickY = state.rightThumbstickY;
+                }
+
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadMenu, CpdGamepadButtonType_Menu, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadView, CpdGamepadButtonType_View, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadA, CpdGamepadButtonType_A, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadB, CpdGamepadButtonType_B, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadX, CpdGamepadButtonType_X, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadY, CpdGamepadButtonType_Y, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadDPadUp, CpdGamepadButtonType_DPadUp, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadDPadDown, CpdGamepadButtonType_DPadDown, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadDPadLeft, CpdGamepadButtonType_DPadLeft, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadDPadRight, CpdGamepadButtonType_DPadRight, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadLeftShoulder, CpdGamepadButtonType_ShoulderLeft, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadRightShoulder, CpdGamepadButtonType_ShoulderRight, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadLeftThumbstick, CpdGamepadButtonType_StickLeft, index);
+                check_gamepad_button(data, &state, last_used_state, GameInputGamepadRightThumbstick, CpdGamepadButtonType_StickRight, index);
+            }
+
+            IGameInputReading_Release(reading);
+        }
+
+        gamepad = gamepad->next;
+    }
+}
+
 bool poll_window(CpdWindow window) {
     MSG msg;
     while (PeekMessageW(&msg, (HWND)window, 0, 0, PM_REMOVE)) {
@@ -83,6 +233,8 @@ bool poll_window(CpdWindow window) {
         return true;
     }
 
+    poll_gamepads(data);
+
     return data->should_close;
 }
 
@@ -90,7 +242,7 @@ CpdSize window_size(CpdWindow window) {
     RECT rectangle = { 0, 0, 0, 0 };
     GetClientRect((HWND)window, &rectangle);
     
-    return (CpdSize){
+    return (CpdSize) {
         .width = (unsigned short)(rectangle.right - rectangle.left),
         .height = (unsigned short)(rectangle.bottom - rectangle.top)
     };

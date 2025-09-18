@@ -1,6 +1,7 @@
 add_library (CpeedLinux STATIC
   "backend/vulkan.c"
 
+  "linuxevent.c" "linuxevent.h"
   "linuxinit.c"
   "linuxinput.c" 
   "linuxlock.c"
@@ -17,6 +18,10 @@ find_package (WaylandProtocols REQUIRED)
 find_package (WaylandScanner REQUIRED)
 
 find_package(X11 REQUIRED COMPONENTS xkbcommon)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(EVDEV REQUIRED "libevdev")
+pkg_check_modules(SYSTEMD REQUIRED "libsystemd")
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/EnableVulkanBackend.cmake")
 
@@ -45,7 +50,15 @@ target_sources (CpeedLinux PRIVATE "xdg-shell/private.c")
 target_include_directories (CpeedLinux
     PRIVATE ${Wayland_INCLUDE_DIRS}
     PRIVATE ${X11_xkbcommon_INCLUDE_PATH}
+    PRIVATE ${EVDEV_INCLUDEDIR}
+  PRIVATE ${SYSTEMD_INCLUDEDIR}
 )
-target_link_libraries (CpeedLinux ${Wayland_LIBRARIES} ${X11_xkbcommon_LIB})
+
+target_link_libraries (CpeedLinux
+  ${Wayland_LIBRARIES}
+  ${X11_xkbcommon_LIB}
+  ${EVDEV_LIBRARIES}
+  ${SYSTEMD_LIBRARIES}
+)
 
 set_property (TARGET CpeedLinux PROPERTY C_STANDARD 99)

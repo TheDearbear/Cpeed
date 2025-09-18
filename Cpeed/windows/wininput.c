@@ -62,3 +62,49 @@ void clear_window_event_queue(CpdWindow window) {
 
     data->input_queue_size = 0;
 }
+
+uint16_t get_gamepad_count(CpdWindow window) {
+    CpdGamepad* current = g_gamepads;
+    uint16_t count = 0;
+
+    while (current != 0) {
+        current = current->next;
+        count++;
+    }
+
+    return count;
+}
+
+CpdGamepadStickPosition get_gamepad_stick_position(CpdWindow window, uint16_t gamepad_index, CpdGamepadStick stick) {
+    CpdGamepad* current = g_gamepads;
+
+    for (uint16_t i = 0; i < gamepad_index; i++) {
+        current = current->next;
+    }
+
+    if (stick == CpdGamepadStick_Left) {
+        return (CpdGamepadStickPosition) {
+            .x = current->last_used_state.leftThumbstickX,
+            .y = current->last_used_state.leftThumbstickY,
+        };
+    }
+    else {
+        return (CpdGamepadStickPosition) {
+            .x = current->last_used_state.rightThumbstickX,
+            .y = current->last_used_state.rightThumbstickY,
+        };
+    }
+}
+
+CpdGamepadTriggersPosition get_gamepad_triggers_position(CpdWindow window, uint16_t gamepad_index) {
+    CpdGamepad* current = g_gamepads;
+
+    for (uint16_t i = 0; i < gamepad_index; i++) {
+        current = current->next;
+    }
+
+    return (CpdGamepadTriggersPosition) {
+        .left = current->last_used_state.leftTrigger,
+        .right = current->last_used_state.rightTrigger
+    };
+}

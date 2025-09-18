@@ -1,6 +1,7 @@
 #pragma once
 
 #include "input/clipboard.h"
+#include "input/gamepad.h"
 #include "input/keyboard.h"
 #include "input/mouse.h"
 
@@ -28,7 +29,14 @@ typedef enum CpdInputEventType {
 
     CpdInputEventType_ButtonPress,
     CpdInputEventType_CharInput,
-    CpdInputEventType_TextInput
+    CpdInputEventType_TextInput,
+
+    // Gamepad
+
+    CpdInputEventType_GamepadButtonPress,
+    CpdInputEventType_GamepadStick,
+    CpdInputEventType_GamepadTrigger,
+    CpdInputEventType_GamepadConnect
 } CpdInputEventType;
 
 typedef union CpdInputEventData {
@@ -47,6 +55,13 @@ typedef union CpdInputEventData {
     CpdButtonPressInputEventData button_press;
     CpdCharInputEventData char_input;
     CpdTextInputEventData text_input;
+
+    // Gamepad
+
+    CpdGamepadButtonPressInputEventData gamepad_button_press;
+    CpdGamepadStickInputEventData gamepad_stick;
+    CpdGamepadTriggerInputEventData gamepad_trigger;
+    CpdGamepadConnectInputEventData gamepad_connect;
 } CpdInputEventData;
 
 typedef struct CpdInputEvent {

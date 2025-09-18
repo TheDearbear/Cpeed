@@ -46,3 +46,8 @@ void destroy_pointer();
 void destroy_keyboard();
 
 void insert_repeating_key_events(CpdWaylandWindow* wl_window);
+
+void add_gamepad_button_press_to_queue(CpdWaylandWindow* wl_window, CpdGamepadButtonType button, uint16_t index, bool pressed);
+void add_gamepad_stick_to_queue(CpdWaylandWindow* wl_window, CpdGamepadStick stick, uint16_t index);
+void add_gamepad_trigger_to_queue(CpdWaylandWindow* wl_window, CpdGamepadTrigger trigger, uint16_t index);
+void add_gamepad_connect_to_queue(CpdWaylandWindow* wl_window, CpdGamepadConnectStatus status, uint16_t index);

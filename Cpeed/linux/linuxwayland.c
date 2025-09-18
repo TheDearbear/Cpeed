@@ -33,7 +33,6 @@ struct xkb_context* g_xkb_context;
 static struct wl_pointer* g_pointer;
 static CpdWaylandKeyboard g_keyboard;
 
-static bool resize_input_queue_if_need(CpdWaylandWindow* window, uint32_t new_events);
 static void queue_mouse_move_event(CpdWaylandWindow* wl_window, wl_fixed_t surface_x, wl_fixed_t surface_y);
 static void add_mouse_button_event(CpdWaylandWindow* wl_window, CpdMouseButtonType type, bool pressed);
 static void add_button_press_event(CpdWaylandWindow* wl_window, CpdKeyCode keyCode, xkb_keycode_t xkbKeyCode, bool pressed);
@@ -385,38 +384,61 @@ struct wl_seat_listener g_seat_listener = (struct wl_seat_listener) {
 // ===============
 
 
-static bool resize_input_queue_if_need(CpdWaylandWindow* window, uint32_t new_events) {
-    uint32_t new_size = window->input_queue_size + new_events;
-
-    if (window->input_queue_max_size >= new_size) {
-        return true;
+void add_gamepad_button_press_to_queue(CpdWaylandWindow* wl_window, CpdGamepadButtonType button, uint16_t index, bool pressed) {
+    if (!resize_input_queue_if_need(wl_window, 1)) {
+        return;
     }
 
-    uint32_t new_max_size = new_size;
-    uint32_t remainder = new_max_size % INPUT_QUEUE_SIZE_STEP;
+    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent) {
+        .type = CpdInputEventType_GamepadButtonPress,
+        .modifiers = g_keyboard.modifiers,
+        .time = get_clock_usec(),
+        .data.gamepad_button_press.button = button,
+        .data.gamepad_button_press.gamepad_index = index,
+        .data.gamepad_button_press.pressed = pressed
+    };
+}
 
-    if (remainder != 0) {
-        new_max_size += INPUT_QUEUE_SIZE_STEP - remainder;
+void add_gamepad_stick_to_queue(CpdWaylandWindow* wl_window, CpdGamepadStick stick, uint16_t index) {
+    if (!resize_input_queue_if_need(wl_window, 1)) {
+        return;
     }
 
-    CpdInputEvent* new_input_queue = (CpdInputEvent*)malloc(new_max_size * sizeof(CpdInputEvent));
-    if (new_input_queue == 0) {
-        return false;
+    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent) {
+        .type = CpdInputEventType_GamepadStick,
+        .modifiers = g_keyboard.modifiers,
+        .time = get_clock_usec(),
+        .data.gamepad_stick.stick = stick,
+        .data.gamepad_stick.gamepad_index = index
+    };
+}
+
+void add_gamepad_trigger_to_queue(CpdWaylandWindow* wl_window, CpdGamepadTrigger trigger, uint16_t index) {
+    if (!resize_input_queue_if_need(wl_window, 1)) {
+        return;
     }
 
-    for (uint32_t i = 0; i < window->input_queue_size; i++) {
-        new_input_queue[i] = window->input_queue[i];
+    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent) {
+        .type = CpdInputEventType_GamepadTrigger,
+        .modifiers = g_keyboard.modifiers,
+        .time = get_clock_usec(),
+        .data.gamepad_trigger.trigger = trigger,
+        .data.gamepad_trigger.gamepad_index = index
+    };
+}
+
+void add_gamepad_connect_to_queue(CpdWaylandWindow* wl_window, CpdGamepadConnectStatus status, uint16_t index) {
+    if (!resize_input_queue_if_need(wl_window, 1)) {
+        return;
     }
 
-    CpdInputEvent* old_input_queue = window->input_queue;
-
-    window->input_queue = new_input_queue;
-    window->input_queue_max_size = new_max_size;
-    window->resize_swap_queue = true;
-
-    free(old_input_queue);
-
-    return true;
+    wl_window->input_queue[wl_window->input_queue_size++] = (CpdInputEvent) {
+        .type = CpdInputEventType_GamepadConnect,
+        .modifiers = g_keyboard.modifiers,
+        .time = get_clock_usec(),
+        .data.gamepad_connect.status = status,
+        .data.gamepad_connect.gamepad_index = index
+    };
 }
 
 static void queue_mouse_move_event(CpdWaylandWindow* wl_window, wl_fixed_t surface_x, wl_fixed_t surface_y) {

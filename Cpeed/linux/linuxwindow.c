@@ -2,8 +2,10 @@
 #include <malloc.h>
 #include <stdio.h>
 
+#include "../platform/input.h"
 #include "../platform/window.h"
 #include "../input.h"
+#include "linuxevent.h"
 #include "linuxmain.h"
 #include "linuxwayland.h"
 #include "linuxwindowlist.h"
@@ -100,6 +102,16 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     wl_display_roundtrip(g_display);
     wl_surface_commit(surface);
 
+    uint16_t count = get_gamepad_count(wl_window);
+    if (!resize_input_queue_if_need(wl_window, count)) {
+        destroy_window(wl_window);
+        return 0;
+    }
+
+    for (uint16_t i = 0; i < count; i++) {
+        add_gamepad_connect_to_queue(wl_window, CpdGamepadConnectStatus_Connected, i);
+    }
+
     return (CpdWindow)wl_window;
 }
 
@@ -145,6 +157,8 @@ bool poll_window(CpdWindow window) {
     if (wl_window->should_close) {
         return true;
     }
+
+    poll_events(wl_window);
 
     // This call is required as sometimes there are still some
     // events present in the default queue

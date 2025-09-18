@@ -8,6 +8,8 @@ typedef struct CpdWaylandWindowListNode {
     CpdWaylandWindow* window;
 } CpdWaylandWindowListNode;
 
+extern CpdWaylandWindowListNode* g_windows_list;
+
 CpdWaylandWindowListNode* add_window_to_list(CpdWaylandWindow* window);
 
 void remove_window_from_list(CpdWaylandWindow* window);
