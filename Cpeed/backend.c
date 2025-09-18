@@ -1,7 +1,7 @@
 #include "backend.h"
 
 #if CPD_VULKAN_ENABLED
-#include "common/backend/vulkan/backend.h"
+#include "vulkan/backend.h"
 #endif
 
 bool get_backend_implementation(CpdPlatformBackendFlags backend, CpdBackendImplementation* implementation) {

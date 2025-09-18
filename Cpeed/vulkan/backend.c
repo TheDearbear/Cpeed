@@ -2,7 +2,7 @@
 #include <string.h>
 #include <malloc.h>
 
-#include "../../../platform/backend/vulkan.h"
+#include "../platform/backend/vulkan.h"
 #include "rendering/rendering.h"
 #include "backend.h"
 #include "renderer.h"

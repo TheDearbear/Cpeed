@@ -1,9 +1,7 @@
 add_library (CpeedLinux STATIC
-  "backend/vulkan.c"
-
   "linuxevent.c" "linuxevent.h"
   "linuxinit.c"
-  "linuxinput.c" 
+  "linuxinput.c"
   "linuxlock.c"
   "linuxmain.c" "linuxmain.h"
   "linuxwayland.c" "linuxwayland.h"
@@ -17,40 +15,39 @@ find_package (Wayland REQUIRED Client)
 find_package (WaylandProtocols REQUIRED)
 find_package (WaylandScanner REQUIRED)
 
-find_package(X11 REQUIRED COMPONENTS xkbcommon)
+find_package (X11 REQUIRED COMPONENTS xkbcommon)
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(EVDEV REQUIRED "libevdev")
-pkg_check_modules(SYSTEMD REQUIRED "libsystemd")
+find_package (PkgConfig REQUIRED)
+pkg_check_modules (EVDEV REQUIRED "libevdev")
+pkg_check_modules (SYSTEMD REQUIRED "libsystemd")
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/EnableVulkanBackend.cmake")
-
-target_sources(Cpeed PRIVATE "../main.c")
+target_sources (CpeedVulkan PRIVATE "backend/vulkan.c")
+target_sources (Cpeed PRIVATE "../main.c")
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell")
 
 message("-- Generating client header for xdg-shell")
 
 execute_process (
-    COMMAND ${WaylandScanner_EXECUTABLE} "client-header"
-        INPUT_FILE "${WaylandProtocols_DATADIR}/stable/xdg-shell/xdg-shell.xml"
-        OUTPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/client.h"
+  COMMAND ${WaylandScanner_EXECUTABLE} "client-header"
+    INPUT_FILE "${WaylandProtocols_DATADIR}/stable/xdg-shell/xdg-shell.xml"
+    OUTPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/client.h"
 )
 
 message("-- Generating code for xdg-shell")
 
 execute_process (
-    COMMAND ${WaylandScanner_EXECUTABLE} "private-code"
-        INPUT_FILE "${WaylandProtocols_DATADIR}/stable/xdg-shell/xdg-shell.xml"
-        OUTPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/private.c"
+  COMMAND ${WaylandScanner_EXECUTABLE} "private-code"
+    INPUT_FILE "${WaylandProtocols_DATADIR}/stable/xdg-shell/xdg-shell.xml"
+    OUTPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/private.c"
 )
 
 target_sources (CpeedLinux PRIVATE "xdg-shell/private.c")
 
 target_include_directories (CpeedLinux
-    PRIVATE ${Wayland_INCLUDE_DIRS}
-    PRIVATE ${X11_xkbcommon_INCLUDE_PATH}
-    PRIVATE ${EVDEV_INCLUDEDIR}
+  PRIVATE ${Wayland_INCLUDE_DIRS}
+  PRIVATE ${X11_xkbcommon_INCLUDE_PATH}
+  PRIVATE ${EVDEV_INCLUDEDIR}
   PRIVATE ${SYSTEMD_INCLUDEDIR}
 )
 

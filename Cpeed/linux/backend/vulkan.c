@@ -3,7 +3,7 @@
 #include <dlfcn.h>
 #include <malloc.h>
 
-#include "../../common/backend/vulkan/vulkan.h"
+#include "../../vulkan/vulkan.h"
 #include "../../platform/backend/vulkan.h"
 #include "../linuxwayland.h"
 

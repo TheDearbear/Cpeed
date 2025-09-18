@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../../../platform/window.h"
-#include "../../../../input.h"
-#include "../../../general.h"
+#include "../../common/general.h"
+#include "../../platform/window.h"
+#include "../../input.h"
 #include "../renderer.h"
 #include "../vulkan.h"
 

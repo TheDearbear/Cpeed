@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-#include "../../../platform.h"
+#include "../platform.h"
 #include "vulkan.h"
 
 typedef struct CpdTransferQueue {

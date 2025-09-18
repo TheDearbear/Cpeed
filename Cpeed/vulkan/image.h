@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../general.h"
+#include "../common/general.h"
 #include "device.h"
 
 typedef struct CpdImageMemory {

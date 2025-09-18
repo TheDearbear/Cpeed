@@ -1,7 +1,7 @@
 #include <malloc.h>
 
 #include "renderer.h"
-#include "../../../platform.h"
+#include "../platform.h"
 
 typedef bool (*CpdDeviceInitializer)(CpdRenderer*, VkPhysicalDevice, VkResult*);
 
