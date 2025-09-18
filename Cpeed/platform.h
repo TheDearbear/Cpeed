@@ -8,7 +8,8 @@ typedef enum CpdCompilePlatform {
 } CpdCompilePlatform;
 
 typedef enum CpdPlatformBackendFlags {
-    CpdPlatformBackendFlags_Vulkan = 1 << 0
+    CpdPlatformBackendFlags_Vulkan = 1 << 0,
+    CpdPlatformBackendFlags_DirectX = 1 << 1
 } CpdPlatformBackendFlags;
 
 extern CpdCompilePlatform compile_platform();
