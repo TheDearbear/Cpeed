@@ -27,8 +27,13 @@ static struct xdg_toplevel_listener top_level_listener = (struct xdg_toplevel_li
 };
 
 static void frame_done(void* data, struct wl_callback* wl_callback, uint32_t callback_data);
-static struct wl_callback_listener frame_listener = (struct wl_callback_listener){
+static struct wl_callback_listener frame_listener = (struct wl_callback_listener) {
     .done = frame_done
+};
+
+static void decoration_configure(void* data, struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1, uint32_t mode);
+static struct zxdg_toplevel_decoration_v1_listener decoration_listener = (struct zxdg_toplevel_decoration_v1_listener) {
+    .configure = decoration_configure
 };
 
 CpdWindow create_window(const CpdWindowInfo* info) {
@@ -67,6 +72,15 @@ CpdWindow create_window(const CpdWindowInfo* info) {
 
     struct xdg_toplevel* top_level = xdg_surface_get_toplevel(shell_surface);
     xdg_toplevel_add_listener(top_level, &top_level_listener, (void*)wl_window);
+
+    if (g_decoration != 0) {
+        wl_window->decoration = zxdg_decoration_manager_v1_get_toplevel_decoration(g_decoration, top_level);
+        zxdg_toplevel_decoration_v1_add_listener(wl_window->decoration, &decoration_listener, (void*)wl_window);
+        zxdg_toplevel_decoration_v1_set_mode(wl_window->decoration, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+    }
+    else {
+        wl_window->decoration = 0;
+    }
 
     wl_window->surface = surface;
     wl_window->callback = callback;
@@ -124,6 +138,10 @@ void destroy_window(CpdWindow window) {
 
     if (g_current_keyboard_focus == wl_window) {
         g_current_keyboard_focus = 0;
+    }
+
+    if (wl_window->decoration != 0) {
+        zxdg_toplevel_decoration_v1_destroy(wl_window->decoration);
     }
 
     xdg_toplevel_destroy(wl_window->top_level);
@@ -288,4 +306,12 @@ static void frame_done(void* data, struct wl_callback* wl_callback, uint32_t cal
     wl_callback_add_listener(wl_window->callback, &frame_listener, data);
 
     wl_window->should_render = true;
+}
+
+static void decoration_configure(void* data, struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1, uint32_t mode) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)data;
+
+    if (mode != ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE) {
+        // TODO: Enable client-side decoration
+    }
 }

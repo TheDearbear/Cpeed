@@ -24,25 +24,26 @@ pkg_check_modules (SYSTEMD REQUIRED "libsystemd")
 target_sources (CpeedVulkan PRIVATE "backend/vulkan.c")
 target_sources (Cpeed PRIVATE "../main.c")
 
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell")
+file(MAKE_DIRECTORY "xdg-decoration" "xdg-shell")
 
-message("-- Generating client header for xdg-shell")
-
-execute_process (
-  COMMAND ${WaylandScanner_EXECUTABLE} "client-header"
-    INPUT_FILE "${WaylandProtocols_DATADIR}/stable/xdg-shell/xdg-shell.xml"
-    OUTPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/client.h"
+add_custom_command (OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/xdg-decoration/client.h" "${CMAKE_CURRENT_SOURCE_DIR}/xdg-decoration/private.c"
+  COMMAND ${WaylandScanner_EXECUTABLE} ARGS "client-header" "${WaylandProtocols_DATADIR}/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml" "${CMAKE_CURRENT_SOURCE_DIR}/xdg-decoration/client.h"
+  COMMAND ${WaylandScanner_EXECUTABLE} ARGS "private-code" "${WaylandProtocols_DATADIR}/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml" "${CMAKE_CURRENT_SOURCE_DIR}/xdg-decoration/private.c"
+  DEPENDS "${WaylandProtocols_DATADIR}/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml"
+  VERBATIM
 )
 
-message("-- Generating code for xdg-shell")
-
-execute_process (
-  COMMAND ${WaylandScanner_EXECUTABLE} "private-code"
-    INPUT_FILE "${WaylandProtocols_DATADIR}/stable/xdg-shell/xdg-shell.xml"
-    OUTPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/private.c"
+add_custom_command (OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/client.h" "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/private.c"
+  COMMAND ${WaylandScanner_EXECUTABLE} ARGS "client-header" "${WaylandProtocols_DATADIR}/stable/xdg-shell/xdg-shell.xml" "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/client.h"
+  COMMAND ${WaylandScanner_EXECUTABLE} ARGS "private-code" "${WaylandProtocols_DATADIR}/stable/xdg-shell/xdg-shell.xml" "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/private.c"
+  DEPENDS "${WaylandProtocols_DATADIR}/stable/xdg-shell/xdg-shell.xml"
+  VERBATIM
 )
 
-target_sources (CpeedLinux PRIVATE "xdg-shell/private.c")
+add_library (WaylandExtensions OBJECT)
+target_sources (WaylandExtensions PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/xdg-decoration/client.h" "${CMAKE_CURRENT_SOURCE_DIR}/xdg-decoration/private.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/client.h" "${CMAKE_CURRENT_SOURCE_DIR}/xdg-shell/private.c")
 
 target_include_directories (CpeedLinux
   PRIVATE ${Wayland_INCLUDE_DIRS}
@@ -56,6 +57,7 @@ target_link_libraries (CpeedLinux
   ${X11_xkbcommon_LIB}
   ${EVDEV_LIBRARIES}
   ${SYSTEMD_LIBRARIES}
+  WaylandExtensions
 )
 
 set_property (TARGET CpeedLinux PROPERTY C_STANDARD 99)

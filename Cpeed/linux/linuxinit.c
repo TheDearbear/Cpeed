@@ -32,6 +32,9 @@ static void registry_global(
 
         xdg_wm_base_add_listener(g_wm_base, &wm_base_listener, 0);
     }
+    else if (strcmp(interface, zxdg_decoration_manager_v1_interface.name) == 0) {
+        g_decoration = (struct zxdg_decoration_manager_v1*)wl_registry_bind(wl_registry, name, &zxdg_decoration_manager_v1_interface, 1);
+    }
 }
 
 struct wl_registry_listener registry_listener = (struct wl_registry_listener) {
@@ -70,6 +73,11 @@ void shutdown_platform() {
     }
 
     shutdown_events();
+
+    if (g_decoration != 0) {
+        zxdg_decoration_manager_v1_destroy(g_decoration);
+        g_decoration = 0;
+    }
 
     if (g_wm_base != 0) {
         xdg_wm_base_destroy(g_wm_base);

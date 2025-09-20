@@ -4,6 +4,7 @@
 
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
+#include "xdg-decoration/client.h"
 #include "xdg-shell/client.h"
 
 #include "../input.h"
@@ -16,6 +17,7 @@ typedef struct CpdWaylandWindow {
     struct wl_callback* callback;
     struct xdg_surface* shell_surface;
     struct xdg_toplevel* top_level;
+    struct zxdg_toplevel_decoration_v1* decoration;
 
     CpdInputMode input_mode;
     uint32_t input_queue_size;

@@ -11,6 +11,7 @@ extern struct wl_compositor* g_compositor;
 extern struct wl_display* g_display;
 extern struct wl_seat* g_seat;
 extern struct xdg_wm_base* g_wm_base;
+extern struct zxdg_decoration_manager_v1* g_decoration;
 
 extern struct wl_seat_listener g_seat_listener;
 
