@@ -1,7 +1,6 @@
 #include <malloc.h>
 #include <stdio.h>
 
-#include "../platform/input.h"
 #include "../platform/window.h"
 #include "../platform.h"
 #include "winmain.h"

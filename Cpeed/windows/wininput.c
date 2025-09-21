@@ -1,6 +1,6 @@
 #include <malloc.h>
 
-#include "../platform/input.h"
+#include "../platform/window.h"
 #include "winmain.h"
 
 bool set_window_input_mode(CpdWindow window, CpdInputMode mode) {
@@ -18,6 +18,14 @@ CpdInputMode get_window_input_mode(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     return data->input_mode;
+}
+
+void clear_window_event_queue(CpdWindow window) {
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
+
+    cleanup_input_queue(data->input_queue, data->input_queue_size);
+
+    data->input_queue_size = 0;
 }
 
 bool get_window_input_events(CpdWindow window, const CpdInputEvent** events, uint32_t* size) {
@@ -53,14 +61,6 @@ bool get_window_input_events(CpdWindow window, const CpdInputEvent** events, uin
     clear_window_event_queue(window);
 
     return true;
-}
-
-void clear_window_event_queue(CpdWindow window) {
-    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
-
-    cleanup_input_queue(data->input_queue, data->input_queue_size);
-
-    data->input_queue_size = 0;
 }
 
 uint16_t get_gamepad_count(CpdWindow window) {

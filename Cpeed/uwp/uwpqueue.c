@@ -176,8 +176,6 @@ bool add_gamepad_trigger_to_queue(CpdUWPWindow* uwp_window, CpdGamepadTrigger tr
 }
 
 bool add_gamepad_button_press_to_queue(CpdUWPWindow* uwp_window, CpdGamepadButtonType button, uint16_t index, bool pressed) {
-    printf("Button (%d): %d -> %d\n", index, button, pressed);
-
     if (!resize_input_queue_if_need(uwp_window, 1)) {
         return false;
     }

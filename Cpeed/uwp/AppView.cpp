@@ -4,6 +4,10 @@
 
 #include "AppView.h"
 
+extern "C" {
+#include "../platform/input/queue.h"
+}
+
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::Activation;
 using namespace winrt::Windows::ApplicationModel::Core;

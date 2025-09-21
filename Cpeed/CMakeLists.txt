@@ -14,9 +14,12 @@ add_executable (Cpeed
   "input/gamepad.h"
   "input/keyboard.h"
   "input/mouse.h"
+  
+  "platform/input/gamepad.h"
+  "platform/input/mode.h"
+  "platform/input/queue.h"
 
   "platform/init.h"
-  "platform/input.h"
   "platform/lock.h"
   "platform/window.h")
 

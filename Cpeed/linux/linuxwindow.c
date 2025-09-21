@@ -2,7 +2,7 @@
 #include <malloc.h>
 #include <stdio.h>
 
-#include "../platform/input.h"
+#include "../platform/input/gamepad.h"
 #include "../platform/window.h"
 #include "../input.h"
 #include "linuxevent.h"

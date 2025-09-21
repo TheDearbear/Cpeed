@@ -1,7 +1,7 @@
 #include <malloc.h>
 #include <stdio.h>
 
-#include "../platform/input.h"
+#include "../platform/input/gamepad.h"
 #include "backend.h"
 #include "directx.h"
 

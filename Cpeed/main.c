@@ -1,11 +1,10 @@
-#include <stdbool.h>
 #include <stdio.h>
 #include <malloc.h>
 
+#include "platform/input/queue.h"
+#include "platform/init.h"
 #include "backend.h"
 #include "platform.h"
-#include "platform/init.h"
-#include "platform/input.h"
 
 int main() {
     if (!initialize_platform()) {

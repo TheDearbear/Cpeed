@@ -1,6 +1,5 @@
 #include <stdio.h>
 
-#include "../../platform/input.h"
 #include "rendering.h"
 #include "../shortcuts.h"
 

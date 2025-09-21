@@ -1,9 +1,7 @@
 #pragma once
 
-#include <stdbool.h>
-
-#include "platform/input.h"
 #include "platform/window.h"
+#include "input.h"
 #include "platform.h"
 
 typedef void* CpdBackendHandle;
