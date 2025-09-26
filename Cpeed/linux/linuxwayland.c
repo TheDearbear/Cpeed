@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <xkbcommon/xkbcommon-names.h>
 
+#include "../platform/logging.h"
 #include "../platform.h"
 #include "linuxmain.h"
 #include "linuxwayland.h"
@@ -219,7 +220,7 @@ static void keyboard_keymap(void* data, struct wl_keyboard* wl_keyboard, uint32_
     if (format == WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) {
         const char* keymap = (const char*)mmap(0, size, PROT_READ, MAP_PRIVATE, fd, 0);
         if (keymap == MAP_FAILED) {
-            printf("Unable to memory map keymap\n");
+            log_error("Unable to memory map keymap\n");
             close(fd);
             return;
         }
@@ -232,7 +233,7 @@ static void keyboard_keymap(void* data, struct wl_keyboard* wl_keyboard, uint32_
         g_keyboard.keymap = xkb_keymap_new_from_names(g_xkb_context, 0, XKB_KEYMAP_COMPILE_NO_FLAGS);
     }
     else {
-        printf("Unknown keymap format (%d)\n", format);
+        log_error("Unknown keymap format (%d)\n", format);
     }
 
     close(fd);
@@ -371,7 +372,7 @@ static void seat_capabilities(void* data, struct wl_seat* wl_seat, uint32_t capa
 }
 
 static void seat_name(void* data, struct wl_seat* wl_seat, const char* name) {
-    printf("Wayland seat name: %s\n", name);
+    log_debug("Wayland seat name: %s\n", name);
 }
 
 struct wl_seat_listener g_seat_listener = (struct wl_seat_listener) {

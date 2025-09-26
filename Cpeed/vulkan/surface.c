@@ -1,6 +1,6 @@
 #include <malloc.h>
-#include <stdio.h>
 
+#include "../platform/logging.h"
 #include "surface.h"
 #include "swapchain.h"
 
@@ -36,7 +36,7 @@ VkResult SURFACE_initialize(CpdSurface* cpeed_surface, CpdDevice* cpeed_device, 
     }
 
     if (!supported) {
-        printf("Presentation is not supported by selected queue family\n");
+        log_error("Presentation is not supported by selected queue family\n");
         return VK_ERROR_UNKNOWN;
     }
 

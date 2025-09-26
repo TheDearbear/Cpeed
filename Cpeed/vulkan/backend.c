@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include <string.h>
 #include <malloc.h>
 
 #include "../platform/backend/vulkan.h"
+#include "../platform/logging.h"
 #include "rendering/rendering.h"
 #include "backend.h"
 #include "renderer.h"
@@ -129,7 +129,7 @@ static VkResult validate_extensions(
 
         if (!found) {
             missing = true;
-            printf("Instance extension missing: %s\n", extensions[i]);
+            log_error("Instance extension missing: %s\n", extensions[i]);
         }
     }
 
@@ -240,7 +240,7 @@ static VkResult create_instance(CpdRendererInitParams* init_params) {
     }
 
     for (unsigned int i = 0; i < all_extensions_count; i++) {
-        printf("Enabling instance extension: %s\n", all_extensions[i]);
+        log_debug("Enabling instance extension: %s\n", all_extensions[i]);
     }
 
     init_params->api_version = api_version;
@@ -290,14 +290,14 @@ static CpdBackendHandle initialize_window(CpdWindow window) {
 
     VkResult result = create_instance(&renderer_init_params);
     if (result != VK_SUCCESS) {
-        printf("Unable to create Vulkan instance. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to create Vulkan instance. Result code: %s\n", string_VkResult(result));
         return 0;
     }
 
     CpdRenderer* renderer = 0;
     result = create_renderer(window, &renderer, &renderer_init_params);
     if (result != VK_SUCCESS) {
-        printf("Unable to create renderer. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to create renderer. Result code: %s\n", string_VkResult(result));
         vkDestroyInstance(renderer_init_params.instance, VK_NULL_HANDLE);
         shutdown_window((CpdBackendHandle)renderer);
         return 0;
@@ -305,14 +305,14 @@ static CpdBackendHandle initialize_window(CpdWindow window) {
 
     result = RENDERING_initialize(renderer);
     if (result != VK_SUCCESS) {
-        printf("Unable to initialize rendering module. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to initialize rendering module. Result code: %s\n", string_VkResult(result));
         shutdown_window((CpdBackendHandle)renderer);
         return 0;
     }
 
     result = create_swapchain(window, renderer);
     if (result != VK_SUCCESS) {
-        printf("Unable to create swapchain. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to create swapchain. Result code: %s\n", string_VkResult(result));
         shutdown_window((CpdBackendHandle)renderer);
         return 0;
     }
@@ -343,13 +343,13 @@ static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
 
     VkResult result = SWAPCHAIN_resize(&renderer->swapchain, &renderer->render_device, &renderer->surface, &new_size);
     if (result != VK_SUCCESS) {
-        printf("Unable to update surface size. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to update surface size. Result code: %s\n", string_VkResult(result));
         return false;
     }
 
     result = RENDERING_resize(renderer, new_size);
     if (result != VK_SUCCESS) {
-        printf("Unable to adapt for new surface size. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to adapt for new surface size. Result code: %s\n", string_VkResult(result));
         return false;
     }
 
@@ -375,7 +375,7 @@ static bool pre_frame(CpdBackendHandle cpeed_backend) {
 
     VkResult result = RENDERER_reset_pools(renderer);
     if (result != VK_SUCCESS) {
-        printf("Unable to reset command pools. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to reset command pools. Result code: %s\n", string_VkResult(result));
         return false;
     }
 
@@ -383,7 +383,7 @@ static bool pre_frame(CpdBackendHandle cpeed_backend) {
     renderer->swapchain.wait_for_acquire = result == VK_NOT_READY;
 
     if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR && result != VK_NOT_READY) {
-        printf("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
+        log_error("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
         return false;
     }
 
@@ -395,7 +395,7 @@ static bool frame(CpdBackendHandle cpeed_backend) {
 
     VkResult result = RENDERING_frame(renderer);
     if (result != VK_SUCCESS) {
-        printf("Unable to draw new frame. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to draw new frame. Result code: %s\n", string_VkResult(result));
         return false;
     }
 
@@ -419,7 +419,7 @@ static bool post_frame(CpdBackendHandle cpeed_backend) {
     };
     VkResult result = renderer->render_device.vkQueuePresentKHR(renderer->render_device.graphics_family.queue, &present_info);
     if (result != VK_SUCCESS) {
-        printf("Unable to present swapchain. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to present swapchain. Result code: %s\n", string_VkResult(result));
     }
 
     renderer->last_frame_end = get_clock_usec();

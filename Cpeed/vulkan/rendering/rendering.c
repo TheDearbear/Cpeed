@@ -1,7 +1,6 @@
-#include <stdio.h>
-
-#include "rendering.h"
+#include "../../platform/logging.h"
 #include "../shortcuts.h"
+#include "rendering.h"
 
 VkCommandBuffer buffer = VK_NULL_HANDLE;
 VkFence render_fence = VK_NULL_HANDLE;
@@ -14,13 +13,13 @@ float brightness_step = 0.05f;
 VkResult RENDERING_initialize(CpdRenderer* cpeed_renderer) {
     VkResult result = create_fence(&cpeed_renderer->render_device, &render_fence);
     if (result != VK_SUCCESS) {
-        printf("Unable to create render fence. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to create render fence. Result code: %s\n", string_VkResult(result));
         return result;
     }
 
     result = create_primary_command_buffer(&cpeed_renderer->render_device, cpeed_renderer->render_device.graphics_family.pool, &buffer);
     if (result != VK_SUCCESS) {
-        printf("Unable to create command buffer. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to create command buffer. Result code: %s\n", string_VkResult(result));
         return result;
     }
 
@@ -37,33 +36,33 @@ void RENDERING_input(CpdRenderer* cpeed_renderer, CpdWindow window, const CpdInp
 
         if (event->type == CpdInputEventType_CharInput) {
             uint64_t text = event->data.char_input.character;
-            printf("Char input: %s (%d bytes)\n", (char*)&text, event->data.char_input.length);
+            log_debug("Char input: %s (%d bytes)\n", (char*)&text, event->data.char_input.length);
         }
         else if (event->type == CpdInputEventType_ButtonPress) {
             if (event->data.button_press.pressed) {
                 if (event->data.button_press.key_code == CpdKeyCode_Numpad7 && brightness_red < 1.0f) {
                     brightness_red += brightness_step;
-                    printf("New red brightness: %.2f\n", brightness_red);
+                    log_debug("New red brightness: %.2f\n", brightness_red);
                 }
                 else if (event->data.button_press.key_code == CpdKeyCode_Numpad4 && brightness_red > 0.0f) {
                     brightness_red -= brightness_step;
-                    printf("New red brightness: %.2f\n", brightness_red);
+                    log_debug("New red brightness: %.2f\n", brightness_red);
                 }
                 else if (event->data.button_press.key_code == CpdKeyCode_Numpad8 && brightness_green < 1.0f) {
                     brightness_green += brightness_step;
-                    printf("New green brightness: %.2f\n", brightness_green);
+                    log_debug("New green brightness: %.2f\n", brightness_green);
                 }
                 else if (event->data.button_press.key_code == CpdKeyCode_Numpad5 && brightness_green > 0.0f) {
                     brightness_green -= brightness_step;
-                    printf("New green brightness: %.2f\n", brightness_green);
+                    log_debug("New green brightness: %.2f\n", brightness_green);
                 }
                 else if (event->data.button_press.key_code == CpdKeyCode_Numpad9 && brightness_blue < 1.0f) {
                     brightness_blue += brightness_step;
-                    printf("New blue brightness: %.2f\n", brightness_blue);
+                    log_debug("New blue brightness: %.2f\n", brightness_blue);
                 }
                 else if (event->data.button_press.key_code == CpdKeyCode_Numpad6 && brightness_blue > 0.0f) {
                     brightness_blue -= brightness_step;
-                    printf("New blue brightness: %.2f\n", brightness_blue);
+                    log_debug("New blue brightness: %.2f\n", brightness_blue);
                 }
             }
             else if (event->data.button_press.key_code == CpdKeyCode_Escape) {
@@ -72,13 +71,13 @@ void RENDERING_input(CpdRenderer* cpeed_renderer, CpdWindow window, const CpdInp
         }
         else if (event->type == CpdInputEventType_Clipboard) {
             if (event->data.clipboard.action_type == CpdClipboardActionType_Paste) {
-                printf("Paste data\n");
+                log_debug("Paste data\n");
             }
             else if (event->data.clipboard.action_type == CpdClipboardActionType_Copy) {
-                printf("Copy data\n");
+                log_debug("Copy data\n");
             }
             else if (event->data.clipboard.action_type == CpdClipboardActionType_Cut) {
-                printf("Cut data\n");
+                log_debug("Cut data\n");
             }
         }
     }
@@ -124,14 +123,14 @@ VkResult RENDERING_frame(CpdRenderer* cpeed_renderer) {
 
     VkResult result = cpeed_renderer->render_device.vkBeginCommandBuffer(buffer, &begin_info);
     if (result != VK_SUCCESS) {
-        printf("Unable to begin command buffer. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to begin command buffer. Result code: %s\n", string_VkResult(result));
         return result;
     }
 
     if (cpeed_renderer->swapchain.wait_for_acquire) {
         result = cpeed_renderer->render_device.vkWaitForFences(cpeed_renderer->render_device.handle, 1, &cpeed_renderer->swapchain_image_fence, VK_FALSE, UINT64_MAX);
         if (result != VK_SUCCESS) {
-            printf("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
+            log_error("Acquiring image of swapchain failed. Result code: %s\n", string_VkResult(result));
             return result;
         }
     }
@@ -152,7 +151,7 @@ VkResult RENDERING_frame(CpdRenderer* cpeed_renderer) {
 
     result = cpeed_renderer->render_device.vkEndCommandBuffer(buffer);
     if (result != VK_SUCCESS) {
-        printf("Unable to end command buffer. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to end command buffer. Result code: %s\n", string_VkResult(result));
         return result;
     }
 
@@ -187,12 +186,12 @@ VkResult RENDERING_frame(CpdRenderer* cpeed_renderer) {
 
     result = cpeed_renderer->render_device.vkResetFences(cpeed_renderer->render_device.handle, 1, &render_fence);
     if (result != VK_SUCCESS) {
-        printf("Unable to reset render fence. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to reset render fence. Result code: %s\n", string_VkResult(result));
     }
 
     result = cpeed_renderer->render_device.vkQueueSubmit2(cpeed_renderer->render_device.graphics_family.queue, 1, &submit_info, render_fence);
     if (result != VK_SUCCESS) {
-        printf("Unable to queue work. Result code: %s\n", string_VkResult(result));
+        log_error("Unable to queue work. Result code: %s\n", string_VkResult(result));
     }
 
     return cpeed_renderer->render_device.vkWaitForFences(cpeed_renderer->render_device.handle, 1, &render_fence, VK_TRUE, UINT64_MAX);

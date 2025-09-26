@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include <string.h>
 #include <malloc.h>
 
 #include "../platform/backend/vulkan.h"
+#include "../platform/logging.h"
 #include "device.h"
 #include "device.queue_init.h"
 
@@ -197,7 +197,7 @@ static CpdVulkanExtensions* alloc_device_extensions(CpdDevice* cpeed_device, Cpd
     uint32_t copied_extensions = 0;
     for (uint32_t i = 0; i < cpeed_device->extension_count; i++) {
         if (cpeed_device->extensions[i].load_method == CpdVulkanExtensionLoadMethod_NotLoaded) {
-            printf("Missing device extension: %s\n", cpeed_device->extensions[i].name);
+            log_error("Missing device extension: %s\n", cpeed_device->extensions[i].name);
             continue;
         }
 
@@ -206,7 +206,7 @@ static CpdVulkanExtensions* alloc_device_extensions(CpdDevice* cpeed_device, Cpd
         }
 
         all_extensions[copied_extensions++] = cpeed_device->extensions[i].name;
-        printf("Enabling device extension: %s\n", cpeed_device->extensions[i].name);
+        log_debug("Enabling device extension: %s\n", cpeed_device->extensions[i].name);
     }
 
     platform_extensions->extensions = all_extensions;
@@ -358,7 +358,7 @@ VkResult DEVICE_initialize(CpdDevice* cpeed_device, CpdDeviceInitParams* params)
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    printf("Initializing %s with %d transfer queue(s) and name \"%s\"\n",
+    log_debug("Initializing %s with %d transfer queue(s) and name \"%s\"\n",
         string_VkPhysicalDeviceType(physical_device_properties.properties.deviceType),
         cpeed_device->transfer_family.queue_count,
         physical_device_properties.properties.deviceName);

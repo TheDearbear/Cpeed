@@ -2,12 +2,12 @@
 #include <fcntl.h>
 #include <libevdev-1.0/libevdev/libevdev.h>
 #include <malloc.h>
-#include <stdio.h>
 #include <string.h>
 #include <systemd/sd-device.h>
 #include <systemd/sd-event.h>
 #include <unistd.h>
 
+#include "../platform/logging.h"
 #include "linuxevent.h"
 #include "linuxmain.h"
 #include "linuxwayland.h"
@@ -32,7 +32,7 @@ static bool init_device_from_fd(CpdEventDevice* device, sd_device* sd_device, in
     
     result = libevdev_new_from_fd(fd, &device->ev_device);
     if (result < 0) {
-        printf("Unable to init libevdev for device (%d)\n", -result);
+        log_error("Unable to init libevdev for device (%d)\n", -result);
         return false;
     }
 
@@ -96,10 +96,10 @@ static void handle_device(sd_device* device, bool added) {
                 free(event_device);
 
                 if (errno == EACCES) {
-                    printf("Unable to read device \"%s\" due to lack of permissions. Try to change file permissions of change user.\n", devname);
+                    log_error("Unable to read device \"%s\" due to lack of permissions. Try to change file permissions of change user.\n", devname);
                 }
                 else {
-                    printf("Unable to read device \"%s\" due to an error %d\n", devname, errno);
+                    log_error("Unable to read device \"%s\" due to an error %d\n", devname, errno);
                 }
 
                 return;
@@ -130,7 +130,7 @@ static void handle_device(sd_device* device, bool added) {
                 index++;
             }
 
-            printf("Joystick added \"%s\" (%s)\n", event_device->device_name, devname);
+            log_info("Joystick added \"%s\" (%s)\n", event_device->device_name, devname);
             announce_gamepad_connect(CpdGamepadConnectStatus_Connected, index);
         }
         else {
@@ -144,7 +144,7 @@ static void handle_device(sd_device* device, bool added) {
             sd_device_ref(device);
             sd_device_unref(old_device);
 
-            printf("Joystick reinitialized \"%s\" (%s)\n", event_device->device_name, devname);
+            log_info("Joystick reinitialized \"%s\" (%s)\n", event_device->device_name, devname);
         }
     }
     else {
@@ -162,7 +162,7 @@ static void handle_device(sd_device* device, bool added) {
             return;
         }
 
-        printf("Joystick removed \"%s\" (%s)\n", current->device_name, devname);
+        log_info("Joystick removed \"%s\" (%s)\n", current->device_name, devname);
         announce_gamepad_connect(CpdGamepadConnectStatus_Disconnected, index);
 
         libevdev_free(current->ev_device);
@@ -213,7 +213,6 @@ static bool init_connected_devices() {
 
     CpdEventDevice* current = g_event_devices;
     while (current != 0) {
-        printf("Device: %s\n", current->device_name);
         current = current->next;
     }
 

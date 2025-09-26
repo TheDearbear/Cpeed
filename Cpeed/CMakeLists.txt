@@ -21,6 +21,7 @@ add_executable (Cpeed
 
   "platform/init.h"
   "platform/lock.h"
+  "platform/logging.h"
   "platform/window.h")
 
 set_property(TARGET Cpeed PROPERTY C_STANDARD 99)

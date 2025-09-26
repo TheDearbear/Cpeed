@@ -1,26 +1,26 @@
-#include <stdio.h>
 #include <malloc.h>
 
 #include "platform/input/queue.h"
 #include "platform/init.h"
+#include "platform/logging.h"
 #include "backend.h"
 #include "platform.h"
 
 int main() {
     if (!initialize_platform()) {
-        printf("Unable to initialize platform-specific information\n");
+        log_error("Unable to initialize platform-specific information\n");
         return -1;
     }
 
     CpdBackendImplementation implementation;
     if (!get_backend_implementation(CpdPlatformBackendFlags_Vulkan, &implementation)) {
-        printf("Unable to find backend implementation\n");
+        log_error("Unable to find backend implementation\n");
         shutdown_platform();
         return -1;
     }
 
     if (!implementation.initialize_backend()) {
-        printf("Unable to initialize backend\n");
+        log_error("Unable to initialize backend\n");
         shutdown_platform();
         return -1;
     }
@@ -35,7 +35,7 @@ int main() {
 
     CpdBackendHandle backend = implementation.initialize_window(window);
     if (backend == 0) {
-        printf("Unable to initialize backend for window\n");
+        log_error("Unable to initialize backend for window\n");
         implementation.shutdown_backend();
         shutdown_platform();
         return -1;
@@ -47,7 +47,7 @@ int main() {
             CpdSize size = window_size(window);
 
             if (!implementation.resize(backend, size)) {
-                printf("Unable to resize window\n");
+                log_error("Unable to resize window\n");
                 continue;
             }
         }
@@ -71,7 +71,7 @@ int main() {
         implementation.post_frame(backend);
     }
 
-    printf("Goodbye!\n");
+    log_info("Goodbye!\n");
 
     implementation.shutdown_window(backend);
 

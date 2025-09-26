@@ -1,8 +1,8 @@
 #include <errno.h>
 #include <malloc.h>
-#include <stdio.h>
 
 #include "../platform/input/gamepad.h"
+#include "../platform/logging.h"
 #include "../platform/window.h"
 #include "../input.h"
 #include "linuxevent.h"
@@ -39,7 +39,7 @@ static struct zxdg_toplevel_decoration_v1_listener decoration_listener = (struct
 CpdWindow create_window(const CpdWindowInfo* info) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)malloc(sizeof(CpdWaylandWindow));
     if (wl_window == 0) {
-        printf("%s", "Unable to allocate window\n");
+        log_error("%s", "Unable to allocate window\n");
         return 0;
     }
 
@@ -49,7 +49,7 @@ CpdWindow create_window(const CpdWindowInfo* info) {
         free(input_queue);
         free(input_swap_queue);
         free(wl_window);
-        printf("%s", "Unable to allocate window data\n");
+        log_error("%s", "Unable to allocate window data\n");
         return 0;
     }
 
@@ -58,7 +58,7 @@ CpdWindow create_window(const CpdWindowInfo* info) {
         free(input_queue);
         free(input_swap_queue);
         free(wl_window);
-        printf("%s", "Unable to allocate list node for window\n");
+        log_error("%s", "Unable to allocate list node for window\n");
         return 0;
     }
 
@@ -183,22 +183,22 @@ bool poll_window(CpdWindow window) {
     wl_display_dispatch_pending(g_display);
 
     if (wl_display_prepare_read(g_display) == -1) {
-        printf("Unable to prepare for reading display events (%d)\n", errno);
+        log_error("Unable to prepare for reading display events (%d)\n", errno);
         return true;
     }
 
     if (wl_display_read_events(g_display) == -1) {
-        printf("Unable to read display events (%d)\n", errno);
+        log_error("Unable to read display events (%d)\n", errno);
         return true;
     }
 
     if (wl_display_dispatch_pending(g_display) == -1) {
-        printf("%s", "Unable to dispatch events for Wayland display\n");
+        log_error("%s", "Unable to dispatch events for Wayland display\n");
         return true;
     }
 
     if (wl_display_flush(g_display) == -1) {
-        printf("%s", "Unable to flush display data\n");
+        log_error("%s", "Unable to flush display data\n");
         return true;
     }
 
@@ -286,14 +286,14 @@ static void top_level_wm_capabilities(void* data, struct xdg_toplevel* xdg_tople
         return;
     }
 
-    printf("%s", "Window capabilities:");
+    log_debug("%s", "Window capabilities:");
 
     const uint32_t* capability;
     wl_array_for_each(capability, capabilities) {
-        printf(" %d", *capability);
+        log_debug(" %d", *capability);
     }
 
-    printf("%s", "\n");
+    log_debug("%s", "\n");
 }
 
 static void frame_done(void* data, struct wl_callback* wl_callback, uint32_t callback_data) {

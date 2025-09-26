@@ -1,7 +1,7 @@
 #include <malloc.h>
-#include <stdio.h>
 
 #include "../platform/window.h"
+#include "../platform/logging.h"
 #include "../platform.h"
 #include "winmain.h"
 
@@ -228,7 +228,7 @@ bool poll_window(CpdWindow window) {
 
     if (data == 0) {
         DWORD err = GetLastError();
-        printf("Unable to read window state. Error code: %d\n", err);
+        log_error("Unable to read window state. Error code: %d\n", err);
         return true;
     }
 

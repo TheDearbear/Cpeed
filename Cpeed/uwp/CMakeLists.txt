@@ -5,6 +5,7 @@ add_library (CpeedUWP STATIC
   "main.cpp" "main.h"
   "uwpinit.c"
   "uwpinput.c"
+  "uwplogging.c"
   "uwpmain.c" "uwpmain.h"
   "uwpqueue.c"
   "uwpwindow.c")

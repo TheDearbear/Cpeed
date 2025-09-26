@@ -1,7 +1,7 @@
 #include <malloc.h>
-#include <stdio.h>
 
 #include "../platform/input/gamepad.h"
+#include "../platform/logging.h"
 #include "backend.h"
 #include "directx.h"
 
@@ -165,33 +165,33 @@ static void input(CpdBackendHandle cpeed_backend, CpdWindow cpeed_window, const 
 
         if (event->type == CpdInputEventType_CharInput) {
             uint64_t text = event->data.char_input.character;
-            printf("Char input: %s (%d bytes)\n", (char*)&text, event->data.char_input.length);
+            log_debug("Char input: %s (%d bytes)\n", (char*)&text, event->data.char_input.length);
         }
         else if (event->type == CpdInputEventType_ButtonPress) {
             if (event->data.button_press.pressed) {
                 if (event->data.button_press.key_code == CpdKeyCode_Numpad7 && brightness_red < 1.0f) {
                     brightness_red += brightness_step;
-                    printf("New red brightness: %.2f\n", brightness_red);
+                    log_debug("New red brightness: %.2f\n", brightness_red);
                 }
                 else if (event->data.button_press.key_code == CpdKeyCode_Numpad4 && brightness_red > 0.0f) {
                     brightness_red -= brightness_step;
-                    printf("New red brightness: %.2f\n", brightness_red);
+                    log_debug("New red brightness: %.2f\n", brightness_red);
                 }
                 else if (event->data.button_press.key_code == CpdKeyCode_Numpad8 && brightness_green < 1.0f) {
                     brightness_green += brightness_step;
-                    printf("New green brightness: %.2f\n", brightness_green);
+                    log_debug("New green brightness: %.2f\n", brightness_green);
                 }
                 else if (event->data.button_press.key_code == CpdKeyCode_Numpad5 && brightness_green > 0.0f) {
                     brightness_green -= brightness_step;
-                    printf("New green brightness: %.2f\n", brightness_green);
+                    log_debug("New green brightness: %.2f\n", brightness_green);
                 }
                 else if (event->data.button_press.key_code == CpdKeyCode_Numpad9 && brightness_blue < 1.0f) {
                     brightness_blue += brightness_step;
-                    printf("New blue brightness: %.2f\n", brightness_blue);
+                    log_debug("New blue brightness: %.2f\n", brightness_blue);
                 }
                 else if (event->data.button_press.key_code == CpdKeyCode_Numpad6 && brightness_blue > 0.0f) {
                     brightness_blue -= brightness_step;
-                    printf("New blue brightness: %.2f\n", brightness_blue);
+                    log_debug("New blue brightness: %.2f\n", brightness_blue);
                 }
 
                 DXGI_RGBA color = {
@@ -208,18 +208,18 @@ static void input(CpdBackendHandle cpeed_backend, CpdWindow cpeed_window, const 
             else if (event->data.button_press.key_code == CpdKeyCode_Tab) {
                 CpdBackendVersion version = get_version(cpeed_backend);
 
-                printf("DirectX version: %d.%d\n", version.major, version.minor);
+                log_debug("DirectX version: %d.%d\n", version.major, version.minor);
             }
         }
         else if (event->type == CpdInputEventType_Clipboard) {
             if (event->data.clipboard.action_type == CpdClipboardActionType_Paste) {
-                printf("Paste data\n");
+                log_debug("Paste data\n");
             }
             else if (event->data.clipboard.action_type == CpdClipboardActionType_Copy) {
-                printf("Copy data\n");
+                log_debug("Copy data\n");
             }
             else if (event->data.clipboard.action_type == CpdClipboardActionType_Cut) {
-                printf("Cut data\n");
+                log_debug("Cut data\n");
             }
         }
         else if (event->type == CpdInputEventType_GamepadButtonPress) {
@@ -245,10 +245,10 @@ static void input(CpdBackendHandle cpeed_backend, CpdWindow cpeed_window, const 
         }
         else if (event->type == CpdInputEventType_GamepadConnect) {
             if (event->data.gamepad_connect.status == CpdGamepadConnectStatus_Connected) {
-                printf("Gamepad %d connected.\n", event->data.gamepad_connect.gamepad_index + 1);
+                log_debug("Gamepad %d connected.\n", event->data.gamepad_connect.gamepad_index + 1);
             }
             else {
-                printf("Gamepad %d disconnected.\n", event->data.gamepad_connect.gamepad_index + 1);
+                log_debug("Gamepad %d disconnected.\n", event->data.gamepad_connect.gamepad_index + 1);
             }
         }
     }

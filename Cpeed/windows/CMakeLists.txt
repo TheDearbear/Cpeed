@@ -2,6 +2,7 @@ add_library (CpeedWindows STATIC
   "wininit.c"
   "wininput.c"
   "winlock.c"
+  "winlogging.c"
   "winmain.c" "winmain.h"
   "winproc.c" "winproc.h"
   "winwindow.c")
