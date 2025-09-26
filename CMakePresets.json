@@ -40,7 +40,8 @@
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "cl.exe",
                 "CMAKE_SYSTEM_NAME": "WindowsStore",
-                "CMAKE_SYSTEM_VERSION": "10.0"
+                "CMAKE_SYSTEM_VERSION": "10.0",
+                "CMAKE_WIN32_EXECUTABLE": "ON"
             }
         },
         {
