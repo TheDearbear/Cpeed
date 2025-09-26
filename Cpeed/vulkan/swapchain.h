@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../common/general.h"
+#include "../common/math.h"
 #include "image.h"
 #include "surface.h"
 

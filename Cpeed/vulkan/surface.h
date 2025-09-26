@@ -1,7 +1,6 @@
 #pragma once
 
 #include "device.h"
-#include "../common/general.h"
 
 typedef struct CpdSurface {
     VkSurfaceKHR handle;

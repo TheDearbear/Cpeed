@@ -8,7 +8,7 @@ add_executable (Cpeed
   "input.h"
   "platform.h"
 
-  "common/general.c" "common/general.h"
+  "common/math.c" "common/math.h"
 
   "input/clipboard.h"
   "input/gamepad.h"

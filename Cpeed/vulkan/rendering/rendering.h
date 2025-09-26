@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../common/general.h"
+#include "../../common/math.h"
 #include "../../platform/window.h"
 #include "../../input.h"
 #include "../renderer.h"

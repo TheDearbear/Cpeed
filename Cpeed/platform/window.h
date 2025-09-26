@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-#include "../common/general.h"
+#include "../common/math.h"
 #include "../input/keyboard.h"
 
 typedef void* CpdWindow;

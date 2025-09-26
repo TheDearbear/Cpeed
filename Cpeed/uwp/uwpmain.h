@@ -6,7 +6,7 @@
 #include <windows.h>
 #include <Windows.Gaming.Input.h>
 
-#include "../common/general.h"
+#include "../common/math.h"
 #include "../input/keyboard.h"
 #include "../backend.h"
 
