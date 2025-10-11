@@ -5,6 +5,7 @@
 #include "AppView.h"
 
 extern "C" {
+#include "../common/init.h"
 #include "../platform/input/queue.h"
 }
 
@@ -96,6 +97,8 @@ void AppView::Initialize(CoreApplicationView const& applicationView)
     get_backend_implementation(CpdPlatformBackendFlags_DirectX, &impl);
 
     impl.initialize_backend();
+
+    init_engine();
 }
 
 // Called when the CoreWindow object is created (or re-created).
@@ -145,6 +148,8 @@ void AppView::Load(winrt::hstring const& entryPoint)
 // update, draw, and present loop, and it also oversees window message processing.
 void AppView::Run()
 {
+    CpdFrame* frame = impl.get_frame(window->backend);
+
     while (!poll_window((CpdWindow)window))
     {
         bool resized = window_resized((CpdWindow)window);
@@ -159,7 +164,18 @@ void AppView::Run()
         uint32_t input_event_count = 0;
         const CpdInputEvent* input_events = 0;
         if (get_window_input_events((CpdWindow)window, &input_events, &input_event_count)) {
-            impl.input(window->backend, (CpdWindow)window, input_events, input_event_count);
+            for (uint32_t i = 0; i < input_event_count; i++) {
+                CpdFrameLayer* frame_layer = 0;
+                loop_frame_layers(get_lowest_frame_layer, &frame_layer);
+
+                while (frame_layer != 0) {
+                    if (frame_layer->functions.input != 0 && !frame_layer->functions.input(window, frame, &input_events[i])) {
+                        break;
+                    }
+
+                    frame_layer = frame_layer->higher;
+                }
+            }
         }
 
         if (!impl.should_frame(window->backend, (CpdWindow)window)) {
@@ -204,6 +220,8 @@ void AppView::Uninitialize()
     window.PointerPressed(pointer_key_down_token);
     window.PointerMoved(pointer_move_token);
     window.PointerWheelChanged(pointer_wheel_token);
+
+    shutdown_engine();
 }
 
 void AppView::OnViewActivated(CoreApplicationView const& sender, IActivatedEventArgs const& args)

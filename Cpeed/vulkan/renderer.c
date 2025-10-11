@@ -17,8 +17,19 @@ CpdRenderer* RENDERER_create(CpdRendererInitParams* params) {
         return 0;
     }
 
+    CpdFrame* frame = (CpdFrame*)malloc(sizeof(CpdFrame));
+    if (frame == 0) {
+        free(render_settings);
+        free(renderer);
+        return 0;
+    }
+
     render_settings->allow_render = true;
     render_settings->force_disable_render = false;
+
+    frame->background.x = 0.0f;
+    frame->background.y = 0.0f;
+    frame->background.z = 0.0f;
 
     renderer->instance = params->instance;
     renderer->api_version = params->max_api_version;
@@ -26,6 +37,7 @@ CpdRenderer* RENDERER_create(CpdRendererInitParams* params) {
     renderer->instance_extensions = *params->instance_extensions;
     renderer->creation_time = get_clock_usec();
     renderer->last_frame_end = renderer->creation_time;
+    renderer->frame = frame;
     renderer->surface.handle = VK_NULL_HANDLE;
     renderer->render_device.handle = VK_NULL_HANDLE;
     renderer->ui_device.handle = VK_NULL_HANDLE;
@@ -53,6 +65,7 @@ void RENDERER_destroy(CpdRenderer* renderer) {
         renderer->ui_device.handle = VK_NULL_HANDLE;
     }
 
+    free(renderer->frame);
     free(renderer->render_settings);
     free(renderer);
 }

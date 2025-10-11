@@ -336,6 +336,12 @@ static CpdBackendVersion get_version(CpdBackendHandle cpeed_backend) {
     };
 }
 
+static CpdFrame* get_frame(CpdBackendHandle cpeed_backend) {
+    CpdRenderer* renderer = (CpdRenderer*)cpeed_backend;
+
+    return renderer->frame;
+}
+
 static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
     CpdRenderer* renderer = (CpdRenderer*)cpeed_backend;
 
@@ -354,12 +360,6 @@ static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
     }
 
     return true;
-}
-
-static void input(CpdBackendHandle cpeed_backend, CpdWindow cpeed_window, const CpdInputEvent* input_events, uint32_t input_event_count) {
-    CpdRenderer* renderer = (CpdRenderer*)cpeed_backend;
-
-    RENDERING_input(renderer, cpeed_window, input_events, input_event_count);
 }
 
 static bool should_frame(CpdBackendHandle cpeed_backend, CpdWindow cpeed_window) {
@@ -433,8 +433,8 @@ void get_vulkan_backend_implementation(CpdBackendImplementation* implementation)
     implementation->initialize_window = initialize_window;
     implementation->shutdown_window = shutdown_window;
     implementation->get_version = get_version;
+    implementation->get_frame = get_frame;
     implementation->resize = resize;
-    implementation->input = input;
     implementation->should_frame = should_frame;
     implementation->pre_frame = pre_frame;
     implementation->frame = frame;

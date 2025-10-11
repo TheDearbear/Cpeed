@@ -1,5 +1,6 @@
 #include <malloc.h>
 
+#include "../common/frame.h"
 #include "../platform/input/gamepad.h"
 #include "../platform/logging.h"
 #include "backend.h"
@@ -15,6 +16,8 @@ static void shutdown_backend() {
 
 static void shutdown_window(CpdBackendHandle cpeed_backend) {
     CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)cpeed_backend;
+
+    free(renderer->frame);
 
     if (renderer->render_target != 0) {
         ID3D11RenderTargetView_Release(renderer->render_target);
@@ -55,10 +58,20 @@ static CpdBackendHandle initialize_window(CpdWindow cpeed_window) {
         return 0;
     }
 
+    CpdFrame* frame = (CpdFrame*)malloc(sizeof(CpdFrame));
+    if (frame == 0) {
+        return 0;
+    }
+
+    frame->background.x = 0.0f;
+    frame->background.y = 0.0f;
+    frame->background.z = 0.0f;
+
     renderer->device = 0;
     renderer->device_context = 0;
     renderer->swapchain = 0;
     renderer->render_target = 0;
+    renderer->frame = frame;
 
     CpdSize size = window_size(cpeed_window);
 
@@ -122,17 +135,23 @@ static CpdBackendVersion get_version(CpdBackendHandle cpeed_backend) {
 
     switch (renderer->feature_level) {
         case D3D_FEATURE_LEVEL_12_2: return (CpdBackendVersion) { .major = 12, .minor = 2 };
-        case D3D_FEATURE_LEVEL_12_1: return (CpdBackendVersion) { .major = 12, .minor = 2 };
-        case D3D_FEATURE_LEVEL_12_0: return (CpdBackendVersion) { .major = 12, .minor = 2 };
-        case D3D_FEATURE_LEVEL_11_1: return (CpdBackendVersion) { .major = 12, .minor = 2 };
-        case D3D_FEATURE_LEVEL_11_0: return (CpdBackendVersion) { .major = 12, .minor = 2 };
-        case D3D_FEATURE_LEVEL_10_1: return (CpdBackendVersion) { .major = 12, .minor = 2 };
-        case D3D_FEATURE_LEVEL_10_0: return (CpdBackendVersion) { .major = 12, .minor = 2 };
-        case D3D_FEATURE_LEVEL_9_3: return (CpdBackendVersion) { .major = 12, .minor = 2 };
-        case D3D_FEATURE_LEVEL_9_2: return (CpdBackendVersion) { .major = 12, .minor = 2 };
-        case D3D_FEATURE_LEVEL_9_1: return (CpdBackendVersion) { .major = 12, .minor = 2 };
+        case D3D_FEATURE_LEVEL_12_1: return (CpdBackendVersion) { .major = 12, .minor = 1 };
+        case D3D_FEATURE_LEVEL_12_0: return (CpdBackendVersion) { .major = 12, .minor = 0 };
+        case D3D_FEATURE_LEVEL_11_1: return (CpdBackendVersion) { .major = 11, .minor = 1 };
+        case D3D_FEATURE_LEVEL_11_0: return (CpdBackendVersion) { .major = 11, .minor = 0 };
+        case D3D_FEATURE_LEVEL_10_1: return (CpdBackendVersion) { .major = 10, .minor = 1 };
+        case D3D_FEATURE_LEVEL_10_0: return (CpdBackendVersion) { .major = 10, .minor = 0 };
+        case D3D_FEATURE_LEVEL_9_3: return (CpdBackendVersion) { .major = 9, .minor = 3 };
+        case D3D_FEATURE_LEVEL_9_2: return (CpdBackendVersion) { .major = 9, .minor = 2 };
+        case D3D_FEATURE_LEVEL_9_1: return (CpdBackendVersion) { .major = 9, .minor = 1 };
         default: return (CpdBackendVersion) { .major = 1, .minor = 0 };
     }
+}
+
+static CpdFrame* get_frame(CpdBackendHandle cpeed_backend) {
+    CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)cpeed_backend;
+
+    return renderer->frame;
 }
 
 static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
@@ -152,122 +171,46 @@ static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
     return result == S_OK;
 }
 
-static float brightness_red = 1.0f;
-static float brightness_green = 1.0f;
-static float brightness_blue = 1.0f;
-static float brightness_step = 0.05f;
-
-static void input(CpdBackendHandle cpeed_backend, CpdWindow cpeed_window, const CpdInputEvent* input_events, uint32_t input_event_count) {
-    CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)cpeed_backend;
-
-    for (uint32_t i = 0; i < input_event_count; i++) {
-        const CpdInputEvent* event = &input_events[i];
-
-        if (event->type == CpdInputEventType_CharInput) {
-            uint64_t text = event->data.char_input.character;
-            log_debug("Char input: %s (%d bytes)\n", (char*)&text, event->data.char_input.length);
-        }
-        else if (event->type == CpdInputEventType_ButtonPress) {
-            if (event->data.button_press.pressed) {
-                if (event->data.button_press.key_code == CpdKeyCode_Numpad7 && brightness_red < 1.0f) {
-                    brightness_red += brightness_step;
-                    log_debug("New red brightness: %.2f\n", brightness_red);
-                }
-                else if (event->data.button_press.key_code == CpdKeyCode_Numpad4 && brightness_red > 0.0f) {
-                    brightness_red -= brightness_step;
-                    log_debug("New red brightness: %.2f\n", brightness_red);
-                }
-                else if (event->data.button_press.key_code == CpdKeyCode_Numpad8 && brightness_green < 1.0f) {
-                    brightness_green += brightness_step;
-                    log_debug("New green brightness: %.2f\n", brightness_green);
-                }
-                else if (event->data.button_press.key_code == CpdKeyCode_Numpad5 && brightness_green > 0.0f) {
-                    brightness_green -= brightness_step;
-                    log_debug("New green brightness: %.2f\n", brightness_green);
-                }
-                else if (event->data.button_press.key_code == CpdKeyCode_Numpad9 && brightness_blue < 1.0f) {
-                    brightness_blue += brightness_step;
-                    log_debug("New blue brightness: %.2f\n", brightness_blue);
-                }
-                else if (event->data.button_press.key_code == CpdKeyCode_Numpad6 && brightness_blue > 0.0f) {
-                    brightness_blue -= brightness_step;
-                    log_debug("New blue brightness: %.2f\n", brightness_blue);
-                }
-
-                DXGI_RGBA color = {
-                    .r = brightness_red,
-                    .g = brightness_green,
-                    .b = brightness_blue,
-                    .a = 1.0f
-                };
-                IDXGISwapChain1_SetBackgroundColor(renderer->swapchain, &color);
-            }
-            else if (event->data.button_press.key_code == CpdKeyCode_Escape) {
-                close_window(cpeed_window);
-            }
-            else if (event->data.button_press.key_code == CpdKeyCode_Tab) {
-                CpdBackendVersion version = get_version(cpeed_backend);
-
-                log_debug("DirectX version: %d.%d\n", version.major, version.minor);
-            }
-        }
-        else if (event->type == CpdInputEventType_Clipboard) {
-            if (event->data.clipboard.action_type == CpdClipboardActionType_Paste) {
-                log_debug("Paste data\n");
-            }
-            else if (event->data.clipboard.action_type == CpdClipboardActionType_Copy) {
-                log_debug("Copy data\n");
-            }
-            else if (event->data.clipboard.action_type == CpdClipboardActionType_Cut) {
-                log_debug("Cut data\n");
-            }
-        }
-        else if (event->type == CpdInputEventType_GamepadButtonPress) {
-            if (event->data.gamepad_button_press.pressed) {
-                if (event->data.gamepad_button_press.button == CpdGamepadButtonType_StickLeft) {
-                    DebugBreak();
-                }
-            }
-        }
-        else if (event->type == CpdInputEventType_GamepadStick && event->data.gamepad_stick.stick == CpdGamepadStick_Left) {
-            CpdGamepadStickPosition pos = get_gamepad_stick_position(cpeed_window, event->data.gamepad_stick.gamepad_index, event->data.gamepad_stick.stick);
-
-            if (pos.x < 0) {
-                pos.x = -pos.x;
-            }
-
-            if (pos.y < 0) {
-                pos.y = -pos.y;
-            }
-
-            brightness_red = pos.x;
-            brightness_green = pos.y;
-        }
-        else if (event->type == CpdInputEventType_GamepadConnect) {
-            if (event->data.gamepad_connect.status == CpdGamepadConnectStatus_Connected) {
-                log_debug("Gamepad %d connected.\n", event->data.gamepad_connect.gamepad_index + 1);
-            }
-            else {
-                log_debug("Gamepad %d disconnected.\n", event->data.gamepad_connect.gamepad_index + 1);
-            }
-        }
-    }
-}
-
 static bool should_frame(CpdBackendHandle cpeed_backend, CpdWindow cpeed_window) {
     return true;
 }
 
 static bool pre_frame(CpdBackendHandle cpeed_backend) {
+    CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)cpeed_backend;
+
+    const float color[4] = {
+        renderer->frame->background.x,
+        renderer->frame->background.y,
+        renderer->frame->background.z,
+        1.0f
+    };
+
+    ID3D11DeviceContext_ClearRenderTargetView(renderer->device_context, renderer->render_target, color);
+
+    return true;
+}
+
+static bool get_lowest_frame_layer(void* context, CpdFrameLayer* frame_layer) {
+    CpdFrameLayer** output = (CpdFrameLayer**)context;
+
+    *output = frame_layer;
+
     return true;
 }
 
 static bool frame(CpdBackendHandle cpeed_backend) {
     CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)cpeed_backend;
 
-    const float color[4] = { brightness_red, brightness_green, brightness_blue, 1.0f };
+    CpdFrameLayer* frame_layer = 0;
+    loop_frame_layers(get_lowest_frame_layer, &frame_layer);
 
-    ID3D11DeviceContext_ClearRenderTargetView(renderer->device_context, renderer->render_target, color);
+    while (frame_layer != 0) {
+        frame_layer->functions.render(renderer->frame);
+
+        frame_layer = frame_layer->higher;
+    }
+
+    // TODO: Actual render
 
     return true;
 }
@@ -287,8 +230,8 @@ void get_directx_backend_implementation(CpdBackendImplementation* implementation
     implementation->initialize_window = initialize_window;
     implementation->shutdown_window = shutdown_window;
     implementation->get_version = get_version;
+    implementation->get_frame = get_frame;
     implementation->resize = resize;
-    implementation->input = input;
     implementation->should_frame = should_frame;
     implementation->pre_frame = pre_frame;
     implementation->frame = frame;

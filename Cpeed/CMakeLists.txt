@@ -8,6 +8,10 @@ add_executable (Cpeed
   "input.h"
   "platform.h"
 
+  "common/frame_layers/test_layer.c" "common/frame_layers/test_layer.h"
+
+  "common/frame.c" "common/frame.h"
+  "common/init.c" "common/init.h"
   "common/math.c" "common/math.h"
 
   "input/clipboard.h"

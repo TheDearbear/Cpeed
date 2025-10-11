@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/frame.h"
 #include "platform/window.h"
 #include "input.h"
 #include "platform.h"
@@ -19,8 +20,8 @@ typedef struct CpdBackendImplementation {
     CpdBackendHandle (*initialize_window)(CpdWindow cpeed_window);
     void (*shutdown_window)(CpdBackendHandle cpeed_backend);
     CpdBackendVersion (*get_version)(CpdBackendHandle cpeed_backend);
+    CpdFrame* (*get_frame)(CpdBackendHandle cpeed_backend);
     bool (*resize)(CpdBackendHandle cpeed_backend, CpdSize new_size);
-    void (*input)(CpdBackendHandle cpeed_backend, CpdWindow cpeed_window, const CpdInputEvent* input_events, uint32_t input_event_count);
     bool (*should_frame)(CpdBackendHandle cpeed_backend, CpdWindow cpeed_window);
     bool (*pre_frame)(CpdBackendHandle cpeed_backend);
     bool (*frame)(CpdBackendHandle cpeed_backend);

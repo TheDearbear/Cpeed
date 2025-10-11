@@ -2,6 +2,24 @@
 
 #include <stdint.h>
 
+typedef struct CpdVector2 {
+    float x;
+    float y;
+} CpdVector2;
+
+typedef struct CpdVector3 {
+    float x;
+    float y;
+    float z;
+} CpdVector3;
+
+typedef struct CpdVector4 {
+    float x;
+    float y;
+    float z;
+    float w;
+} CpdVector4;
+
 typedef struct CpdSize {
     unsigned short width;
     unsigned short height;

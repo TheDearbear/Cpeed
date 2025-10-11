@@ -79,6 +79,14 @@ extern "C" {
         }
     }
 
+    bool get_lowest_frame_layer(void* context, struct CpdFrameLayer* frame_layer) {
+        struct CpdFrameLayer** output = (struct CpdFrameLayer**)context;
+
+        *output = frame_layer;
+
+        return true;
+    }
+
     int real_main() {
         if (!initialize_platform()) {
             return 0;

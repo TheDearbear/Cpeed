@@ -14,5 +14,7 @@ typedef struct CpdDirectXRenderer {
 
     ID3D11RenderTargetView* render_target;
 
+    struct CpdFrame* frame;
+
     D3D_FEATURE_LEVEL feature_level;
 } CpdDirectXRenderer;

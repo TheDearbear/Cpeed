@@ -51,6 +51,8 @@ bool resize_input_queue_if_need(CpdUWPWindow* uwp_window, uint32_t new_events);
 void poll_events(CpdUWPWindow* uwp_window);
 void poll_gamepads(CpdUWPWindow* uwp_window);
 
+bool get_lowest_frame_layer(void* context, struct CpdFrameLayer* frame_layer);
+
 bool add_button_press_to_queue(CpdUWPWindow* uwp_window, CpdKeyCode keyCode, bool pressed);
 bool add_char_input_to_queue(CpdUWPWindow* uwp_window, uint32_t character, uint32_t length);
 bool add_mouse_button_press_to_queue(CpdUWPWindow* uwp_window, CpdMouseButtonType button, bool pressed);

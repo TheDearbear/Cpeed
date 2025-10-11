@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../common/frame.h"
 #include "vulkan.h"
 #include "device.h"
 #include "swapchain.h"
@@ -18,6 +19,8 @@ typedef struct CpdRenderer {
 
     uint64_t creation_time;
     uint64_t last_frame_end;
+
+    CpdFrame* frame;
 
     CpdInstanceVulkanExtensions instance_extensions;
 
