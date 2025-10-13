@@ -52,7 +52,7 @@ static HRESULT create_render_target(CpdDirectXRenderer* renderer) {
     return result;
 }
 
-static CpdBackendHandle initialize_window(CpdWindow cpeed_window) {
+static CpdBackendHandle initialize_window(const CpdBackendInfo* info) {
     CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)malloc(sizeof(CpdDirectXRenderer));
     if (renderer == 0) {
         return 0;
@@ -63,9 +63,7 @@ static CpdBackendHandle initialize_window(CpdWindow cpeed_window) {
         return 0;
     }
 
-    frame->background.x = 0.0f;
-    frame->background.y = 0.0f;
-    frame->background.z = 0.0f;
+    frame->background = info->background;
 
     renderer->device = 0;
     renderer->device_context = 0;
@@ -73,7 +71,7 @@ static CpdBackendHandle initialize_window(CpdWindow cpeed_window) {
     renderer->render_target = 0;
     renderer->frame = frame;
 
-    CpdSize size = window_size(cpeed_window);
+    CpdSize size = window_size(info->window);
 
     DXGI_SWAP_CHAIN_DESC1 description = {
         .Width = size.width,
@@ -108,10 +106,10 @@ static CpdBackendHandle initialize_window(CpdWindow cpeed_window) {
     }
 
     if (compile_platform() == CpdCompilePlatform_UWP) {
-        result = IDXGIFactory2_CreateSwapChainForCoreWindow(factory, (IUnknown*)renderer->device, *(IUnknown**)cpeed_window, &description, 0, &renderer->swapchain);
+        result = IDXGIFactory2_CreateSwapChainForCoreWindow(factory, (IUnknown*)renderer->device, *(IUnknown**)info->window, &description, 0, &renderer->swapchain);
     }
     else {
-        result = IDXGIFactory2_CreateSwapChainForHwnd(factory, (IUnknown*)renderer->device, (HWND)cpeed_window, &description, 0, 0, &renderer->swapchain);
+        result = IDXGIFactory2_CreateSwapChainForHwnd(factory, (IUnknown*)renderer->device, (HWND)info->window, &description, 0, 0, &renderer->swapchain);
     }
 
     IDXGIFactory2_Release(factory);

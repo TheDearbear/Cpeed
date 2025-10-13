@@ -12,12 +12,17 @@ typedef struct CpdBackendVersion {
     uint16_t minor;
 } CpdBackendVersion;
 
+typedef struct CpdBackendInfo {
+    CpdWindow window;
+    CpdVector3 background;
+} CpdBackendInfo;
+
 typedef struct CpdBackendImplementation {
     CpdPlatformBackendFlags type;
 
     bool (*initialize_backend)();
     void (*shutdown_backend)();
-    CpdBackendHandle (*initialize_window)(CpdWindow cpeed_window);
+    CpdBackendHandle (*initialize_window)(const CpdBackendInfo* info);
     void (*shutdown_window)(CpdBackendHandle cpeed_backend);
     CpdBackendVersion (*get_version)(CpdBackendHandle cpeed_backend);
     CpdFrame* (*get_frame)(CpdBackendHandle cpeed_backend);

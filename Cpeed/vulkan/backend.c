@@ -280,12 +280,13 @@ static VkResult create_instance(CpdRendererInitParams* init_params) {
     return result;
 }
 
-static CpdBackendHandle initialize_window(CpdWindow window) {
+static CpdBackendHandle initialize_window(const CpdBackendInfo* info) {
     CpdInstanceVulkanExtensions instance_extensions;
     initialize_vulkan_instance_extensions(&instance_extensions);
 
     CpdRendererInitParams renderer_init_params = {
-        .instance_extensions = &instance_extensions
+        .instance_extensions = &instance_extensions,
+        .background = info->background
     };
 
     VkResult result = create_instance(&renderer_init_params);
@@ -295,7 +296,7 @@ static CpdBackendHandle initialize_window(CpdWindow window) {
     }
 
     CpdRenderer* renderer = 0;
-    result = create_renderer(window, &renderer, &renderer_init_params);
+    result = create_renderer(info->window, &renderer, &renderer_init_params);
     if (result != VK_SUCCESS) {
         log_error("Unable to create renderer. Result code: %s\n", string_VkResult(result));
         vkDestroyInstance(renderer_init_params.instance, VK_NULL_HANDLE);
@@ -310,7 +311,7 @@ static CpdBackendHandle initialize_window(CpdWindow window) {
         return 0;
     }
 
-    result = create_swapchain(window, renderer);
+    result = create_swapchain(info->window, renderer);
     if (result != VK_SUCCESS) {
         log_error("Unable to create swapchain. Result code: %s\n", string_VkResult(result));
         shutdown_window((CpdBackendHandle)renderer);

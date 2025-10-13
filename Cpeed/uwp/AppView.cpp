@@ -114,7 +114,9 @@ void AppView::SetWindow(CoreWindow const& window)
     this->window->size.width = (unsigned short)bounds.Width;
     this->window->size.height = (unsigned short)bounds.Height;
 
-    this->window->backend = impl.initialize_window((CpdWindow)this->window);
+    CpdBackendInfo backend_info = { (CpdWindow)this->window, { 0.0f, 0.0f, 0.0f } };
+
+    this->window->backend = impl.initialize_window(&backend_info);
     if (this->window->backend == 0) {
         __debugbreak();
     }

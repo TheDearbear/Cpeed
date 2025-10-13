@@ -38,6 +38,7 @@ typedef struct CpdRenderer {
 typedef struct CpdRendererInitParams {
     VkInstance instance;
     CpdInstanceVulkanExtensions* instance_extensions;
+    CpdVector3 background;
     uint32_t api_version;
     uint32_t max_api_version;
 } CpdRendererInitParams;

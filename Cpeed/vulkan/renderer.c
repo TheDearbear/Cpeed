@@ -27,9 +27,7 @@ CpdRenderer* RENDERER_create(CpdRendererInitParams* params) {
     render_settings->allow_render = true;
     render_settings->force_disable_render = false;
 
-    frame->background.x = 0.0f;
-    frame->background.y = 0.0f;
-    frame->background.z = 0.0f;
+    frame->background = params->background;
 
     renderer->instance = params->instance;
     renderer->api_version = params->max_api_version;

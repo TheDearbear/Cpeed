@@ -35,17 +35,30 @@ int main() {
         return -1;
     }
 
-    CpdWindowInfo windowInfo = {
+    CpdWindowInfo window_info = {
         .title = "Cpeed",
         .size.width = 800,
         .size.height = 600,
         .input_mode = CpdInputMode_KeyCode
     };
-    CpdWindow window = create_window(&windowInfo);
+    CpdWindow window = create_window(&window_info);
+    if (window == 0) {
+        log_error("Unable to create window\n");
+        implementation.shutdown_backend();
+        shutdown_platform();
+        return -1;
+    }
 
-    CpdBackendHandle backend = implementation.initialize_window(window);
+    CpdBackendInfo backend_info = {
+        .window = window,
+        .background.x = 0.2f,
+        .background.y = 0.5f,
+        .background.z = 0.5f
+    };
+    CpdBackendHandle backend = implementation.initialize_window(&backend_info);
     if (backend == 0) {
         log_error("Unable to initialize backend for window\n");
+        destroy_window(window);
         implementation.shutdown_backend();
         shutdown_platform();
         return -1;

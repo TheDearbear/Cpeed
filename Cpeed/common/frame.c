@@ -52,6 +52,10 @@ static bool remove_frame_layer_loop(void* context, CpdFrameLayer* layer) {
 }
 
 void remove_frame_layer(uint32_t handle) {
+    if (handle == INVALID_FRAME_LAYER_HANDLE) {
+        return;
+    }
+
     loop_frame_layers(remove_frame_layer_loop, &handle);
 }
 
