@@ -1,5 +1,6 @@
 #include <malloc.h>
 
+#include "../platform/input/gamepad.h"
 #include "../platform/window.h"
 #include "../platform/logging.h"
 #include "../platform.h"
@@ -9,11 +10,13 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     WindowExtraData* data = (WindowExtraData*)malloc(sizeof(WindowExtraData));
     CpdInputEvent* input_queue = (CpdInputEvent*)malloc(INPUT_QUEUE_BASE_SIZE * sizeof(CpdInputEvent));
     CpdInputEvent* input_swap_queue = (CpdInputEvent*)malloc(INPUT_QUEUE_BASE_SIZE * sizeof(CpdInputEvent));
+    CpdKeyboardKey* keyboard_presses = (CpdKeyboardKey*)malloc(KEYBOARD_PRESSES_BASE_SIZE * sizeof(CpdKeyboardKey));
 
-    if (data == 0 || input_queue == 0 || input_swap_queue == 0) {
+    if (data == 0 || input_queue == 0 || input_swap_queue == 0 || keyboard_presses == 0) {
         free(data);
         free(input_queue);
         free(input_swap_queue);
+        free(keyboard_presses);
         return 0;
     }
 
@@ -25,6 +28,7 @@ CpdWindow create_window(const CpdWindowInfo* info) {
         free(data);
         free(input_queue);
         free(input_swap_queue);
+        free(keyboard_presses);
         return 0;
     }
 
@@ -39,12 +43,24 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     data->mouse_x = 0;
     data->mouse_y = 0;
 
+    data->keyboard_presses = keyboard_presses;
+    data->keyboard_presses_size = 0;
+    data->keyboard_presses_max_size = KEYBOARD_PRESSES_BASE_SIZE;
+
     data->resized = false;
     data->should_close = false;
     data->minimized = false;
     data->resize_swap_queue = false;
     data->first_mouse_event = true;
     data->focused = true;
+    data->use_raw_input = true;
+
+    data->left_shift_pressed = false;
+    data->right_shift_pressed = false;
+    data->left_control_pressed = false;
+    data->right_control_pressed = false;
+    data->left_alt_pressed = false;
+    data->right_alt_pressed = false;
     
     SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG_PTR)data);
 
@@ -55,13 +71,17 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     }
 
     for (uint16_t i = 0; i < count; i++) {
-        data->input_queue[data->input_queue_size++] = (CpdInputEvent){
+        data->input_queue[data->input_queue_size++] = (CpdInputEvent) {
             .type = CpdInputEventType_GamepadConnect,
             .modifiers = data->current_key_modifiers,
             .time = get_clock_usec(),
             .data.gamepad_connect.status = CpdGamepadConnectStatus_Connected,
             .data.gamepad_connect.gamepad_index = i
         };
+    }
+
+    if (data->use_raw_input) {
+        data->use_raw_input = register_raw_input(hWnd);
     }
 
     return (CpdWindow)hWnd;
@@ -75,6 +95,7 @@ void destroy_window(CpdWindow window) {
 
     free(data->input_queue);
     free(data->input_swap_queue);
+    free(data->keyboard_presses);
     free(data);
 
     DestroyWindow((HWND)window);
@@ -107,7 +128,7 @@ static bool add_gamepad_stick_to_queue(WindowExtraData* data, CpdGamepadStick st
         return false;
     }
 
-    data->input_queue[data->input_queue_size++] = (CpdInputEvent){
+    data->input_queue[data->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_GamepadStick,
         .modifiers = data->current_key_modifiers,
         .time = get_clock_usec(),
@@ -123,7 +144,7 @@ static bool add_gamepad_button_press_to_queue(WindowExtraData* data, CpdGamepadB
         return false;
     }
 
-    data->input_queue[data->input_queue_size++] = (CpdInputEvent){
+    data->input_queue[data->input_queue_size++] = (CpdInputEvent) {
         .type = CpdInputEventType_GamepadButtonPress,
         .modifiers = data->current_key_modifiers,
         .time = get_clock_usec(),

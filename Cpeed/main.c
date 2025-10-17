@@ -1,5 +1,3 @@
-#include <malloc.h>
-
 #include "common/frame.h"
 #include "common/init.h"
 #include "platform/input/queue.h"

@@ -728,8 +728,9 @@ static CpdKeyCode map_key_code(uint32_t keyCode) {
     case KEY_LEFTBRACE:  return CpdKeyCode_LeftSquareBracket;
     case KEY_RIGHTBRACE: return CpdKeyCode_RightSquareBracket;
 
-    case KEY_ENTER:    case KEY_KPENTER:   return CpdKeyCode_Enter;
-    case KEY_LEFTCTRL: case KEY_RIGHTCTRL: return CpdKeyCode_Control;
+    case KEY_ENTER:      case KEY_KPENTER:   return CpdKeyCode_Enter;
+    case KEY_LEFTCTRL:   return CpdKeyCode_LeftControl;
+    case KEY_RIGHTCTRL:  return CpdKeyCode_RightControl;
 
     case KEY_A: return CpdKeyCode_A;
     case KEY_S: return CpdKeyCode_S;
@@ -744,7 +745,8 @@ static CpdKeyCode map_key_code(uint32_t keyCode) {
     case KEY_SEMICOLON:  return CpdKeyCode_Semicolon;
     case KEY_APOSTROPHE: return CpdKeyCode_Quote;
     case KEY_GRAVE:      return CpdKeyCode_Backtick;
-    case KEY_LEFTSHIFT:  case KEY_RIGHTSHIFT: return CpdKeyCode_Shift;
+    case KEY_LEFTSHIFT:  return CpdKeyCode_LeftShift;
+    case KEY_RIGHTSHIFT: return CpdKeyCode_RightShift;
     case KEY_BACKSLASH:  case KEY_102ND:      return CpdKeyCode_Backslash;
 
     case KEY_Z: return CpdKeyCode_Z;
@@ -759,7 +761,8 @@ static CpdKeyCode map_key_code(uint32_t keyCode) {
     case KEY_DOT:        case KEY_KPDOT:    return CpdKeyCode_Dot;
     case KEY_SLASH:      case KEY_KPSLASH:  return CpdKeyCode_Slash;
     case KEY_KPASTERISK: return CpdKeyCode_Multiply;
-    case KEY_LEFTALT:    case KEY_RIGHTALT: return CpdKeyCode_Alt;
+    case KEY_LEFTALT:    return CpdKeyCode_LeftAlt;
+    case KEY_RIGHTALT:   return CpdKeyCode_RightAlt;
     case KEY_SPACE:      return CpdKeyCode_Spacebar;
 
     case KEY_KPPLUS: return CpdKeyCode_Plus;

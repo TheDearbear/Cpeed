@@ -18,6 +18,9 @@ using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Input;
 
+const USHORT SCANCODE_LSHIFT = 42;
+const USHORT SCANCODE_RSHIFT = 54;
+
 void AppView::OnGamepadConnect(winrt::Windows::Foundation::IUnknown const&, Gamepad const& gamepad) {
     CpdInputDevice* entry = (CpdInputDevice*)malloc(sizeof(CpdInputDevice));
     if (entry == 0) {
@@ -114,7 +117,7 @@ void AppView::SetWindow(CoreWindow const& window)
     this->window->size.width = (unsigned short)bounds.Width;
     this->window->size.height = (unsigned short)bounds.Height;
 
-    CpdBackendInfo backend_info = { (CpdWindow)this->window, { 0.0f, 0.0f, 0.0f } };
+    CpdBackendInfo backend_info = { (CpdWindow)this->window, { 0.2f, 0.5f, 0.5f } };
 
     this->window->backend = impl.initialize_window(&backend_info);
     if (this->window->backend == 0) {
@@ -248,58 +251,61 @@ void AppView::OnSizeChanged(CoreWindow const& sender, WindowSizeChangedEventArgs
     window->resized = true;
 }
 
-static CpdKeyCode virtual_key_to_key_code(VirtualKey key) {
-    int32_t vk = (int32_t)key;
+static CpdKeyCode virtual_key_to_key_code(KeyEventArgs const& args) {
+    VirtualKey vk = args.VirtualKey();
+    int32_t vk_int = (int32_t)args.VirtualKey();
 
-    if (key >= VirtualKey::F1 && key <= VirtualKey::F24) {
-        return (CpdKeyCode)(vk - ((int32_t)VirtualKey::F1 - CpdKeyCode_F1));
+    if (vk >= VirtualKey::F1 && vk <= VirtualKey::F24) {
+        return (CpdKeyCode)(vk_int - ((int32_t)VirtualKey::F1 - CpdKeyCode_F1));
     }
 
-    if (vk >= 'A' && vk <= 'Z') {
-        return (CpdKeyCode)(vk - ('A' - CpdKeyCode_A));
+    if (vk_int >= 'A' && vk_int <= 'Z') {
+        return (CpdKeyCode)(vk_int - ('A' - CpdKeyCode_A));
     }
 
-    if (vk >= '0' && vk <= '9') {
-        return (CpdKeyCode)(vk - ('0' - CpdKeyCode_0));
+    if (vk_int >= '0' && vk_int <= '9') {
+        return (CpdKeyCode)(vk_int - ('0' - CpdKeyCode_0));
     }
 
-    if (key >= VirtualKey::NumberPad0 && key <= VirtualKey::NumberPad9) {
-        return (CpdKeyCode)(vk - ((int32_t)VirtualKey::NumberPad0 - CpdKeyCode_Numpad0));
+    if (vk >= VirtualKey::NumberPad0 && vk <= VirtualKey::NumberPad9) {
+        return (CpdKeyCode)(vk_int - ((int32_t)VirtualKey::NumberPad0 - CpdKeyCode_Numpad0));
     }
 
-    switch (key) {
-    case VirtualKey::Back:         return CpdKeyCode_Backspace;
-    case VirtualKey::Tab:          return CpdKeyCode_Tab;
-    case VirtualKey::Enter:        return CpdKeyCode_Enter;
-    case VirtualKey::Shift:        return CpdKeyCode_Shift;
-    case VirtualKey::Control:      return CpdKeyCode_Control;
-    case VirtualKey::Menu:         return CpdKeyCode_Alt;
-    case VirtualKey::Escape:       return CpdKeyCode_Escape;
-    case VirtualKey::Space:        return CpdKeyCode_Spacebar;
-    case VirtualKey::PageUp:       return CpdKeyCode_PageUp;
-    case VirtualKey::PageDown:     return CpdKeyCode_PageDown;
-    case VirtualKey::End:          return CpdKeyCode_End;
-    case VirtualKey::Home:         return CpdKeyCode_Home;
-    case VirtualKey::Left:         return CpdKeyCode_LeftArrow;
-    case VirtualKey::Right:        return CpdKeyCode_RightArrow;
-    case VirtualKey::Up:           return CpdKeyCode_UpArrow;
-    case VirtualKey::Down:         return CpdKeyCode_DownArrow;
-    case VirtualKey::Insert:       return CpdKeyCode_Insert;
-    case VirtualKey::Delete:       return CpdKeyCode_Delete;
-    case VirtualKey::Multiply:     return CpdKeyCode_Multiply;
-    case VirtualKey::Subtract:     case (VirtualKey)VK_OEM_MINUS:  return CpdKeyCode_Minus;
-    case VirtualKey::Add:          return CpdKeyCode_Plus;
-    case (VirtualKey)VK_OEM_PLUS:  return CpdKeyCode_Equal;
-    case VirtualKey::Divide:       case (VirtualKey)VK_OEM_2:      return CpdKeyCode_Slash;
-    case (VirtualKey)VK_OEM_5:     case (VirtualKey)VK_OEM_102:    return CpdKeyCode_Backslash;
-    case VirtualKey::Decimal:      case (VirtualKey)VK_OEM_PERIOD: return CpdKeyCode_Dot;
-    case (VirtualKey)VK_OEM_COMMA: return CpdKeyCode_Comma;
-    case (VirtualKey)VK_OEM_1:     return CpdKeyCode_Semicolon;
-    case (VirtualKey)VK_OEM_4:     return CpdKeyCode_LeftSquareBracket;
-    case (VirtualKey)VK_OEM_6:     return CpdKeyCode_RightSquareBracket;
-    case (VirtualKey)VK_OEM_7:     return CpdKeyCode_Quote;
-    case (VirtualKey)VK_OEM_3:     return CpdKeyCode_Backtick;
-    default:                       return CpdKeyCode_Invalid;
+    if (vk == VirtualKey::Shift) {
+        return args.KeyStatus().ScanCode != SCANCODE_RSHIFT ? CpdKeyCode_LeftShift : CpdKeyCode_RightShift;
+    }
+
+    switch (vk) {
+        case VirtualKey::Back:         return CpdKeyCode_Backspace;
+        case VirtualKey::Tab:          return CpdKeyCode_Tab;
+        case VirtualKey::Enter:        return CpdKeyCode_Enter;
+        case VirtualKey::Control:      return args.KeyStatus().IsExtendedKey ? CpdKeyCode_RightControl : CpdKeyCode_LeftControl;
+        case VirtualKey::Escape:       return CpdKeyCode_Escape;
+        case VirtualKey::Space:        return CpdKeyCode_Spacebar;
+        case VirtualKey::PageUp:       return CpdKeyCode_PageUp;
+        case VirtualKey::PageDown:     return CpdKeyCode_PageDown;
+        case VirtualKey::End:          return CpdKeyCode_End;
+        case VirtualKey::Home:         return CpdKeyCode_Home;
+        case VirtualKey::Left:         return CpdKeyCode_LeftArrow;
+        case VirtualKey::Right:        return CpdKeyCode_RightArrow;
+        case VirtualKey::Up:           return CpdKeyCode_UpArrow;
+        case VirtualKey::Down:         return CpdKeyCode_DownArrow;
+        case VirtualKey::Insert:       return CpdKeyCode_Insert;
+        case VirtualKey::Delete:       return CpdKeyCode_Delete;
+        case VirtualKey::Multiply:     return CpdKeyCode_Multiply;
+        case VirtualKey::Subtract:     case (VirtualKey)VK_OEM_MINUS:  return CpdKeyCode_Minus;
+        case VirtualKey::Add:          return CpdKeyCode_Plus;
+        case (VirtualKey)VK_OEM_PLUS:  return CpdKeyCode_Equal;
+        case VirtualKey::Divide:       case (VirtualKey)VK_OEM_2:      return CpdKeyCode_Slash;
+        case (VirtualKey)VK_OEM_5:     case (VirtualKey)VK_OEM_102:    return CpdKeyCode_Backslash;
+        case VirtualKey::Decimal:      case (VirtualKey)VK_OEM_PERIOD: return CpdKeyCode_Dot;
+        case (VirtualKey)VK_OEM_COMMA: return CpdKeyCode_Comma;
+        case (VirtualKey)VK_OEM_1:     return CpdKeyCode_Semicolon;
+        case (VirtualKey)VK_OEM_4:     return CpdKeyCode_LeftSquareBracket;
+        case (VirtualKey)VK_OEM_6:     return CpdKeyCode_RightSquareBracket;
+        case (VirtualKey)VK_OEM_7:     return CpdKeyCode_Quote;
+        case (VirtualKey)VK_OEM_3:     return CpdKeyCode_Backtick;
+        default:                       return CpdKeyCode_Invalid;
     }
 }
 
@@ -322,20 +328,35 @@ void AppView::OnKey(CoreWindow const& sender, KeyEventArgs const& args) {
         return;
     }
 
-    CpdKeyCode keyCode = virtual_key_to_key_code(args.VirtualKey());
+    bool pressed = !args.KeyStatus().IsKeyReleased;
+    CpdKeyCode keyCode = virtual_key_to_key_code(args);
 
     if (keyCode != CpdKeyCode_Invalid) {
-        args.Handled(add_button_press_to_queue(window, keyCode, !args.KeyStatus().IsKeyReleased));
+        args.Handled(add_button_press_to_queue(window, keyCode, pressed));
     }
 
     switch (args.VirtualKey()) {
-    case VirtualKey::Shift:
-        set_key_modifier(window, CpdInputModifierKey_Shift, !args.KeyStatus().IsKeyReleased);
-        break;
+        case VirtualKey::Shift:
+            if (!pressed) {
+                bool left_pressed = CoreWindow::GetForCurrentThread().GetKeyState(VirtualKey::LeftShift) == CoreVirtualKeyStates::Down;
+                bool right_pressed = CoreWindow::GetForCurrentThread().GetKeyState(VirtualKey::RightShift) == CoreVirtualKeyStates::Down;
 
-    case VirtualKey::Control:
-        set_key_modifier(window, CpdInputModifierKey_Control, !args.KeyStatus().IsKeyReleased);
-        break;
+                pressed = left_pressed || right_pressed;
+            }
+
+            set_key_modifier(window, CpdInputModifierKey_Shift, pressed);
+            break;
+
+        case VirtualKey::Control:
+            if (!pressed) {
+                bool left_pressed = CoreWindow::GetForCurrentThread().GetKeyState(VirtualKey::LeftControl) == CoreVirtualKeyStates::Down;
+                bool right_pressed = CoreWindow::GetForCurrentThread().GetKeyState(VirtualKey::RightControl) == CoreVirtualKeyStates::Down;
+
+                pressed = left_pressed || right_pressed;
+            }
+
+            set_key_modifier(window, CpdInputModifierKey_Control, pressed);
+            break;
     }
 }
 
@@ -345,8 +366,17 @@ void AppView::OnAcceleratorKey(CoreDispatcher const& sender, AcceleratorKeyEvent
     }
 
     bool pressed = !args.KeyStatus().IsKeyReleased;
+    CpdKeyCode keyCode = args.KeyStatus().IsExtendedKey ? CpdKeyCode_RightAlt : CpdKeyCode_LeftAlt;
 
-    args.Handled(add_button_press_to_queue(window, CpdKeyCode_Alt, pressed));
+    args.Handled(add_button_press_to_queue(window, keyCode, pressed));
+
+    if (!pressed) {
+        bool left_pressed = CoreWindow::GetForCurrentThread().GetKeyState(VirtualKey::LeftMenu) == CoreVirtualKeyStates::Down;
+        bool right_pressed = CoreWindow::GetForCurrentThread().GetKeyState(VirtualKey::RightMenu) == CoreVirtualKeyStates::Down;
+
+        pressed = left_pressed || right_pressed;
+    }
+
     set_key_modifier(window, CpdInputModifierKey_Alt, pressed);
 }
 
@@ -377,58 +407,58 @@ void AppView::OnPointerButton(CoreWindow const& sender, PointerEventArgs const& 
     bool pressed = false;
 
     switch (props.PointerUpdateKind()) {
-    case PointerUpdateKind::LeftButtonPressed:
-        button = CpdMouseButtonType_Left;
-        pressed = true;
-        break;
+        case PointerUpdateKind::LeftButtonPressed:
+            button = CpdMouseButtonType_Left;
+            pressed = true;
+            break;
 
-    case PointerUpdateKind::LeftButtonReleased:
-        button = CpdMouseButtonType_Left;
-        pressed = false;
-        break;
+        case PointerUpdateKind::LeftButtonReleased:
+            button = CpdMouseButtonType_Left;
+            pressed = false;
+            break;
 
-    case PointerUpdateKind::MiddleButtonPressed:
-        button = CpdMouseButtonType_Middle;
-        pressed = true;
-        break;
+        case PointerUpdateKind::MiddleButtonPressed:
+            button = CpdMouseButtonType_Middle;
+            pressed = true;
+            break;
 
-    case PointerUpdateKind::MiddleButtonReleased:
-        button = CpdMouseButtonType_Middle;
-        pressed = false;
-        break;
+        case PointerUpdateKind::MiddleButtonReleased:
+            button = CpdMouseButtonType_Middle;
+            pressed = false;
+            break;
 
-    case PointerUpdateKind::RightButtonPressed:
-        button = CpdMouseButtonType_Right;
-        pressed = true;
-        break;
+        case PointerUpdateKind::RightButtonPressed:
+            button = CpdMouseButtonType_Right;
+            pressed = true;
+            break;
 
-    case PointerUpdateKind::RightButtonReleased:
-        button = CpdMouseButtonType_Right;
-        pressed = false;
-        break;
+        case PointerUpdateKind::RightButtonReleased:
+            button = CpdMouseButtonType_Right;
+            pressed = false;
+            break;
 
-    case PointerUpdateKind::XButton1Pressed:
-        button = CpdMouseButtonType_Extra1;
-        pressed = true;
-        break;
+        case PointerUpdateKind::XButton1Pressed:
+            button = CpdMouseButtonType_Extra1;
+            pressed = true;
+            break;
 
-    case PointerUpdateKind::XButton1Released:
-        button = CpdMouseButtonType_Extra1;
-        pressed = false;
-        break;
+        case PointerUpdateKind::XButton1Released:
+            button = CpdMouseButtonType_Extra1;
+            pressed = false;
+            break;
 
-    case PointerUpdateKind::XButton2Pressed:
-        button = CpdMouseButtonType_Extra2;
-        pressed = true;
-        break;
+        case PointerUpdateKind::XButton2Pressed:
+            button = CpdMouseButtonType_Extra2;
+            pressed = true;
+            break;
 
-    case PointerUpdateKind::XButton2Released:
-        button = CpdMouseButtonType_Extra2;
-        pressed = false;
-        break;
+        case PointerUpdateKind::XButton2Released:
+            button = CpdMouseButtonType_Extra2;
+            pressed = false;
+            break;
 
-    default:
-        return;
+        default:
+            return;
     }
 
     args.Handled(add_mouse_button_press_to_queue(window, button, pressed));

@@ -18,8 +18,8 @@ CpdWindow create_window(const CpdWindowInfo* info) {
         return 0;
     }
 
-    uwp_window->backend = 0;
     uwp_window->core_window = 0;
+    uwp_window->backend = 0;
 
     uwp_window->input_queue = input_queue;
     uwp_window->input_swap_queue = input_swap_queue;
@@ -27,6 +27,7 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     uwp_window->input_swap_queue_size = 0;
     uwp_window->input_queue_max_size = INPUT_QUEUE_BASE_SIZE;
     uwp_window->input_mode = info->input_mode;
+    uwp_window->current_key_modifiers = CpdInputModifierKey_None;
     uwp_window->size = info->size;
 
     uwp_window->mouse_x = 0;

@@ -49,7 +49,7 @@ static void announce_gamepad_connect(CpdGamepadConnectStatus status, uint16_t in
         .gamepad_connect.gamepad_index = index
     };
 
-    EnumWindows(window_enum_procedure, &data);
+    EnumWindows(window_enum_procedure, (LPARAM)&data);
 }
 
 static void callback(GameInputCallbackToken token, void* context, IGameInputDevice* device, uint64_t timestamp, GameInputDeviceStatus status, GameInputDeviceStatus previous_status) {

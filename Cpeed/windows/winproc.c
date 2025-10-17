@@ -1,11 +1,13 @@
+#include <stdio.h>
 #include <malloc.h>
 #include <windowsx.h>
 
+#include "../platform/logging.h"
 #include "../platform/window.h"
 #include "winmain.h"
 #include "winproc.h"
 
-static LRESULT add_button_press_to_queue(WindowExtraData* data, LPARAM lParam, CpdKeyCode keyCode) {
+static LRESULT add_button_press_to_queue(WindowExtraData* data, bool pressed, CpdKeyCode keyCode) {
     if (!resize_input_queue_if_need(data, 1)) {
         return 1;
     }
@@ -15,7 +17,7 @@ static LRESULT add_button_press_to_queue(WindowExtraData* data, LPARAM lParam, C
         .modifiers = data->current_key_modifiers,
         .time = get_clock_usec(),
         .data.button_press.key_code = keyCode,
-        .data.button_press.pressed = (HIWORD(lParam) & KF_UP) == 0
+        .data.button_press.pressed = pressed
     };
 
     return 0;
@@ -98,8 +100,8 @@ static LRESULT add_mouse_move_to_queue(WindowExtraData* data, int16_t new_x, int
     return 0;
 }
 
-static void set_key_modifier(WindowExtraData* data, LPARAM lParam, CpdInputModifierKeyFlags modifier) {
-    if ((HIWORD(lParam) & KF_UP) == 0) {
+static void set_key_modifier(WindowExtraData* data, CpdInputModifierKeyFlags modifier, bool enable) {
+    if (enable) {
         data->current_key_modifiers |= modifier;
     }
     else {
@@ -107,38 +109,37 @@ static void set_key_modifier(WindowExtraData* data, LPARAM lParam, CpdInputModif
     }
 }
 
-static LRESULT add_modifier_button_press_to_queue(WindowExtraData* data, LPARAM lParam, CpdKeyCode keyCode, CpdInputModifierKeyFlags modifier) {
-    LRESULT result = add_button_press_to_queue(data, lParam, keyCode);
-
-    set_key_modifier(data, lParam, modifier);
-
-    return result;
-}
-
-static CpdKeyCode virtual_key_to_key_code(WPARAM wParam) {
-    if (wParam >= VK_F1 && wParam <= VK_F24) {
-        return wParam - (VK_F1 - CpdKeyCode_F1);
+static CpdKeyCode virtual_key_to_key_code(USHORT virtual_key, USHORT scan_code) {
+    if (virtual_key >= VK_F1 && virtual_key <= VK_F24) {
+        return virtual_key - (VK_F1 - CpdKeyCode_F1);
     }
 
-    if (wParam >= 'A' && wParam <= 'Z') {
-        return wParam - ('A' - CpdKeyCode_A);
+    if (virtual_key >= 'A' && virtual_key <= 'Z') {
+        return virtual_key - ('A' - CpdKeyCode_A);
     }
 
-    if (wParam >= '0' && wParam <= '9') {
-        return wParam - ('0' - CpdKeyCode_0);
+    if (virtual_key >= '0' && virtual_key <= '9') {
+        return virtual_key - ('0' - CpdKeyCode_0);
     }
 
-    if (wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9) {
-        return wParam - (VK_NUMPAD0 - CpdKeyCode_Numpad0);
+    if (virtual_key >= VK_NUMPAD0 && virtual_key <= VK_NUMPAD9) {
+        return virtual_key - (VK_NUMPAD0 - CpdKeyCode_Numpad0);
     }
 
-    switch (wParam) {
+    if (virtual_key == VK_SHIFT || virtual_key == VK_CONTROL || virtual_key == VK_MENU) {
+        virtual_key = LOWORD(MapVirtualKeyW(scan_code, MAPVK_VSC_TO_VK_EX));
+    }
+
+    switch (virtual_key) {
         case VK_BACK:      return CpdKeyCode_Backspace;
         case VK_TAB:       return CpdKeyCode_Tab;
         case VK_RETURN:    return CpdKeyCode_Enter;
-        case VK_SHIFT:     return CpdKeyCode_Shift;
-        case VK_CONTROL:   return CpdKeyCode_Control;
-        case VK_MENU:      return CpdKeyCode_Alt;
+        case VK_LSHIFT:    return CpdKeyCode_LeftShift;
+        case VK_RSHIFT:    return CpdKeyCode_RightShift;
+        case VK_LCONTROL:  return CpdKeyCode_LeftControl;
+        case VK_RCONTROL:  return CpdKeyCode_RightControl;
+        case VK_LMENU:     return CpdKeyCode_LeftAlt;
+        case VK_RMENU:     return CpdKeyCode_RightAlt;
         case VK_ESCAPE:    return CpdKeyCode_Escape;
         case VK_SPACE:     return CpdKeyCode_Spacebar;
         case VK_PRIOR:     return CpdKeyCode_PageUp;
@@ -166,6 +167,62 @@ static CpdKeyCode virtual_key_to_key_code(WPARAM wParam) {
         case VK_OEM_3:     return CpdKeyCode_Backtick;
         default:           return CpdKeyCode_Invalid;
     }
+}
+
+static bool check_key_code(WindowExtraData* data, CpdKeyCode keyCode, bool pressed) {
+    if (keyCode == CpdKeyCode_LeftShift) {
+        if (data->left_shift_pressed != pressed) {
+            data->left_shift_pressed = pressed;
+        }
+        else {
+            return false;
+        }
+    }
+    else if (keyCode == CpdKeyCode_RightShift) {
+        if (data->right_shift_pressed != pressed) {
+            data->right_shift_pressed = pressed;
+        }
+        else {
+            return false;
+        }
+    }
+    else if (keyCode == CpdKeyCode_LeftControl) {
+        if (data->left_control_pressed != pressed) {
+            data->left_control_pressed = pressed;
+        }
+        else {
+            return false;
+        }
+    }
+    else if (keyCode == CpdKeyCode_RightControl) {
+        if (data->right_control_pressed != pressed) {
+            data->right_control_pressed = pressed;
+        }
+        else {
+            return false;
+        }
+    }
+    else if (keyCode == CpdKeyCode_LeftAlt) {
+        if (data->left_alt_pressed != pressed) {
+            data->left_alt_pressed = pressed;
+        }
+        else {
+            return false;
+        }
+    }
+    else if (keyCode == CpdKeyCode_RightAlt) {
+        if (data->right_alt_pressed != pressed) {
+            data->right_alt_pressed = pressed;
+        }
+        else {
+            return false;
+        }
+    }
+    else if (keyCode == CpdKeyCode_Invalid) {
+        return false;
+    }
+
+    return true;
 }
 
 LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -279,29 +336,100 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             bool wasPressed = (HIWORD(lParam) & KF_REPEAT) != 0;
             bool isPressed = (HIWORD(lParam) & KF_UP) == 0;
 
-            // Ignore repeating events
-            if (wasPressed == isPressed) {
+            bool is_modifier_key = wParam == VK_SHIFT || wParam == VK_CONTROL || wParam == VK_MENU;
+
+            // Ignore repeating events for non-modifier keys
+            if (wasPressed == isPressed && !is_modifier_key) {
                 return 0;
             }
 
-            switch (wParam) {
-            case VK_SHIFT:
-                return add_modifier_button_press_to_queue(data, lParam, CpdKeyCode_Shift, CpdInputModifierKey_Shift);
-
-            case VK_CONTROL:
-                return add_modifier_button_press_to_queue(data, lParam, CpdKeyCode_Control, CpdInputModifierKey_Control);
-
-            case VK_MENU:
-                return add_modifier_button_press_to_queue(data, lParam, CpdKeyCode_Alt, CpdInputModifierKey_Alt);
-
-            default:
-            {
-                CpdKeyCode keyCode = virtual_key_to_key_code(wParam);
-                if (keyCode != CpdKeyCode_Invalid) {
-                    return add_button_press_to_queue(data, lParam, keyCode);
-                }
+            USHORT scan_code = LOBYTE(HIWORD(lParam));
+            if ((HIWORD(lParam) & KF_EXTENDED) != 0) {
+                scan_code += 0xE000;
             }
-            break;
+
+            CpdKeyCode keyCode = virtual_key_to_key_code((USHORT)wParam, scan_code);
+            if (!check_key_code(data, keyCode, isPressed)) {
+                return 0;
+            }
+
+            LRESULT result = add_button_press_to_queue(data, isPressed, keyCode);
+            if (result != 0) {
+                return result;
+            }
+
+            if (wParam == VK_SHIFT) {
+                set_key_modifier(data, CpdInputModifierKey_Shift, HIBYTE(GetKeyState(VK_LSHIFT)) || HIBYTE(GetKeyState(VK_RSHIFT)));
+            }
+            else if (wParam == VK_CONTROL) {
+                set_key_modifier(data, CpdInputModifierKey_Control, HIBYTE(GetKeyState(VK_LCONTROL)) || HIBYTE(GetKeyState(VK_RCONTROL)));
+            }
+            else if (wParam == VK_MENU) {
+                set_key_modifier(data, CpdInputModifierKey_Alt, HIBYTE(GetKeyState(VK_LMENU)) || HIBYTE(GetKeyState(VK_RMENU)));
+            }
+        }
+        return 0;
+
+        case WM_INPUT:
+        {
+            WindowExtraData* data = GET_EXTRA_DATA(hWnd);
+            HRAWINPUT raw_input_handle = (HRAWINPUT)lParam;
+
+            UINT data_size = sizeof(RAWINPUTHEADER) + sizeof(RAWKEYBOARD);
+            RAWINPUT raw_input;
+            if (GetRawInputData(raw_input_handle, RID_INPUT, &raw_input, &data_size, sizeof(RAWINPUTHEADER)) != data_size) {
+                return 1;
+            }
+
+            if (raw_input.header.dwType == RIM_TYPEKEYBOARD && raw_input.data.keyboard.MakeCode != KEYBOARD_OVERRUN_MAKE_CODE && raw_input.data.keyboard.VKey < UCHAR_MAX) {
+                uint16_t scan_code = raw_input.data.keyboard.MakeCode & 0x7F;
+
+                if (scan_code == 0) {
+                    scan_code = LOWORD(MapVirtualKeyW(raw_input.data.keyboard.VKey, MAPVK_VK_TO_VSC_EX));
+                }
+
+                if ((raw_input.data.keyboard.Flags & RI_KEY_E0) != 0) {
+                    scan_code = MAKEWORD(scan_code, 0xE0);
+                }
+                else if ((raw_input.data.keyboard.Flags & RI_KEY_E1) != 0) {
+                    scan_code = MAKEWORD(scan_code, 0xE1);
+                }
+
+                bool pressed = (raw_input.data.keyboard.Flags & RI_KEY_BREAK) == 0;
+
+                for (uint32_t i = 0; i < data->keyboard_presses_size; i++) {
+                    if (data->keyboard_presses[i].scan_code != scan_code) {
+                        continue;
+                    }
+
+                    if (data->keyboard_presses[i].pressed == pressed) {
+                        return 0;
+                    }
+                }
+
+                CpdKeyCode keyCode = virtual_key_to_key_code(raw_input.data.keyboard.VKey, scan_code);
+                if (!check_key_code(data, keyCode, pressed)) {
+                    return 0;
+                }
+
+                LRESULT result = add_button_press_to_queue(data, pressed, keyCode);
+                if (result != 0) {
+                    return result;
+                }
+
+                if (!set_keyboard_key_press(data, scan_code, pressed)) {
+                    return 1;
+                }
+
+                if (wParam == VK_SHIFT) {
+                    set_key_modifier(data, CpdInputModifierKey_Shift, HIBYTE(GetKeyState(VK_LSHIFT)) || HIBYTE(GetKeyState(VK_RSHIFT)));
+                }
+                else if (wParam == VK_CONTROL) {
+                    set_key_modifier(data, CpdInputModifierKey_Control, HIBYTE(GetKeyState(VK_LCONTROL)) || HIBYTE(GetKeyState(VK_RCONTROL)));
+                }
+                else if (wParam == VK_MENU) {
+                    set_key_modifier(data, CpdInputModifierKey_Alt, HIBYTE(GetKeyState(VK_LMENU)) || HIBYTE(GetKeyState(VK_RMENU)));
+                }
             }
         }
         return 0;
@@ -315,6 +443,10 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             }
 
             data->focused = LOWORD(wParam) != WA_INACTIVE;
+
+            if (data->focused && data->use_raw_input) {
+                data->use_raw_input = register_raw_input(hWnd);
+            }
         }
         return 0;
 
