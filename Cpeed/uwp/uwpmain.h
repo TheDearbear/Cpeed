@@ -38,6 +38,8 @@ typedef struct CpdUWPWindow {
 
     CpdInputDevice* devices;
 
+    struct CpdFrameLayer* layers;
+
     uint32_t should_close : 1;
     uint32_t resized : 1;
     uint32_t visible : 1;

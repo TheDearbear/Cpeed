@@ -7,6 +7,7 @@
 #include <GameInput.h>
 #include <windows.h>
 
+#include "../platform/window.h"
 #include "../input.h"
 
 #define INPUT_QUEUE_BASE_SIZE 16
@@ -42,12 +43,15 @@ typedef struct WindowExtraData {
     uint32_t input_queue_max_size;
     CpdInputMode input_mode;
     CpdInputModifierKeyFlags current_key_modifiers;
-    int16_t mouse_x;
-    int16_t mouse_y;
+    CpdSize size;
+    int32_t mouse_x;
+    int32_t mouse_y;
 
     CpdKeyboardKey* keyboard_presses;
     uint32_t keyboard_presses_size;
     uint32_t keyboard_presses_max_size;
+
+    struct CpdFrameLayer* layers;
 
     uint32_t should_close : 1;
     uint32_t resized : 1;

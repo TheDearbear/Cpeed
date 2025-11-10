@@ -1,35 +1,42 @@
 #include <malloc.h>
 
-#include "frame.h"
+#include "../common/frame.h"
+#include "uwpmain.h"
 
-static CpdFrameLayer* g_layers = 0;
 static uint32_t g_new_layer_handle = 1;
 
 uint32_t add_frame_layer(CpdWindow window, const CpdFrameLayerFunctions* functions, CpdFrameLayerFlags flags) {
+    CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
+
     CpdFrameLayer* layer = (CpdFrameLayer*)malloc(sizeof(CpdFrameLayer));
     if (layer == 0) {
         return INVALID_FRAME_LAYER_HANDLE;
     }
 
     layer->higher = 0;
-    layer->underlying = g_layers;
+    layer->underlying = uwp_window->layers;
     layer->handle = g_new_layer_handle++;
     layer->flags = flags;
     layer->functions = *functions;
 
-    if (g_layers != 0) {
-        g_layers->higher = layer;
+    if (uwp_window->layers != 0) {
+        uwp_window->layers->higher = layer;
     }
 
-    g_layers = layer;
+    uwp_window->layers = layer;
 
     return layer->handle;
 }
 
-static bool remove_frame_layer_loop(void* context, CpdFrameLayer* layer) {
-    uint32_t handle = *(uint32_t*)context;
+typedef struct CpdRemoveLayerArgs {
+    CpdUWPWindow* uwp_window;
+    uint32_t handle;
+} CpdRemoveLayerArgs;
 
-    if (layer->handle != handle) {
+static bool remove_frame_layer_loop(void* context, CpdFrameLayer* layer) {
+    CpdRemoveLayerArgs* args = (CpdRemoveLayerArgs*)context;
+
+    if (layer->handle != args->handle) {
         return true;
     }
 
@@ -37,7 +44,7 @@ static bool remove_frame_layer_loop(void* context, CpdFrameLayer* layer) {
 
 
     if (higher == 0) {
-        g_layers = layer->underlying;
+        args->uwp_window->layers = layer->underlying;
     }
     else {
         higher->underlying = layer->underlying;
@@ -56,13 +63,21 @@ void remove_frame_layer(CpdWindow window, uint32_t handle) {
         return;
     }
 
-    loop_frame_layers(window, remove_frame_layer_loop, &handle);
+    CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
+
+    CpdRemoveLayerArgs args = {
+        .uwp_window = uwp_window,
+        .handle = handle
+    };
+
+    loop_frame_layers(window, remove_frame_layer_loop, &args);
 }
 
 void loop_frame_layers(CpdWindow window, CpdFrameLayerLoopFunction loop, void* context) {
+    CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
     CpdFrameLayer* underlying = 0;
 
-    for (CpdFrameLayer* layer = g_layers; layer != 0; layer = underlying) {
+    for (CpdFrameLayer* layer = uwp_window->layers; layer != 0; layer = underlying) {
         underlying = layer->underlying;
 
         if (!loop(context, layer)) {

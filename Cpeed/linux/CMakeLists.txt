@@ -1,5 +1,6 @@
 add_library (CpeedLinux STATIC
   "linuxevent.c" "linuxevent.h"
+  "linuxframe.c"
   "linuxinit.c"
   "linuxinput.c"
   "linuxlock.c"

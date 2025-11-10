@@ -1,6 +1,10 @@
+#include <unknwn.h>
+
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Gaming.Input.h>
+#include <winrt/Windows.Graphics.Display.h>
 #include <winrt/Windows.UI.Input.h>
+#include <winrt/Windows.UI.ViewManagement.h>
 
 #include "AppView.h"
 
@@ -14,9 +18,11 @@ using namespace winrt::Windows::ApplicationModel::Activation;
 using namespace winrt::Windows::ApplicationModel::Core;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Gaming::Input;
+using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Input;
+using namespace winrt::Windows::UI::ViewManagement;
 
 const USHORT SCANCODE_LSHIFT = 42;
 const USHORT SCANCODE_RSHIFT = 54;
@@ -84,6 +90,10 @@ void AppView::OnGamepadDisconnect(winrt::Windows::Foundation::IUnknown const&, G
 
 void AppView::Initialize(CoreApplicationView const& applicationView)
 {
+    if (!windowed_mode_supported()) {
+        ApplicationView::PreferredLaunchWindowingMode(ApplicationViewWindowingMode::FullScreen);
+    }
+
     applicationView.Activated({ this, &AppView::OnViewActivated });
 
     gamepad_added = Gamepad::GamepadAdded({ this, &AppView::OnGamepadConnect });
@@ -101,7 +111,7 @@ void AppView::Initialize(CoreApplicationView const& applicationView)
 
     impl.initialize_backend();
 
-    init_engine();
+    init_engine(window);
 }
 
 // Called when the CoreWindow object is created (or re-created).
@@ -114,8 +124,11 @@ void AppView::SetWindow(CoreWindow const& window)
     this->window->core_window = (void*)winrt::get_unknown(window);
     auto bounds = window.Bounds();
 
-    this->window->size.width = (unsigned short)bounds.Width;
-    this->window->size.height = (unsigned short)bounds.Height;
+    double screen_factor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+    this->window->size.width = (unsigned short)(bounds.Width * screen_factor);
+    this->window->size.height = (unsigned short)(bounds.Height * screen_factor);
+    this->window->resized = true;
 
     CpdBackendInfo backend_info = { (CpdWindow)this->window, { 0.2f, 0.5f, 0.5f } };
 
@@ -171,7 +184,7 @@ void AppView::Run()
         if (get_window_input_events((CpdWindow)window, &input_events, &input_event_count)) {
             for (uint32_t i = 0; i < input_event_count; i++) {
                 CpdFrameLayer* frame_layer = 0;
-                loop_frame_layers(get_lowest_frame_layer, &frame_layer);
+                loop_frame_layers((CpdWindow)window, get_lowest_frame_layer, &frame_layer);
 
                 while (frame_layer != 0) {
                     if (frame_layer->functions.input != 0 && !frame_layer->functions.input(window, frame, &input_events[i])) {
@@ -247,7 +260,10 @@ void AppView::OnWindowClosed(CoreWindow const& sender, CoreWindowEventArgs const
 }
 
 void AppView::OnSizeChanged(CoreWindow const& sender, WindowSizeChangedEventArgs const& args) {
-    window->size = { (uint16_t)args.Size().Width, (uint16_t)args.Size().Height };
+    double screen_factor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+    window->size.width = (uint16_t)(args.Size().Width * screen_factor);
+    window->size.height = (uint16_t)(args.Size().Height * screen_factor);
     window->resized = true;
 }
 
@@ -278,7 +294,7 @@ static CpdKeyCode virtual_key_to_key_code(KeyEventArgs const& args) {
     switch (vk) {
         case VirtualKey::Back:         return CpdKeyCode_Backspace;
         case VirtualKey::Tab:          return CpdKeyCode_Tab;
-        case VirtualKey::Enter:        return CpdKeyCode_Enter;
+        case VirtualKey::Enter:        return args.KeyStatus().IsExtendedKey ? CpdKeyCode_NumpadEnter : CpdKeyCode_Enter;
         case VirtualKey::Control:      return args.KeyStatus().IsExtendedKey ? CpdKeyCode_RightControl : CpdKeyCode_LeftControl;
         case VirtualKey::Escape:       return CpdKeyCode_Escape;
         case VirtualKey::Space:        return CpdKeyCode_Spacebar;
@@ -330,11 +346,7 @@ void AppView::OnKey(CoreWindow const& sender, KeyEventArgs const& args) {
 
     bool pressed = !args.KeyStatus().IsKeyReleased;
     CpdKeyCode keyCode = virtual_key_to_key_code(args);
-
-    if (keyCode != CpdKeyCode_Invalid) {
-        args.Handled(add_button_press_to_queue(window, keyCode, pressed));
-    }
-
+    
     switch (args.VirtualKey()) {
         case VirtualKey::Shift:
             if (!pressed) {
@@ -358,6 +370,10 @@ void AppView::OnKey(CoreWindow const& sender, KeyEventArgs const& args) {
             set_key_modifier(window, CpdInputModifierKey_Control, pressed);
             break;
     }
+
+    if (keyCode != CpdKeyCode_Invalid) {
+        args.Handled(add_button_press_to_queue(window, keyCode, pressed));
+    }
 }
 
 void AppView::OnAcceleratorKey(CoreDispatcher const& sender, AcceleratorKeyEventArgs const& args) {
@@ -368,8 +384,6 @@ void AppView::OnAcceleratorKey(CoreDispatcher const& sender, AcceleratorKeyEvent
     bool pressed = !args.KeyStatus().IsKeyReleased;
     CpdKeyCode keyCode = args.KeyStatus().IsExtendedKey ? CpdKeyCode_RightAlt : CpdKeyCode_LeftAlt;
 
-    args.Handled(add_button_press_to_queue(window, keyCode, pressed));
-
     if (!pressed) {
         bool left_pressed = CoreWindow::GetForCurrentThread().GetKeyState(VirtualKey::LeftMenu) == CoreVirtualKeyStates::Down;
         bool right_pressed = CoreWindow::GetForCurrentThread().GetKeyState(VirtualKey::RightMenu) == CoreVirtualKeyStates::Down;
@@ -378,6 +392,8 @@ void AppView::OnAcceleratorKey(CoreDispatcher const& sender, AcceleratorKeyEvent
     }
 
     set_key_modifier(window, CpdInputModifierKey_Alt, pressed);
+
+    args.Handled(add_button_press_to_queue(window, keyCode, pressed));
 }
 
 void AppView::OnCharacterReceived(CoreWindow const& sender, CharacterReceivedEventArgs const& args) {
@@ -465,16 +481,18 @@ void AppView::OnPointerButton(CoreWindow const& sender, PointerEventArgs const& 
 }
 
 void AppView::OnPointerMoved(CoreWindow const& sender, PointerEventArgs const& args) {
-    int32_t x = (int32_t)args.CurrentPoint().Position().X;
-    int32_t y = (int32_t)args.CurrentPoint().Position().Y;
+    double screen_factor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+    int32_t x = (int32_t)(args.CurrentPoint().Position().X * screen_factor);
+    int32_t y = (int32_t)(args.CurrentPoint().Position().Y * screen_factor);
 
     if (!add_mouse_move_to_queue(window, (int16_t)x, (int16_t)y)) {
         return;
     }
 
     args.Handled(true);
-    window->mouse_x = x;
-    window->mouse_y = y;
+    window->mouse_x = (int32_t)x;
+    window->mouse_y = (int32_t)y;
 }
 
 void AppView::OnPointerWheel(CoreWindow const& sender, PointerEventArgs const& args) {

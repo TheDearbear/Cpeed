@@ -22,16 +22,27 @@ VkResult RENDERING_initialize(CpdRenderer* cpeed_renderer) {
     return VK_SUCCESS;
 }
 
-VkResult RENDERING_resize(CpdRenderer* cpeed_renderer, CpdSize new_size) {
-    return VK_SUCCESS;
-}
-
 static bool get_lowest_frame_layer(void* context, CpdFrameLayer* frame_layer) {
     CpdFrameLayer** output = (CpdFrameLayer**)context;
 
     *output = frame_layer;
 
     return true;
+}
+
+VkResult RENDERING_resize(CpdRenderer* cpeed_renderer, CpdSize new_size) {
+    CpdFrameLayer* frame_layer = 0;
+    loop_frame_layers(cpeed_renderer->window, get_lowest_frame_layer, &frame_layer);
+
+    while (frame_layer != 0) {
+        if (frame_layer->functions.resize != 0) {
+            frame_layer->functions.resize(cpeed_renderer->window, cpeed_renderer->frame, new_size);
+        }
+
+        frame_layer = frame_layer->higher;
+    }
+
+    return VK_SUCCESS;
 }
 
 static void begin_rendering(CpdRenderer* cpeed_renderer, VkCommandBuffer buffer) {
@@ -58,7 +69,9 @@ static void begin_rendering(CpdRenderer* cpeed_renderer, VkCommandBuffer buffer)
         .layerCount = 1,
         .viewMask = 0,
         .colorAttachmentCount = 1,
-        .pColorAttachments = &attachment
+        .pColorAttachments = &attachment,
+        .pDepthAttachment = 0,
+        .pStencilAttachment = 0
     };
 
     cpeed_renderer->render_device.vkCmdBeginRendering(buffer, &info);
@@ -92,10 +105,12 @@ VkResult RENDERING_frame(CpdRenderer* cpeed_renderer) {
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     CpdFrameLayer* frame_layer = 0;
-    loop_frame_layers(get_lowest_frame_layer, &frame_layer);
+    loop_frame_layers(cpeed_renderer->window, get_lowest_frame_layer, &frame_layer);
 
     while (frame_layer != 0) {
-        frame_layer->functions.render(cpeed_renderer->frame);
+        if (frame_layer->functions.render != 0) {
+            frame_layer->functions.render(cpeed_renderer->frame);
+        }
 
         frame_layer = frame_layer->higher;
     }

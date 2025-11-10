@@ -66,12 +66,9 @@ static void shutdown_window(CpdBackendHandle backend) {
 static VkResult create_renderer(CpdWindow window, CpdRenderer** renderer, CpdRendererInitParams* params) {
     *renderer = RENDERER_create(params);
 
-    VkResult result = RENDERER_select_render_device(*renderer);
-    if (result != VK_SUCCESS) {
-        return result;
-    }
+    (*renderer)->window = window;
 
-    result = RENDERER_select_ui_device(*renderer);
+    VkResult result = RENDERER_select_render_device(*renderer);
     if (result != VK_SUCCESS) {
         return result;
     }

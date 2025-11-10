@@ -1,5 +1,6 @@
 #include <malloc.h>
 
+#include "../common/frame.h"
 #include "../platform/input/gamepad.h"
 #include "../platform/window.h"
 #include "../platform/logging.h"
@@ -40,12 +41,21 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     data->input_mode = info->input_mode;
     data->current_key_modifiers = CpdInputModifierKey_None;
 
+    RECT rectangle = { 0, 0, 0, 0 };
+    GetClientRect(hWnd, &rectangle);
+
+    data->size = (CpdSize) {
+        .width = (unsigned short)(rectangle.right - rectangle.left),
+        .height = (unsigned short)(rectangle.bottom - rectangle.top),
+    };
     data->mouse_x = 0;
     data->mouse_y = 0;
 
     data->keyboard_presses = keyboard_presses;
     data->keyboard_presses_size = 0;
     data->keyboard_presses_max_size = KEYBOARD_PRESSES_BASE_SIZE;
+
+    data->layers = 0;
 
     data->resized = false;
     data->should_close = false;
@@ -87,8 +97,18 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     return (CpdWindow)hWnd;
 }
 
+static bool remove_frame_layers_loop(void* context, CpdFrameLayer* layer) {
+    CpdWindow window = (CpdWindow)context;
+
+    remove_frame_layer(window, layer->handle);
+
+    return true;
+}
+
 void destroy_window(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
+
+    loop_frame_layers(window, remove_frame_layers_loop, (void*)window);
 
     cleanup_input_queue(data->input_queue, data->input_queue_size);
     cleanup_input_queue(data->input_swap_queue, data->input_swap_queue_size);
@@ -259,13 +279,9 @@ bool poll_window(CpdWindow window) {
 }
 
 CpdSize window_size(CpdWindow window) {
-    RECT rectangle = { 0, 0, 0, 0 };
-    GetClientRect((HWND)window, &rectangle);
-    
-    return (CpdSize) {
-        .width = (unsigned short)(rectangle.right - rectangle.left),
-        .height = (unsigned short)(rectangle.bottom - rectangle.top)
-    };
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
+
+    return data->size;
 }
 
 bool window_resized(CpdWindow window) {
@@ -284,5 +300,9 @@ bool window_present_allowed(CpdWindow window) {
 }
 
 bool multiple_windows_supported() {
+    return true;
+}
+
+bool windowed_mode_supported() {
     return true;
 }

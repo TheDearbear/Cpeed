@@ -1,7 +1,9 @@
 #include <unknwn.h>
+#include <wchar.h>
 
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Gaming.Input.h>
+#include <winrt/Windows.System.Profile.h>
 #include <winrt/Windows.UI.Input.h>
 
 #include "AppView.h"
@@ -12,6 +14,7 @@ extern "C" {
 
 using namespace winrt::Windows::ApplicationModel::Core;
 using namespace winrt::Windows::Gaming::Input;
+using namespace winrt::Windows::System::Profile;
 using namespace winrt::Windows::UI::Core;
 
 static inline void check_gamepad_button(CpdUWPWindow* uwp_window, GamepadReading* state, CpdInputDevice* device, uint16_t index, GamepadButtons state_button, CpdGamepadButtonType cpeed_button) {
@@ -85,6 +88,13 @@ extern "C" {
         *output = frame_layer;
 
         return true;
+    }
+
+    bool windowed_mode_supported() {
+        const wchar_t* device_family = AnalyticsInfo::VersionInfo().DeviceFamily().c_str();
+        const wchar_t* desktop_family = L"Windows.Desktop";
+
+        return wcscmp(device_family, desktop_family) == 0;
     }
 
     int real_main() {

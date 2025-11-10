@@ -259,7 +259,7 @@ static VkResult create_logical_device(CpdDevice* cpeed_device, CpdDeviceInitPara
 
         next = (VulkanStructureChain*)features;
     }
-    else {
+    else if (load_method == CpdVulkanExtensionLoadMethod_FromExtension) {
         VkPhysicalDeviceDynamicRenderingFeatures* dynamic_rendering_features = (VkPhysicalDeviceDynamicRenderingFeatures*)malloc(sizeof(VkPhysicalDeviceDynamicRenderingFeatures));
         VkPhysicalDeviceSynchronization2Features* synchronization2_features = (VkPhysicalDeviceSynchronization2Features*)malloc(sizeof(VkPhysicalDeviceSynchronization2Features));
         
@@ -285,6 +285,14 @@ static VkResult create_logical_device(CpdDevice* cpeed_device, CpdDeviceInitPara
         synchronization2_features->synchronization2 = VK_TRUE;
 
         next = (VulkanStructureChain*)dynamic_rendering_features;
+    }
+    else {
+        destroy_queue_create_infos(queue_create_info, queue_create_info_count);
+        free_device_extensions(extensions);
+
+        log_error("Dynamic rendering is not available for the device\n");
+
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
     VkDeviceCreateInfo create_info = {

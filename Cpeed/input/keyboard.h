@@ -11,6 +11,7 @@ typedef enum CpdKeyCode {
     CpdKeyCode_Backspace,
     CpdKeyCode_Tab,
     CpdKeyCode_Enter,
+    CpdKeyCode_NumpadEnter,
     CpdKeyCode_LeftShift,
     CpdKeyCode_RightShift,
     CpdKeyCode_LeftControl,

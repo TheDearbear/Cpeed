@@ -3,6 +3,7 @@ project (CpeedUWP C CXX)
 add_library (CpeedUWP STATIC
   "AppView.cpp" "AppView.h"
   "main.cpp" "main.h"
+  "uwpframe.c"
   "uwpinit.c"
   "uwpinput.c"
   "uwplogging.c"

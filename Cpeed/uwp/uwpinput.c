@@ -5,12 +5,7 @@
 bool set_window_input_mode(CpdWindow window, CpdInputMode mode) {
     CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
 
-    if (uwp_window->input_queue_size != 0) {
-        return false;
-    }
-
     uwp_window->input_mode = mode;
-
     return true;
 }
 

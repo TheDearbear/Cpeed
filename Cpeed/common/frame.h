@@ -8,17 +8,38 @@
 
 #define INVALID_FRAME_LAYER_HANDLE ((uint32_t)0)
 
+#define RENDER_QUEUE_BASE_SIZE 128
+#define RENDER_QUEUE_SIZE_STEP 64
+
+typedef struct CpdRenderQueueEntry {
+    struct CpdObject* object;
+} CpdRenderQueueEntry;
+
+typedef struct CpdFrame {
+    CpdVector3 background;
+
+    uint16_t render_queue_max_size;
+    uint16_t render_queue_size;
+    CpdRenderQueueEntry* render_queue;
+
+    // TODO: Add functions for adding objects for render to queue (request_object_render, load_model, load_texture, etc)
+} CpdFrame;
+
+struct CpdFrameLayer;
+
 typedef enum CpdFrameLayerFlags {
     CpdFrameLayerFlags_None
 } CpdFrameLayerFlags;
 
 typedef bool (*CpdFrameLayerLoopFunction)(void*, struct CpdFrameLayer*);
-typedef bool (*CpdFrameInputFunction)(CpdWindow window, struct CpdFrame*, const CpdInputEvent*);
-typedef void (*CpdFrameRenderFunction)(struct CpdFrame*);
+typedef bool (*CpdFrameInputFunction)(CpdWindow window, CpdFrame*, const CpdInputEvent*);
+typedef void (*CpdFrameRenderFunction)(CpdFrame*);
+typedef void (*CpdFrameResizeFunction)(CpdWindow window, CpdFrame*, CpdSize size);
 
 typedef struct CpdFrameLayerFunctions {
     CpdFrameInputFunction input;
     CpdFrameRenderFunction render;
+    CpdFrameResizeFunction resize;
 } CpdFrameLayerFunctions;
 
 typedef struct CpdFrameLayer {
@@ -29,11 +50,7 @@ typedef struct CpdFrameLayer {
     CpdFrameLayerFunctions functions;
 } CpdFrameLayer;
 
-typedef struct CpdFrame {
-    CpdVector3 background;
-} CpdFrame;
+extern uint32_t add_frame_layer(CpdWindow window, const CpdFrameLayerFunctions* functions, CpdFrameLayerFlags flags);
+extern void remove_frame_layer(CpdWindow window, uint32_t handle);
 
-uint32_t add_frame_layer(const CpdFrameLayerFunctions* functions, CpdFrameLayerFlags flags);
-void remove_frame_layer(uint32_t handle);
-
-void loop_frame_layers(CpdFrameLayerLoopFunction loop, void* context);
+extern void loop_frame_layers(CpdWindow window, CpdFrameLayerLoopFunction loop, void* context);

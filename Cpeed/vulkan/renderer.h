@@ -24,6 +24,8 @@ typedef struct CpdRenderer {
 
     CpdInstanceVulkanExtensions instance_extensions;
 
+    CpdWindow window;
+
     CpdSurface surface;
 
     CpdSwapchain swapchain;
@@ -32,7 +34,6 @@ typedef struct CpdRenderer {
     CpdRenderSettings* render_settings;
 
     CpdDevice render_device;
-    CpdDevice ui_device;
 } CpdRenderer;
 
 typedef struct CpdRendererInitParams {
@@ -47,7 +48,6 @@ CpdRenderer* RENDERER_create(CpdRendererInitParams* params);
 void RENDERER_destroy(CpdRenderer* renderer);
 
 VkResult RENDERER_select_render_device(CpdRenderer* renderer);
-VkResult RENDERER_select_ui_device(CpdRenderer* renderer);
 
 VkResult RENDERER_reset_pools(CpdRenderer* renderer);
 VkResult RENDERER_wait_idle(CpdRenderer* renderer);

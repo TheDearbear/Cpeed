@@ -3,41 +3,51 @@
 #
 cmake_minimum_required (VERSION 3.16)
 
-# Enable Hot Reload for MSVC compilers if supported.
-if (POLICY CMP0141)
-  cmake_policy(SET CMP0141 NEW)
-  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
-endif()
-
-cmake_policy(SET CMP0069 NEW)
-cmake_policy(SET CMP0079 NEW)
-
-include(CheckIPOSupported)
+cmake_policy (SET CMP0069 NEW)
+cmake_policy (SET CMP0079 NEW)
 
 project ("Cpeed" C)
+
+include (CheckIPOSupported)
+
+message (CHECK_START "Checking for IPO support")
+check_ipo_supported (RESULT ipo_supported OUTPUT ipo_error)
+if (ipo_supported)
+  message (CHECK_PASS "available")
+  set (CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+else ()
+  message (CHECK_FAIL "not available: ${ipo_error}")
+endif ()
+
+if (WINDOWS_STORE)
+  set (CPD_PLATFORM_TARGET CpeedUWP)
+  set (CPD_PLATFORM_SUBDIRECTORY "Cpeed/uwp")
+
+  set (CPD_BACKENDS_TARGET CpeedDirectX)
+  set (CPD_BACKENDS_SUBDIRECTORY "Cpeed/directx")
+elseif (WIN32)
+  set (CPD_PLATFORM_TARGET CpeedWindows)
+  set (CPD_PLATFORM_SUBDIRECTORY "Cpeed/windows")
+
+  set (CPD_BACKENDS_TARGET CpeedDirectX CpeedVulkan)
+  set (CPD_BACKENDS_SUBDIRECTORY "Cpeed/directx" "Cpeed/vulkan")
+elseif (LINUX)
+  set (CPD_PLATFORM_TARGET CpeedLinux)
+  set (CPD_PLATFORM_SUBDIRECTORY "Cpeed/linux")
+
+  set (CPD_BACKENDS_TARGET CpeedVulkan)
+  set (CPD_BACKENDS_SUBDIRECTORY "Cpeed/vulkan")
+else ()
+  message (FATAL_ERROR "Unsupported platform specified")
+endif (WINDOWS_STORE)
 
 # Include sub-projects.
 add_subdirectory ("Cpeed")
 
-check_ipo_supported(RESULT ipo_supported)
-if (ipo_supported)
-  set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-  message("-- IPO is enabled")
-else()
-  message("-- IPO is NOT enabled")
-endif()
+foreach (SUBDIR ${CPD_BACKENDS_SUBDIRECTORY})
+  add_subdirectory (${SUBDIR})
+endforeach ()
 
-if (WINDOWS_STORE)
-  add_subdirectory ("Cpeed/directx")
-  add_subdirectory ("Cpeed/uwp")
-  target_link_libraries (Cpeed LINK_PRIVATE CpeedUWP CpeedDirectX)
-elseif (WIN32)
-  add_subdirectory ("Cpeed/directx")
-  add_subdirectory ("Cpeed/vulkan")
-  add_subdirectory ("Cpeed/windows")
-  target_link_libraries (Cpeed LINK_PRIVATE CpeedWindows CpeedDirectX CpeedVulkan)
-elseif (LINUX)
-  add_subdirectory ("Cpeed/vulkan")
-  add_subdirectory ("Cpeed/linux")
-  target_link_libraries (Cpeed LINK_PRIVATE CpeedLinux CpeedVulkan)
-endif (WINDOWS_STORE)
+add_subdirectory (${CPD_PLATFORM_SUBDIRECTORY})
+
+target_link_libraries (Cpeed PRIVATE ${CPD_PLATFORM_TARGET} ${CPD_BACKENDS_TARGET})

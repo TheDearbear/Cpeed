@@ -4,6 +4,7 @@
 
 #include "../platform/logging.h"
 #include "../platform/window.h"
+#include "../platform.h"
 #include "winmain.h"
 #include "winproc.h"
 
@@ -71,13 +72,13 @@ static LRESULT add_mouse_button_press_to_queue(WindowExtraData* data, CpdMouseBu
     return 0;
 }
 
-static LRESULT add_mouse_move_to_queue(WindowExtraData* data, int16_t new_x, int16_t new_y) {
+static LRESULT add_mouse_move_to_queue(WindowExtraData* data, int32_t new_x, int32_t new_y) {
     if (!resize_input_queue_if_need(data, 1)) {
         return 1;
     }
 
-    int16_t delta_x = 0;
-    int16_t delta_y = 0;
+    int32_t delta_x = 0;
+    int32_t delta_y = 0;
 
     if (data->first_mouse_event) {
         data->first_mouse_event = false;
@@ -91,10 +92,10 @@ static LRESULT add_mouse_move_to_queue(WindowExtraData* data, int16_t new_x, int
         .type = CpdInputEventType_MouseMove,
         .modifiers = data->current_key_modifiers,
         .time = get_clock_usec(),
-        .data.mouse_move.x_pos = new_x,
-        .data.mouse_move.y_pos = new_y,
-        .data.mouse_move.x_move = delta_x,
-        .data.mouse_move.y_move = delta_y
+        .data.mouse_move.x_pos = (int16_t)new_x,
+        .data.mouse_move.y_pos = (int16_t)new_y,
+        .data.mouse_move.x_move = (int16_t)delta_x,
+        .data.mouse_move.y_move = (int16_t)delta_y
     };
 
     return 0;
@@ -128,6 +129,10 @@ static CpdKeyCode virtual_key_to_key_code(USHORT virtual_key, USHORT scan_code) 
 
     if (virtual_key == VK_SHIFT || virtual_key == VK_CONTROL || virtual_key == VK_MENU) {
         virtual_key = LOWORD(MapVirtualKeyW(scan_code, MAPVK_VSC_TO_VK_EX));
+    }
+
+    if (virtual_key == VK_RETURN && (scan_code & 0xE000) != 0) {
+        return CpdKeyCode_NumpadEnter;
     }
 
     switch (virtual_key) {
@@ -244,6 +249,13 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             WindowExtraData* data = GET_EXTRA_DATA(hWnd);
             if (data != 0) {
                 data->minimized = (wParam & SIZE_MINIMIZED) != 0;
+
+                RECT rectangle = { 0, 0, 0, 0 };
+                GetClientRect(hWnd, &rectangle);
+                data->size = (CpdSize) {
+                    .width = (unsigned short)(rectangle.right - rectangle.left),
+                    .height = (unsigned short)(rectangle.bottom - rectangle.top)
+                };
             }
         }
         return 0;
@@ -288,8 +300,8 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         {
             WindowExtraData* data = GET_EXTRA_DATA(hWnd);
 
-            int16_t x = GET_X_LPARAM(lParam);
-            int16_t y = GET_Y_LPARAM(lParam);
+            int32_t x = GET_X_LPARAM(lParam);
+            int32_t y = GET_Y_LPARAM(lParam);
 
             add_mouse_move_to_queue(data, x, y);
 
@@ -333,6 +345,10 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         {
             WindowExtraData* data = GET_EXTRA_DATA(hWnd);
 
+            if (data->use_raw_input) {
+                return 0;
+            }
+
             bool wasPressed = (HIWORD(lParam) & KF_REPEAT) != 0;
             bool isPressed = (HIWORD(lParam) & KF_UP) == 0;
 
@@ -353,11 +369,6 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 return 0;
             }
 
-            LRESULT result = add_button_press_to_queue(data, isPressed, keyCode);
-            if (result != 0) {
-                return result;
-            }
-
             if (wParam == VK_SHIFT) {
                 set_key_modifier(data, CpdInputModifierKey_Shift, HIBYTE(GetKeyState(VK_LSHIFT)) || HIBYTE(GetKeyState(VK_RSHIFT)));
             }
@@ -366,6 +377,11 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             }
             else if (wParam == VK_MENU) {
                 set_key_modifier(data, CpdInputModifierKey_Alt, HIBYTE(GetKeyState(VK_LMENU)) || HIBYTE(GetKeyState(VK_RMENU)));
+            }
+
+            LRESULT result = add_button_press_to_queue(data, isPressed, keyCode);
+            if (result != 0) {
+                return result;
             }
         }
         return 0;
@@ -412,6 +428,25 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     return 0;
                 }
 
+                if (raw_input.data.keyboard.VKey == VK_SHIFT) {
+                    WORD vkey = LOWORD(MapVirtualKeyW(scan_code, MAPVK_VSC_TO_VK_EX));
+                    bool modifier_pressed = pressed || HIBYTE(GetKeyState(vkey == VK_RSHIFT ? VK_LSHIFT : VK_RSHIFT));
+                    
+                    set_key_modifier(data, CpdInputModifierKey_Shift, modifier_pressed);
+                }
+                else if (raw_input.data.keyboard.VKey == VK_CONTROL) {
+                    WORD vkey = LOWORD(MapVirtualKeyW(scan_code, MAPVK_VSC_TO_VK_EX));
+                    bool modifier_pressed = pressed || HIBYTE(GetKeyState(vkey == VK_RCONTROL ? VK_LCONTROL : VK_RCONTROL));
+                    
+                    set_key_modifier(data, CpdInputModifierKey_Control, modifier_pressed);
+                }
+                else if (raw_input.data.keyboard.VKey == VK_MENU) {
+                    WORD vkey = LOWORD(MapVirtualKeyW(scan_code, MAPVK_VSC_TO_VK_EX));
+                    bool modifier_pressed = pressed || HIBYTE(GetKeyState(vkey == VK_RMENU ? VK_LMENU : VK_RMENU));
+                    
+                    set_key_modifier(data, CpdInputModifierKey_Alt, modifier_pressed);
+                }
+
                 LRESULT result = add_button_press_to_queue(data, pressed, keyCode);
                 if (result != 0) {
                     return result;
@@ -419,16 +454,6 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
                 if (!set_keyboard_key_press(data, scan_code, pressed)) {
                     return 1;
-                }
-
-                if (wParam == VK_SHIFT) {
-                    set_key_modifier(data, CpdInputModifierKey_Shift, HIBYTE(GetKeyState(VK_LSHIFT)) || HIBYTE(GetKeyState(VK_RSHIFT)));
-                }
-                else if (wParam == VK_CONTROL) {
-                    set_key_modifier(data, CpdInputModifierKey_Control, HIBYTE(GetKeyState(VK_LCONTROL)) || HIBYTE(GetKeyState(VK_RCONTROL)));
-                }
-                else if (wParam == VK_MENU) {
-                    set_key_modifier(data, CpdInputModifierKey_Alt, HIBYTE(GetKeyState(VK_LMENU)) || HIBYTE(GetKeyState(VK_RMENU)));
                 }
             }
         }

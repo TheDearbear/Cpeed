@@ -6,10 +6,6 @@
 bool set_window_input_mode(CpdWindow window, CpdInputMode mode) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
-    if (data->input_queue_size != 0) {
-        return false;
-    }
-
     data->input_mode = mode;
     return true;
 }

@@ -1,4 +1,5 @@
 add_library (CpeedWindows STATIC
+  "winframe.c"
   "wininit.c"
   "wininput.c"
   "winlock.c"
@@ -8,7 +9,11 @@ add_library (CpeedWindows STATIC
   "winwindow.c")
 
 target_sources(CpeedVulkan PRIVATE "backend/vulkan.c")
-target_sources(Cpeed PRIVATE "../main.c")
+target_sources(Cpeed PRIVATE
+  "../main.c"
+
+  "Cpeed.rc"
+  "icon.ico")
 
 target_link_libraries(CpeedWindows gameinput)
 

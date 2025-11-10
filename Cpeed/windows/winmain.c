@@ -152,7 +152,7 @@ bool register_raw_input(HWND hWnd) {
     RAWINPUTDEVICE device = {
         .usUsagePage = HID_USAGE_PAGE_GENERIC,
         .usUsage = HID_USAGE_GENERIC_KEYBOARD,
-        .dwFlags = RIDEV_NOLEGACY,
+        .dwFlags = 0,
         .hwndTarget = hWnd
     };
 

@@ -7,7 +7,10 @@
 #include <dxgi.h>
 #include <dxgi1_2.h>
 
+#include "../platform/window.h"
+
 typedef struct CpdDirectXRenderer {
+    CpdWindow window;
     ID3D11Device* device;
     ID3D11DeviceContext* device_context;
     IDXGISwapChain1* swapchain;

@@ -2,7 +2,6 @@
 
 #include "../common/frame.h"
 #include "../platform/input/gamepad.h"
-#include "../platform/logging.h"
 #include "backend.h"
 #include "directx.h"
 
@@ -65,6 +64,7 @@ static CpdBackendHandle initialize_window(const CpdBackendInfo* info) {
 
     frame->background = info->background;
 
+    renderer->window = info->window;
     renderer->device = 0;
     renderer->device_context = 0;
     renderer->swapchain = 0;
@@ -84,7 +84,7 @@ static CpdBackendHandle initialize_window(const CpdBackendInfo* info) {
 
         .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
         .BufferCount = 3,
-        .Scaling = DXGI_SCALING_NONE,
+        .Scaling = DXGI_SCALING_ASPECT_RATIO_STRETCH,
         .SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
         .AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
         .Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
@@ -131,25 +131,24 @@ static CpdBackendHandle initialize_window(const CpdBackendInfo* info) {
 static CpdBackendVersion get_version(CpdBackendHandle cpeed_backend) {
     CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)cpeed_backend;
 
-    switch (renderer->feature_level) {
-        case D3D_FEATURE_LEVEL_12_2: return (CpdBackendVersion) { .major = 12, .minor = 2 };
-        case D3D_FEATURE_LEVEL_12_1: return (CpdBackendVersion) { .major = 12, .minor = 1 };
-        case D3D_FEATURE_LEVEL_12_0: return (CpdBackendVersion) { .major = 12, .minor = 0 };
-        case D3D_FEATURE_LEVEL_11_1: return (CpdBackendVersion) { .major = 11, .minor = 1 };
-        case D3D_FEATURE_LEVEL_11_0: return (CpdBackendVersion) { .major = 11, .minor = 0 };
-        case D3D_FEATURE_LEVEL_10_1: return (CpdBackendVersion) { .major = 10, .minor = 1 };
-        case D3D_FEATURE_LEVEL_10_0: return (CpdBackendVersion) { .major = 10, .minor = 0 };
-        case D3D_FEATURE_LEVEL_9_3: return (CpdBackendVersion) { .major = 9, .minor = 3 };
-        case D3D_FEATURE_LEVEL_9_2: return (CpdBackendVersion) { .major = 9, .minor = 2 };
-        case D3D_FEATURE_LEVEL_9_1: return (CpdBackendVersion) { .major = 9, .minor = 1 };
-        default: return (CpdBackendVersion) { .major = 1, .minor = 0 };
-    }
+    return (CpdBackendVersion) {
+        .major = renderer->feature_level >> 12,
+        .minor = (renderer->feature_level >> 8) & 0x0F
+    };
 }
 
 static CpdFrame* get_frame(CpdBackendHandle cpeed_backend) {
     CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)cpeed_backend;
 
     return renderer->frame;
+}
+
+static bool get_lowest_frame_layer(void* context, CpdFrameLayer* frame_layer) {
+    CpdFrameLayer** output = (CpdFrameLayer**)context;
+
+    *output = frame_layer;
+
+    return true;
 }
 
 static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
@@ -165,6 +164,17 @@ static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
     }
 
     result = create_render_target(renderer);
+
+    CpdFrameLayer* frame_layer = 0;
+    loop_frame_layers(renderer->window, get_lowest_frame_layer, &frame_layer);
+
+    while (frame_layer != 0) {
+        if (frame_layer->functions.resize != 0) {
+            frame_layer->functions.resize(renderer->window, renderer->frame, new_size);
+        }
+
+        frame_layer = frame_layer->higher;
+    }
 
     return result == S_OK;
 }
@@ -184,14 +194,7 @@ static bool pre_frame(CpdBackendHandle cpeed_backend) {
     };
 
     ID3D11DeviceContext_ClearRenderTargetView(renderer->device_context, renderer->render_target, color);
-
-    return true;
-}
-
-static bool get_lowest_frame_layer(void* context, CpdFrameLayer* frame_layer) {
-    CpdFrameLayer** output = (CpdFrameLayer**)context;
-
-    *output = frame_layer;
+    ID3D11DeviceContext_OMSetRenderTargets(renderer->device_context, 1, &renderer->render_target, 0);
 
     return true;
 }
@@ -199,13 +202,13 @@ static bool get_lowest_frame_layer(void* context, CpdFrameLayer* frame_layer) {
 static bool frame(CpdBackendHandle cpeed_backend) {
     CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)cpeed_backend;
 
-    CpdFrameLayer* frame_layer = 0;
-    loop_frame_layers(get_lowest_frame_layer, &frame_layer);
+    CpdFrameLayer* lowest = 0;
+    loop_frame_layers(renderer->window, get_lowest_frame_layer, &lowest);
 
-    while (frame_layer != 0) {
-        frame_layer->functions.render(renderer->frame);
-
-        frame_layer = frame_layer->higher;
+    for (CpdFrameLayer* layer = lowest; layer != 0; layer = layer->higher) {
+        if (layer->functions.render != 0) {
+            layer->functions.render(renderer->frame);
+        }
     }
 
     // TODO: Actual render

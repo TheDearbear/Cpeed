@@ -7,7 +7,7 @@ message ("-- Enabling DirectX backend support")
 target_compile_definitions(Cpeed PRIVATE CPD_DIRECTX_ENABLED)
 target_compile_definitions(CpeedDirectX PRIVATE CPD_DIRECTX_ENABLED)
 
-target_link_libraries(CpeedDirectX PRIVATE d3d11 dxgi dxguid)
+target_link_libraries(CpeedDirectX d3d11 dxgi dxguid)
 
 target_sources(Cpeed PRIVATE "../platform/backend/directx.h")
 

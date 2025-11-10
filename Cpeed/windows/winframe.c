@@ -1,35 +1,42 @@
 #include <malloc.h>
 
-#include "frame.h"
+#include "../common/frame.h"
+#include "winmain.h"
 
-static CpdFrameLayer* g_layers = 0;
 static uint32_t g_new_layer_handle = 1;
 
 uint32_t add_frame_layer(CpdWindow window, const CpdFrameLayerFunctions* functions, CpdFrameLayerFlags flags) {
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
+
     CpdFrameLayer* layer = (CpdFrameLayer*)malloc(sizeof(CpdFrameLayer));
     if (layer == 0) {
         return INVALID_FRAME_LAYER_HANDLE;
     }
 
     layer->higher = 0;
-    layer->underlying = g_layers;
+    layer->underlying = data->layers;
     layer->handle = g_new_layer_handle++;
     layer->flags = flags;
     layer->functions = *functions;
 
-    if (g_layers != 0) {
-        g_layers->higher = layer;
+    if (data->layers != 0) {
+        data->layers->higher = layer;
     }
 
-    g_layers = layer;
+    data->layers = layer;
 
     return layer->handle;
 }
 
-static bool remove_frame_layer_loop(void* context, CpdFrameLayer* layer) {
-    uint32_t handle = *(uint32_t*)context;
+typedef struct CpdRemoveLayerArgs {
+    WindowExtraData* data;
+    uint32_t handle;
+} CpdRemoveLayerArgs;
 
-    if (layer->handle != handle) {
+static bool remove_frame_layer_loop(void* context, CpdFrameLayer* layer) {
+    CpdRemoveLayerArgs* args = (CpdRemoveLayerArgs*)context;
+
+    if (layer->handle != args->handle) {
         return true;
     }
 
@@ -37,7 +44,7 @@ static bool remove_frame_layer_loop(void* context, CpdFrameLayer* layer) {
 
 
     if (higher == 0) {
-        g_layers = layer->underlying;
+        args->data->layers = layer->underlying;
     }
     else {
         higher->underlying = layer->underlying;
@@ -56,13 +63,21 @@ void remove_frame_layer(CpdWindow window, uint32_t handle) {
         return;
     }
 
-    loop_frame_layers(window, remove_frame_layer_loop, &handle);
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
+
+    CpdRemoveLayerArgs args = {
+        .data = data,
+        .handle = handle
+    };
+
+    loop_frame_layers(window, remove_frame_layer_loop, &args);
 }
 
 void loop_frame_layers(CpdWindow window, CpdFrameLayerLoopFunction loop, void* context) {
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
     CpdFrameLayer* underlying = 0;
 
-    for (CpdFrameLayer* layer = g_layers; layer != 0; layer = underlying) {
+    for (CpdFrameLayer* layer = data->layers; layer != 0; layer = underlying) {
         underlying = layer->underlying;
 
         if (!loop(context, layer)) {

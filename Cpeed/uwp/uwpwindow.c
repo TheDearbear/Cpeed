@@ -1,5 +1,6 @@
 #include <malloc.h>
 
+#include "../common/frame.h"
 #include "../platform/window.h"
 #include "uwpmain.h"
 
@@ -34,7 +35,9 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     uwp_window->mouse_y = 0;
 
     uwp_window->devices = 0;
-    
+
+    uwp_window->layers = 0;
+
     uwp_window->should_close = false;
     uwp_window->resized = false;
     uwp_window->visible = true;
@@ -44,8 +47,18 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     return (CpdWindow)uwp_window;
 }
 
+static bool remove_frame_layers_loop(void* context, CpdFrameLayer* layer) {
+    CpdWindow window = (CpdWindow)context;
+
+    remove_frame_layer(window, layer->handle);
+
+    return true;
+}
+
 void destroy_window(CpdWindow window) {
     CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
+
+    loop_frame_layers(window, remove_frame_layers_loop, (void*)window);
 
     cleanup_input_queue(uwp_window->input_queue, uwp_window->input_queue_size);
     cleanup_input_queue(uwp_window->input_swap_queue, uwp_window->input_swap_queue_size);

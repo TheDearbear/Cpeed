@@ -31,3 +31,5 @@ bld/
 [Ll]ogs/
 out/
 .vs/
+
+*.aps

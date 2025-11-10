@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <malloc.h>
 
+#include "../common/frame.h"
 #include "../platform/input/gamepad.h"
 #include "../platform/logging.h"
 #include "../platform/window.h"
@@ -102,6 +103,8 @@ CpdWindow create_window(const CpdWindowInfo* info) {
 
     wl_window->last_repeating_key_events_insert_time = 0;
 
+    wl_window->layers = 0;
+
     wl_window->resized = false;
     wl_window->should_close = false;
     wl_window->should_render = true;
@@ -129,8 +132,18 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     return (CpdWindow)wl_window;
 }
 
+static bool remove_frame_layers_loop(void* context, CpdFrameLayer* layer) {
+    CpdWindow window = (CpdWindow)context;
+
+    remove_frame_layer(window, layer->handle);
+
+    return true;
+}
+
 void destroy_window(CpdWindow window) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
+
+    loop_frame_layers(window, remove_frame_layers_loop, (void*)window);
 
     if (g_current_pointer_focus == wl_window) {
         g_current_pointer_focus = 0;
@@ -233,6 +246,10 @@ bool window_present_allowed(CpdWindow window) {
 }
 
 bool multiple_windows_supported() {
+    return true;
+}
+
+bool windowed_mode_supported() {
     return true;
 }
 

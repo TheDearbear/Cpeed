@@ -62,7 +62,7 @@ int main() {
         return -1;
     }
 
-    init_engine();
+    init_engine(window);
 
     CpdFrame* cpeed_frame = implementation.get_frame(backend);
 
@@ -82,7 +82,7 @@ int main() {
         if (get_window_input_events(window, &input_events, &input_event_count)) {
             for (uint32_t i = 0; i < input_event_count; i++) {
                 CpdFrameLayer* frame_layer = 0;
-                loop_frame_layers(get_lowest_frame_layer, &frame_layer);
+                loop_frame_layers(window, get_lowest_frame_layer, &frame_layer);
 
                 while (frame_layer != 0) {
                     if (frame_layer->functions.input != 0 && !frame_layer->functions.input(window, cpeed_frame, &input_events[i])) {

@@ -707,82 +707,83 @@ static CpdKeyCode map_key_code(uint32_t keyCode) {
     }
 
     switch (keyCode) {
-    case KEY_ESC:       return CpdKeyCode_Escape;
-    case KEY_0:         return CpdKeyCode_0;
-    case KEY_MINUS:     case KEY_KPMINUS: return CpdKeyCode_Minus;
-    case KEY_EQUAL:     case KEY_KPEQUAL: return CpdKeyCode_Equal;
-    case KEY_BACKSPACE: return CpdKeyCode_Backspace;
-    case KEY_TAB:       return CpdKeyCode_Tab;
+        case KEY_ESC:       return CpdKeyCode_Escape;
+        case KEY_0:         return CpdKeyCode_0;
+        case KEY_MINUS:     case KEY_KPMINUS: return CpdKeyCode_Minus;
+        case KEY_EQUAL:     case KEY_KPEQUAL: return CpdKeyCode_Equal;
+        case KEY_BACKSPACE: return CpdKeyCode_Backspace;
+        case KEY_TAB:       return CpdKeyCode_Tab;
 
-    case KEY_Q: return CpdKeyCode_Q;
-    case KEY_W: return CpdKeyCode_W;
-    case KEY_E: return CpdKeyCode_E;
-    case KEY_R: return CpdKeyCode_R;
-    case KEY_T: return CpdKeyCode_T;
-    case KEY_Y: return CpdKeyCode_Y;
-    case KEY_U: return CpdKeyCode_U;
-    case KEY_I: return CpdKeyCode_I;
-    case KEY_O: return CpdKeyCode_O;
-    case KEY_P: return CpdKeyCode_P;
+        case KEY_Q: return CpdKeyCode_Q;
+        case KEY_W: return CpdKeyCode_W;
+        case KEY_E: return CpdKeyCode_E;
+        case KEY_R: return CpdKeyCode_R;
+        case KEY_T: return CpdKeyCode_T;
+        case KEY_Y: return CpdKeyCode_Y;
+        case KEY_U: return CpdKeyCode_U;
+        case KEY_I: return CpdKeyCode_I;
+        case KEY_O: return CpdKeyCode_O;
+        case KEY_P: return CpdKeyCode_P;
 
-    case KEY_LEFTBRACE:  return CpdKeyCode_LeftSquareBracket;
-    case KEY_RIGHTBRACE: return CpdKeyCode_RightSquareBracket;
+        case KEY_LEFTBRACE:  return CpdKeyCode_LeftSquareBracket;
+        case KEY_RIGHTBRACE: return CpdKeyCode_RightSquareBracket;
 
-    case KEY_ENTER:      case KEY_KPENTER:   return CpdKeyCode_Enter;
-    case KEY_LEFTCTRL:   return CpdKeyCode_LeftControl;
-    case KEY_RIGHTCTRL:  return CpdKeyCode_RightControl;
+        case KEY_ENTER:      return CpdKeyCode_Enter;
+        case KEY_KPENTER:    return CpdKeyCode_NumpadEnter;
+        case KEY_LEFTCTRL:   return CpdKeyCode_LeftControl;
+        case KEY_RIGHTCTRL:  return CpdKeyCode_RightControl;
 
-    case KEY_A: return CpdKeyCode_A;
-    case KEY_S: return CpdKeyCode_S;
-    case KEY_D: return CpdKeyCode_D;
-    case KEY_F: return CpdKeyCode_F;
-    case KEY_G: return CpdKeyCode_G;
-    case KEY_H: return CpdKeyCode_H;
-    case KEY_J: return CpdKeyCode_J;
-    case KEY_K: return CpdKeyCode_K;
-    case KEY_L: return CpdKeyCode_L;
+        case KEY_A: return CpdKeyCode_A;
+        case KEY_S: return CpdKeyCode_S;
+        case KEY_D: return CpdKeyCode_D;
+        case KEY_F: return CpdKeyCode_F;
+        case KEY_G: return CpdKeyCode_G;
+        case KEY_H: return CpdKeyCode_H;
+        case KEY_J: return CpdKeyCode_J;
+        case KEY_K: return CpdKeyCode_K;
+        case KEY_L: return CpdKeyCode_L;
 
-    case KEY_SEMICOLON:  return CpdKeyCode_Semicolon;
-    case KEY_APOSTROPHE: return CpdKeyCode_Quote;
-    case KEY_GRAVE:      return CpdKeyCode_Backtick;
-    case KEY_LEFTSHIFT:  return CpdKeyCode_LeftShift;
-    case KEY_RIGHTSHIFT: return CpdKeyCode_RightShift;
-    case KEY_BACKSLASH:  case KEY_102ND:      return CpdKeyCode_Backslash;
+        case KEY_SEMICOLON:  return CpdKeyCode_Semicolon;
+        case KEY_APOSTROPHE: return CpdKeyCode_Quote;
+        case KEY_GRAVE:      return CpdKeyCode_Backtick;
+        case KEY_LEFTSHIFT:  return CpdKeyCode_LeftShift;
+        case KEY_RIGHTSHIFT: return CpdKeyCode_RightShift;
+        case KEY_BACKSLASH:  case KEY_102ND:      return CpdKeyCode_Backslash;
 
-    case KEY_Z: return CpdKeyCode_Z;
-    case KEY_X: return CpdKeyCode_X;
-    case KEY_C: return CpdKeyCode_C;
-    case KEY_V: return CpdKeyCode_V;
-    case KEY_B: return CpdKeyCode_B;
-    case KEY_N: return CpdKeyCode_N;
-    case KEY_M: return CpdKeyCode_M;
+        case KEY_Z: return CpdKeyCode_Z;
+        case KEY_X: return CpdKeyCode_X;
+        case KEY_C: return CpdKeyCode_C;
+        case KEY_V: return CpdKeyCode_V;
+        case KEY_B: return CpdKeyCode_B;
+        case KEY_N: return CpdKeyCode_N;
+        case KEY_M: return CpdKeyCode_M;
 
-    case KEY_COMMA:      return CpdKeyCode_Comma;
-    case KEY_DOT:        case KEY_KPDOT:    return CpdKeyCode_Dot;
-    case KEY_SLASH:      case KEY_KPSLASH:  return CpdKeyCode_Slash;
-    case KEY_KPASTERISK: return CpdKeyCode_Multiply;
-    case KEY_LEFTALT:    return CpdKeyCode_LeftAlt;
-    case KEY_RIGHTALT:   return CpdKeyCode_RightAlt;
-    case KEY_SPACE:      return CpdKeyCode_Spacebar;
+        case KEY_COMMA:      return CpdKeyCode_Comma;
+        case KEY_DOT:        case KEY_KPDOT:    return CpdKeyCode_Dot;
+        case KEY_SLASH:      case KEY_KPSLASH:  return CpdKeyCode_Slash;
+        case KEY_KPASTERISK: return CpdKeyCode_Multiply;
+        case KEY_LEFTALT:    return CpdKeyCode_LeftAlt;
+        case KEY_RIGHTALT:   return CpdKeyCode_RightAlt;
+        case KEY_SPACE:      return CpdKeyCode_Spacebar;
 
-    case KEY_KPPLUS: return CpdKeyCode_Plus;
-    case KEY_KP0:    return CpdKeyCode_Numpad0;
-    case KEY_F11:    return CpdKeyCode_F11;
-    case KEY_F12:    return CpdKeyCode_F12;
+        case KEY_KPPLUS: return CpdKeyCode_Plus;
+        case KEY_KP0:    return CpdKeyCode_Numpad0;
+        case KEY_F11:    return CpdKeyCode_F11;
+        case KEY_F12:    return CpdKeyCode_F12;
 
-    case KEY_HOME:     return CpdKeyCode_Home;
-    case KEY_PAGEUP:   return CpdKeyCode_PageUp;
-    case KEY_END:      return CpdKeyCode_End;
-    case KEY_PAGEDOWN: return CpdKeyCode_PageDown;
-    case KEY_INSERT:   return CpdKeyCode_Insert;
-    case KEY_DELETE:   return CpdKeyCode_Delete;
+        case KEY_HOME:     return CpdKeyCode_Home;
+        case KEY_PAGEUP:   return CpdKeyCode_PageUp;
+        case KEY_END:      return CpdKeyCode_End;
+        case KEY_PAGEDOWN: return CpdKeyCode_PageDown;
+        case KEY_INSERT:   return CpdKeyCode_Insert;
+        case KEY_DELETE:   return CpdKeyCode_Delete;
 
-    case KEY_UP:    return CpdKeyCode_UpArrow;
-    case KEY_LEFT:  return CpdKeyCode_LeftArrow;
-    case KEY_RIGHT: return CpdKeyCode_RightArrow;
-    case KEY_DOWN:  return CpdKeyCode_DownArrow;
+        case KEY_UP:    return CpdKeyCode_UpArrow;
+        case KEY_LEFT:  return CpdKeyCode_LeftArrow;
+        case KEY_RIGHT: return CpdKeyCode_RightArrow;
+        case KEY_DOWN:  return CpdKeyCode_DownArrow;
 
-    default: return CpdKeyCode_Invalid;
+        default: return CpdKeyCode_Invalid;
     }
 }
 

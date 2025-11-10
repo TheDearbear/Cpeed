@@ -30,3 +30,5 @@ extern bool window_resized(CpdWindow window);
 extern bool window_present_allowed(CpdWindow window);
 
 extern bool multiple_windows_supported();
+
+extern bool windowed_mode_supported();

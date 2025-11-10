@@ -34,6 +34,8 @@ typedef struct CpdWaylandWindow {
 
     uint64_t last_repeating_key_events_insert_time;
 
+    struct CpdFrameLayer* layers;
+
     uint64_t resized : 1;
     uint64_t should_close : 1;
     uint64_t should_render : 1;

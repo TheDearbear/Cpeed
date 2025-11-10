@@ -1,3 +1,4 @@
+#include "../platform.h"
 #include "winmain.h"
 #include "winproc.h"
 
@@ -125,10 +126,13 @@ bool initialize_platform() {
         return false;
     }
 
+    HINSTANCE hInstance = GetModuleHandleW(NULL);
+
     WNDCLASSEXW wndClassExW = {
         .cbSize = sizeof(WNDCLASSEXW),
         .lpfnWndProc = window_procedure,
-        .hInstance = GetModuleHandleW(NULL),
+        .hInstance = hInstance,
+        .hIcon = LoadIconW(hInstance, L"IDI_ICON1"),
         .hCursor = LoadImageW(NULL, (LPCWSTR)IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED),
         .lpszClassName = L"Cpeed"
     };

@@ -36,9 +36,9 @@ CpdRenderer* RENDERER_create(CpdRendererInitParams* params) {
     renderer->creation_time = get_clock_usec();
     renderer->last_frame_end = renderer->creation_time;
     renderer->frame = frame;
+    renderer->window = 0;
     renderer->surface.handle = VK_NULL_HANDLE;
     renderer->render_device.handle = VK_NULL_HANDLE;
-    renderer->ui_device.handle = VK_NULL_HANDLE;
     renderer->swapchain.handle = VK_NULL_HANDLE;
     renderer->swapchain.image_count = 0;
     renderer->swapchain_image_fence = VK_NULL_HANDLE;
@@ -56,11 +56,6 @@ void RENDERER_destroy(CpdRenderer* renderer) {
     if (renderer->render_device.handle != VK_NULL_HANDLE) {
         DEVICE_destroy(&renderer->render_device);
         renderer->render_device.handle = VK_NULL_HANDLE;
-    }
-
-    if (renderer->ui_device.handle != VK_NULL_HANDLE) {
-        DEVICE_destroy(&renderer->ui_device);
-        renderer->ui_device.handle = VK_NULL_HANDLE;
     }
 
     free(renderer->frame);
@@ -232,44 +227,6 @@ static bool try_initialize_render_device(CpdRenderer* renderer, VkPhysicalDevice
     return false;
 }
 
-static bool try_initialize_ui_device(CpdRenderer* renderer, VkPhysicalDevice physical_device, VkResult* result) {
-    uint32_t graphics_family_index;
-    uint32_t compute_family_index;
-    uint32_t transfer_family_index;
-
-    uint32_t transfer_queue_count;
-    uint32_t transfer_queue_offset;
-
-    if (vkGetPhysicalDeviceQueueFamilyProperties2 != VK_NULL_HANDLE) {
-        get_physical_device_families2(physical_device,
-            &graphics_family_index, &compute_family_index, &transfer_family_index,
-            &transfer_queue_count, &transfer_queue_offset);
-    }
-    else {
-        get_physical_device_families(physical_device,
-            &graphics_family_index, &compute_family_index, &transfer_family_index,
-            &transfer_queue_count, &transfer_queue_offset);
-    }
-
-    if (graphics_family_index != UINT32_MAX && compute_family_index != UINT32_MAX && transfer_family_index != UINT32_MAX) {
-        CpdDeviceInitParams init_params = {
-            .physical_device = physical_device,
-            .device_extensions = 0,
-            .device_extension_count = 0,
-            .graphics_family = graphics_family_index,
-            .compute_family = compute_family_index,
-            .transfer_family = transfer_family_index,
-            .transfer_count = transfer_queue_count,
-            .transfer_offset = transfer_queue_offset
-        };
-
-        *result = DEVICE_initialize(&renderer->ui_device, &init_params);
-        return true;
-    }
-
-    return false;
-}
-
 static VkResult device_selector(CpdRenderer* renderer,
     VkPhysicalDeviceType targetType, VkPhysicalDeviceType secondaryType,
     CpdDeviceInitializer device_initializer
@@ -339,30 +296,12 @@ VkResult RENDERER_select_render_device(CpdRenderer* renderer) {
         try_initialize_render_device);
 }
 
-VkResult RENDERER_select_ui_device(CpdRenderer* renderer) {
-    return device_selector(renderer,
-        VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM,
-        try_initialize_ui_device);
-}
-
 VkResult RENDERER_reset_pools(CpdRenderer* renderer) {
-    VkResult result = DEVICE_reset_pools(&renderer->render_device, 0, false);
-    if (result != VK_SUCCESS) {
-        return result;
-    }
-
-    return DEVICE_reset_pools(&renderer->ui_device, 0, false);
+    return DEVICE_reset_pools(&renderer->render_device, 0, false);
 }
 
 VkResult RENDERER_wait_idle(CpdRenderer* renderer) {
-    VkResult result = DEVICE_wait_idle(&renderer->render_device, false);
-    if (result != VK_SUCCESS) {
-        return result;
-    }
-
-    result = DEVICE_wait_idle(&renderer->ui_device, false);
-
-    return result;
+    return DEVICE_wait_idle(&renderer->render_device, false);
 }
 
 VkResult RENDERER_acquire_next_image(CpdRenderer* renderer, bool wait_for_fence) {

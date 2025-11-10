@@ -8,10 +8,6 @@
 bool set_window_input_mode(CpdWindow window, CpdInputMode mode) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
 
-    if (wl_window->input_queue_size != 0) {
-        return false;
-    }
-
     wl_window->input_mode = mode;
     return true;
 }
