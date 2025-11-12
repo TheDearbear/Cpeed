@@ -1,0 +1,29 @@
+#pragma once
+
+#include <Cpeed/common/math.h>
+
+#include "image.h"
+#include "surface.h"
+
+typedef struct CpdSwapchainImage {
+    CpdImage image;
+    VkSemaphore semaphore;
+} CpdSwapchainImage;
+
+typedef struct CpdSwapchain {
+    VkSwapchainKHR handle;
+    CpdSwapchainImage* images;
+    CpdSize size;
+    uint32_t image_count;
+    uint32_t current_image;
+    
+    uint32_t wait_for_acquire : 1;
+} CpdSwapchain;
+
+
+void SWAPCHAIN_destroy(CpdSwapchain* swapchain, CpdDevice* cpeed_device);
+VkResult SWAPCHAIN_create(CpdSwapchain* swapchain, CpdDevice* cpeed_device, CpdSurface* surface, CpdSize* size);
+
+VkResult SWAPCHAIN_resize(CpdSwapchain* swapchain, CpdDevice* cpeed_device, CpdSurface* surface, CpdSize* size);
+void SWAPCHAIN_set_layout(CpdSwapchain* swapchain, CpdDevice* cpeed_device, VkCommandBuffer buffer,
+    VkPipelineStageFlags2KHR stage, VkAccessFlags2KHR access, VkImageLayout layout);

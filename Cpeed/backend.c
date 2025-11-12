@@ -1,11 +1,11 @@
 #include "backend.h"
 
 #if CPD_DIRECTX_ENABLED
-#include "directx/backend.h"
+#include <CpeedDirectX/backend.h>
 #endif
 
 #if CPD_VULKAN_ENABLED
-#include "vulkan/backend.h"
+#include <CpeedVulkan/backend.h>
 #endif
 
 bool get_backend_implementation(CpdPlatformBackendFlags backend, CpdBackendImplementation* implementation) {

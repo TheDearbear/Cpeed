@@ -43,7 +43,7 @@ if (LIB_M)
   target_link_libraries (DearImGui ${LIB_M})
 endif ()
 
-if (CpeedDirectX IN_LIST CPD_BACKENDS_TARGET)
+if (CpeedDirectX IN_LIST CPD_COMPILE_BACKENDS)
   add_custom_command (
     OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/dear_bindings/dcimgui/dcimgui_impl_dx11.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/dear_bindings/dcimgui/dcimgui_impl_dx11.h"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dear_bindings"
@@ -57,7 +57,7 @@ if (CpeedDirectX IN_LIST CPD_BACKENDS_TARGET)
   )
 endif ()
 
-if (CpeedVulkan IN_LIST CPD_BACKENDS_TARGET)
+if (CpeedVulkan IN_LIST CPD_COMPILE_BACKENDS)
   find_package (Vulkan REQUIRED)
   
   target_compile_definitions (DearImGui PRIVATE VK_NO_PROTOTYPES)

@@ -69,6 +69,11 @@ int main() {
     CpdBackendHandle backend = implementation.initialize_window(&backend_info);
     if (backend == 0) {
         log_error("Unable to initialize backend for window\n");
+
+#ifdef CPD_IMGUI_AVAILABLE
+        cImGui_ImplCpeed_Shutdown();
+#endif
+
         destroy_window(window);
         implementation.shutdown_backend();
         shutdown_platform();

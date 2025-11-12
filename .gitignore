@@ -11,8 +11,8 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 
-Cpeed/linux/xdg-decoration/
-Cpeed/linux/xdg-shell/
+platforms/CpeedLinux/xdg-decoration/
+platforms/CpeedLinux/xdg-shell/
 
 # Produced by Visual Studio
 [Dd]ebug/

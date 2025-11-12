@@ -37,4 +37,6 @@ if (TARGET DearImGui)
     "common/imgui/imgui_impl_cpeed.c" "common/imgui/imgui_impl_cpeed.h")
 endif ()
 
+target_include_directories (Cpeed PRIVATE "${Cpeed_SOURCE_DIR}/backends")
+
 set_property(TARGET Cpeed PROPERTY C_STANDARD 99)
