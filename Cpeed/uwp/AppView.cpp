@@ -1,3 +1,6 @@
+// Enable winrt::get_unknown in old Windows SDKs
+#define WINRT_WINDOWS_ABI
+
 #include <unknwn.h>
 
 #include <winrt/Windows.Foundation.Collections.h>

@@ -4,6 +4,12 @@
 #define CINTERFACE
 
 #include <windows.h>
+
+// HACK: Ignore header file 'Windows.Foundation.Collections.h'
+// to make project compatible with old Windows SDKs that
+// do not provide support for C
+#define WINDOWS_FOUNDATION_COLLECTIONS_H
+
 #include <Windows.Gaming.Input.h>
 
 #include "../common/math.h"
