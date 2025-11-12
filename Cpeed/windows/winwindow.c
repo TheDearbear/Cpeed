@@ -33,6 +33,11 @@ CpdWindow create_window(const CpdWindowInfo* info) {
         return 0;
     }
 
+#ifdef CPD_IMGUI_AVAILABLE
+    data->imgui_context = ImGui_CreateContext(0);
+    ImGui_SetCurrentContext(data->imgui_context);
+#endif
+
     data->input_queue = input_queue;
     data->input_swap_queue = input_swap_queue;
     data->input_queue_size = 0;
@@ -109,6 +114,10 @@ void destroy_window(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     loop_frame_layers(window, remove_frame_layers_loop, (void*)window);
+
+#ifdef CPD_IMGUI_AVAILABLE
+    ImGui_DestroyContext(data->imgui_context);
+#endif
 
     cleanup_input_queue(data->input_queue, data->input_queue_size);
     cleanup_input_queue(data->input_swap_queue, data->input_swap_queue_size);
@@ -297,6 +306,16 @@ bool window_present_allowed(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     return !data->minimized;
+}
+
+ImGuiContext* get_imgui_context(CpdWindow window) {
+#ifdef CPD_IMGUI_AVAILABLE
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
+
+    return data->imgui_context;
+#else
+    return 0;
+#endif
 }
 
 bool multiple_windows_supported() {

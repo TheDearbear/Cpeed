@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef CPD_IMGUI_AVAILABLE
+#include <dcimgui.h>
+#endif
+
 #include <stdint.h>
 
 #include <wayland-client-core.h>
@@ -35,6 +39,10 @@ typedef struct CpdWaylandWindow {
     uint64_t last_repeating_key_events_insert_time;
 
     struct CpdFrameLayer* layers;
+
+#ifdef CPD_IMGUI_AVAILABLE
+    ImGuiContext* imgui_context;
+#endif
 
     uint64_t resized : 1;
     uint64_t should_close : 1;

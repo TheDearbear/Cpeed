@@ -1,5 +1,11 @@
 #pragma once
 
+#if CPD_IMGUI_AVAILABLE
+#include <dcimgui.h>
+#else
+typedef struct ImGuiContext_t ImGuiContext;
+#endif
+
 #include <stdbool.h>
 
 #include "../common/math.h"
@@ -28,6 +34,8 @@ extern CpdSize window_size(CpdWindow window);
 extern bool window_resized(CpdWindow window);
 
 extern bool window_present_allowed(CpdWindow window);
+
+extern ImGuiContext* get_imgui_context(CpdWindow window);
 
 extern bool multiple_windows_supported();
 

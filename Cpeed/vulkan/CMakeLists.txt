@@ -22,4 +22,10 @@ target_include_directories(CpeedVulkan PRIVATE ${Vulkan_INCLUDE_DIRS})
 
 target_sources(Cpeed PRIVATE "../platform/backend/vulkan.h")
 
+if (TARGET DearImGui)
+  target_link_libraries (CpeedVulkan DearImGui)
+  target_include_directories (CpeedVulkan PRIVATE "${DearBindings_SOURCE_DIR}/imgui")
+  target_include_directories (CpeedVulkan PRIVATE "${DearBindings_SOURCE_DIR}/dear_bindings/dcimgui")
+endif ()
+
 set_property(TARGET CpeedVulkan PROPERTY C_STANDARD 99)

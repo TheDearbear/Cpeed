@@ -44,6 +44,11 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     uwp_window->resize_swap_queue = false;
     uwp_window->first_mouse_event = true;
 
+#ifdef CPD_IMGUI_AVAILABLE
+    uwp_window->imgui_context = ImGui_CreateContext(0);
+    ImGui_SetCurrentContext(uwp_window->imgui_context);
+#endif
+
     return (CpdWindow)uwp_window;
 }
 
@@ -59,6 +64,10 @@ void destroy_window(CpdWindow window) {
     CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
 
     loop_frame_layers(window, remove_frame_layers_loop, (void*)window);
+
+#ifdef CPD_IMGUI_AVAILABLE
+    ImGui_DestroyContext(uwp_window->imgui_context);
+#endif
 
     cleanup_input_queue(uwp_window->input_queue, uwp_window->input_queue_size);
     cleanup_input_queue(uwp_window->input_swap_queue, uwp_window->input_swap_queue_size);
@@ -102,6 +111,16 @@ bool window_present_allowed(CpdWindow window) {
     CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
 
     return uwp_window->visible;
+}
+
+ImGuiContext* get_imgui_context(CpdWindow window) {
+#ifdef CPD_IMGUI_AVAILABLE
+    CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
+
+    return uwp_window->imgui_context;
+#else
+    return 0;
+#endif
 }
 
 bool multiple_windows_supported() {

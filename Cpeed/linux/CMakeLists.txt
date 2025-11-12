@@ -62,4 +62,10 @@ target_link_libraries (CpeedLinux
   WaylandExtensions
 )
 
+if (TARGET DearImGui)
+  target_link_libraries (CpeedLinux DearImGui)
+  target_include_directories (CpeedLinux PRIVATE "${DearBindings_SOURCE_DIR}/imgui")
+  target_include_directories (CpeedLinux PRIVATE "${DearBindings_SOURCE_DIR}/dear_bindings/dcimgui")
+endif ()
+
 set_property (TARGET CpeedLinux PROPERTY C_STANDARD 99)

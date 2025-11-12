@@ -6,6 +6,8 @@ cmake_minimum_required (VERSION 3.16)
 cmake_policy (SET CMP0069 NEW)
 cmake_policy (SET CMP0079 NEW)
 
+option (CPD_IMGUI_ENABLED "Compiles and enables support of DearImGui in code" ON)
+
 project ("Cpeed" C)
 
 include (CheckIPOSupported)
@@ -42,6 +44,12 @@ else ()
 endif (WINDOWS_STORE)
 
 # Include sub-projects.
+add_subdirectory ("deps")
+
+if (TARGET DearImGui)
+  add_compile_definitions (CPD_IMGUI_AVAILABLE)
+endif ()
+
 add_subdirectory ("Cpeed")
 
 foreach (SUBDIR ${CPD_BACKENDS_SUBDIRECTORY})

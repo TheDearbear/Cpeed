@@ -17,4 +17,10 @@ target_sources(Cpeed PRIVATE
 
 target_link_libraries(CpeedWindows gameinput)
 
+if (TARGET DearImGui)
+  target_link_libraries (CpeedWindows DearImGui)
+  target_include_directories (CpeedWindows PRIVATE "${DearBindings_SOURCE_DIR}/imgui")
+  target_include_directories (CpeedWindows PRIVATE "${DearBindings_SOURCE_DIR}/dear_bindings/dcimgui")
+endif ()
+
 set_property(TARGET CpeedWindows PROPERTY C_STANDARD 99)

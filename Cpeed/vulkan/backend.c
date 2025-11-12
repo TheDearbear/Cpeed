@@ -9,6 +9,10 @@
 #include "shortcuts.h"
 #include "vulkan.h"
 
+#ifdef CPD_IMGUI_AVAILABLE
+#include <dcimgui_impl_vulkan.h>
+#endif
+
 static void load_global_pointers() {
     GET_INSTANCE_PROC_ADDR(VK_NULL_HANDLE, vkEnumerateInstanceVersion);
     GET_INSTANCE_PROC_ADDR(VK_NULL_HANDLE, vkCreateInstance);
@@ -48,6 +52,12 @@ static void shutdown_window(CpdBackendHandle backend) {
     if (renderer == 0) {
         return;
     }
+
+#ifdef CPD_IMGUI_AVAILABLE
+    if (ImGui_GetIO()->BackendRendererUserData != 0) {
+        cImGui_ImplVulkan_Shutdown();
+    }
+#endif
 
     VkInstance instance = renderer->instance;
 
@@ -277,6 +287,14 @@ static VkResult create_instance(CpdRendererInitParams* init_params) {
     return result;
 }
 
+#ifdef CPD_IMGUI_AVAILABLE
+static PFN_vkVoidFunction imgui_function_loader(const char* name, void* context) {
+    CpdRenderer* renderer = (CpdRenderer*)context;
+
+    return vkGetInstanceProcAddr(renderer->instance, name);
+}
+#endif
+
 static CpdBackendHandle initialize_window(const CpdBackendInfo* info) {
     CpdInstanceVulkanExtensions instance_extensions;
     initialize_vulkan_instance_extensions(&instance_extensions);
@@ -314,6 +332,62 @@ static CpdBackendHandle initialize_window(const CpdBackendInfo* info) {
         shutdown_window((CpdBackendHandle)renderer);
         return 0;
     }
+
+#ifdef CPD_IMGUI_AVAILABLE
+    if (!cImGui_ImplVulkan_LoadFunctionsEx(renderer->api_version, imgui_function_loader, renderer)) {
+        log_error("Unable to load vulkan functions for imgui\n");
+        shutdown_window((CpdBackendHandle)renderer);
+        return 0;
+    }
+
+    ImGui_ImplVulkan_InitInfo imgui_info = {
+        .ApiVersion = renderer->api_version,
+        .Instance = renderer->instance,
+        .PhysicalDevice = renderer->render_device.physical_handle,
+        .Device = renderer->render_device.handle,
+        .QueueFamily = renderer->render_device.graphics_family.index,
+        .Queue = renderer->render_device.graphics_family.queue,
+        .DescriptorPool = VK_NULL_HANDLE,
+        .DescriptorPoolSize = 32,
+        .MinImageCount = renderer->swapchain.image_count,
+        .ImageCount = renderer->swapchain.image_count,
+        .PipelineCache = VK_NULL_HANDLE,
+
+        .PipelineInfoMain.Subpass = 0,
+        .PipelineInfoMain.MSAASamples = 0,
+        .PipelineInfoMain.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+        .PipelineInfoMain.PipelineRenderingCreateInfo.pNext = 0,
+        .PipelineInfoMain.PipelineRenderingCreateInfo.viewMask = 0,
+        .PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1,
+        .PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &renderer->surface.format.format,
+        .PipelineInfoMain.PipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED,
+        .PipelineInfoMain.PipelineRenderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED,
+        .PipelineInfoMain.SwapChainImageUsage = 0,
+
+        .PipelineInfoForViewports.Subpass = 0,
+        .PipelineInfoForViewports.MSAASamples = 0,
+        .PipelineInfoForViewports.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+        .PipelineInfoForViewports.PipelineRenderingCreateInfo.pNext = 0,
+        .PipelineInfoForViewports.PipelineRenderingCreateInfo.viewMask = 0,
+        .PipelineInfoForViewports.PipelineRenderingCreateInfo.colorAttachmentCount = 1,
+        .PipelineInfoForViewports.PipelineRenderingCreateInfo.pColorAttachmentFormats = &renderer->surface.format.format,
+        .PipelineInfoForViewports.PipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED,
+        .PipelineInfoForViewports.PipelineRenderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED,
+        .PipelineInfoForViewports.SwapChainImageUsage = 0,
+
+        .UseDynamicRendering = true,
+        .Allocator = 0,
+        .MinAllocationSize = 1024 * 1024,
+        .CustomShaderVertCreateInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+        .CustomShaderFragCreateInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO
+    };
+
+    if (!cImGui_ImplVulkan_Init(&imgui_info)) {
+        log_error("Unable to initialize imgui for Vulkan\n");
+        shutdown_window((CpdBackendHandle)renderer);
+        return 0;
+    }
+#endif
 
     return (CpdBackendHandle)renderer;
 }

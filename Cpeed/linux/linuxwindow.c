@@ -105,6 +105,11 @@ CpdWindow create_window(const CpdWindowInfo* info) {
 
     wl_window->layers = 0;
 
+#ifdef CPD_IMGUI_AVAILABLE
+    wl_window->imgui_context = ImGui_CreateContext(0);
+    ImGui_SetCurrentContext(wl_window->imgui_context);
+#endif
+
     wl_window->resized = false;
     wl_window->should_close = false;
     wl_window->should_render = true;
@@ -144,6 +149,10 @@ void destroy_window(CpdWindow window) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
 
     loop_frame_layers(window, remove_frame_layers_loop, (void*)window);
+
+#ifdef CPD_IMGUI_AVAILABLE
+    ImGui_DestroyContext(wl_window->imgui_context);
+#endif
 
     if (g_current_pointer_focus == wl_window) {
         g_current_pointer_focus = 0;
@@ -245,6 +254,16 @@ bool window_present_allowed(CpdWindow window) {
     return result;
 }
 
+ImGuiContext* get_imgui_context(CpdWindow window) {
+#ifdef CPD_IMGUI_AVAILABLE
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
+
+    return wl_window->imgui_context;
+#else
+    return 0;
+#endif
+}
+
 bool multiple_windows_supported() {
     return true;
 }
@@ -266,6 +285,11 @@ static void top_level_configure(void* data, struct xdg_toplevel* xdg_toplevel, i
         if (*state == XDG_TOPLEVEL_STATE_MAXIMIZED) {
             maximized = true;
         }
+#ifdef CPD_IMGUI_AVAILABLE
+        else if (*state == XDG_TOPLEVEL_STATE_ACTIVATED) {
+            ImGui_SetCurrentContext(wl_window->imgui_context);
+        }
+#endif
     }
 
     wl_window->maximized = maximized;

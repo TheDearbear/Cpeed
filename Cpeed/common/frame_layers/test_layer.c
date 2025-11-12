@@ -4,6 +4,10 @@
 #include "../../platform/logging.h"
 #include "test_layer.h"
 
+#ifdef CPD_IMGUI_AVAILABLE
+#include <dcimgui.h>
+#endif
+
 static float brightness_step = 0.05f;
 
 static bool input(CpdWindow window, CpdFrame* frame, const CpdInputEvent* event) {
@@ -78,8 +82,17 @@ static void render(CpdFrame* frame) {
     //
 }
 
+#ifdef CPD_IMGUI_AVAILABLE
+static void imgui() {
+    ImGui_ShowDemoWindow(0);
+}
+#endif
+
 CpdFrameLayerFlags g_frame_layer_flags_test = CpdFrameLayerFlags_None;
 CpdFrameLayerFunctions g_frame_layer_functions_test = {
+#ifdef CPD_IMGUI_AVAILABLE
+    .imgui = imgui,
+#endif
     .input = input,
     .render = render
 };

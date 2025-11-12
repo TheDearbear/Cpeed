@@ -5,6 +5,11 @@
 #include "backend.h"
 #include "directx.h"
 
+#ifdef CPD_IMGUI_AVAILABLE
+#include <dcimgui_impl_dx11.h>
+#include "../common/imgui/imgui_impl_cpeed.h"
+#endif
+
 static bool initialize_backend() {
     return true;
 }
@@ -17,6 +22,12 @@ static void shutdown_window(CpdBackendHandle cpeed_backend) {
     CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)cpeed_backend;
 
     free(renderer->frame);
+
+#ifdef CPD_IMGUI_AVAILABLE
+    if (ImGui_GetIO()->BackendRendererUserData != 0) {
+        cImGui_ImplDX11_Shutdown();
+    }
+#endif
 
     if (renderer->render_target != 0) {
         ID3D11RenderTargetView_Release(renderer->render_target);
@@ -98,6 +109,13 @@ static CpdBackendHandle initialize_window(const CpdBackendInfo* info) {
         return 0;
     }
 
+#ifdef CPD_IMGUI_AVAILABLE
+    if (!cImGui_ImplDX11_Init(renderer->device, renderer->device_context)) {
+        shutdown_window(renderer);
+        return 0;
+    }
+#endif
+
     IDXGIFactory2* factory = 0;
     result = CreateDXGIFactory1(&IID_IDXGIFactory2, &factory);
     if (result != S_OK) {
@@ -154,6 +172,10 @@ static bool get_lowest_frame_layer(void* context, CpdFrameLayer* frame_layer) {
 static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
     CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)cpeed_backend;
 
+#ifdef CPD_IMGUI_AVAILABLE
+    cImGui_ImplDX11_InvalidateDeviceObjects();
+#endif
+
     ID3D11DeviceContext_Flush(renderer->device_context);
 
     ID3D11RenderTargetView_Release(renderer->render_target);
@@ -175,6 +197,12 @@ static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
 
         frame_layer = frame_layer->higher;
     }
+
+#ifdef CPD_IMGUI_AVAILABLE
+    if (!cImGui_ImplDX11_CreateDeviceObjects()) {
+        return E_FAIL;
+    }
+#endif
 
     return result == S_OK;
 }
@@ -205,11 +233,30 @@ static bool frame(CpdBackendHandle cpeed_backend) {
     CpdFrameLayer* lowest = 0;
     loop_frame_layers(renderer->window, get_lowest_frame_layer, &lowest);
 
+#ifdef CPD_IMGUI_AVAILABLE
+    cImGui_ImplDX11_NewFrame();
+    cImGui_ImplCpeed_NewFrame();
+    ImGui_NewFrame();
+
+    for (CpdFrameLayer* layer = lowest; layer != 0; layer = layer->higher) {
+        if (layer->functions.imgui != 0) {
+            layer->functions.imgui();
+        }
+    }
+
+    ImGui_EndFrame();
+#endif
+
     for (CpdFrameLayer* layer = lowest; layer != 0; layer = layer->higher) {
         if (layer->functions.render != 0) {
             layer->functions.render(renderer->frame);
         }
     }
+
+#ifdef CPD_IMGUI_AVAILABLE
+    ImGui_Render();
+    cImGui_ImplDX11_RenderDrawData(ImGui_GetDrawData());
+#endif
 
     // TODO: Actual render
 

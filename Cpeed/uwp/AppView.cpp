@@ -9,6 +9,10 @@
 #include "AppView.h"
 
 extern "C" {
+#ifdef CPD_IMGUI_AVAILABLE
+#include "../common/imgui/imgui_impl_cpeed.h"
+#endif
+
 #include "../common/init.h"
 #include "../platform/input/queue.h"
 }
@@ -103,9 +107,13 @@ void AppView::Initialize(CoreApplicationView const& applicationView)
         OnGamepadConnect(nullptr, gamepad);
     }
 
-    CpdWindowInfo info = { "Cpeed", { 800, 600 }, 0, CpdInputMode_KeyCode };
+    window = (CpdUWPWindow*)create_window(&g_window_create_info);
 
-    window = (CpdUWPWindow*)create_window(&info);
+#ifdef CPD_IMGUI_AVAILABLE
+    if (!cImGui_ImplCpeed_Init(window)) {
+        __debugbreak();
+    }
+#endif
 
     get_backend_implementation(CpdPlatformBackendFlags_DirectX, &impl);
 
@@ -240,6 +248,10 @@ void AppView::Uninitialize()
     window.PointerWheelChanged(pointer_wheel_token);
 
     shutdown_engine();
+
+#ifdef CPD_IMGUI_AVAILABLE
+    cImGui_ImplCpeed_Shutdown();
+#endif
 }
 
 void AppView::OnViewActivated(CoreApplicationView const& sender, IActivatedEventArgs const& args)

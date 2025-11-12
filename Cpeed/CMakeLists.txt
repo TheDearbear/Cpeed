@@ -28,4 +28,13 @@ add_executable (Cpeed
   "platform/logging.h"
   "platform/window.h")
 
+if (TARGET DearImGui)
+  target_link_libraries (Cpeed PRIVATE DearImGui)
+  target_include_directories (Cpeed PUBLIC "${DearBindings_SOURCE_DIR}/imgui")
+  target_include_directories (Cpeed PUBLIC "${DearBindings_SOURCE_DIR}/dear_bindings/dcimgui")
+
+  target_sources (Cpeed PRIVATE
+    "common/imgui/imgui_impl_cpeed.c" "common/imgui/imgui_impl_cpeed.h")
+endif ()
+
 set_property(TARGET Cpeed PROPERTY C_STANDARD 99)

@@ -3,6 +3,10 @@
 #define WIN32_LEAN_AND_MEAN
 #define COBJMACROS
 
+#ifdef CPD_IMGUI_AVAILABLE
+#include <dcimgui.h>
+#endif
+
 #include <stdbool.h>
 #include <GameInput.h>
 #include <windows.h>
@@ -52,6 +56,10 @@ typedef struct WindowExtraData {
     uint32_t keyboard_presses_max_size;
 
     struct CpdFrameLayer* layers;
+
+#ifdef CPD_IMGUI_AVAILABLE
+    ImGuiContext* imgui_context;
+#endif
 
     uint32_t should_close : 1;
     uint32_t resized : 1;

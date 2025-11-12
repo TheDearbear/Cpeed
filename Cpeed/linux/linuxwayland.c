@@ -1,3 +1,7 @@
+#ifdef CPD_IMGUI_AVAILABLE
+#include <dcimgui.h>
+#endif
+
 #include <linux/input-event-codes.h>
 #include <malloc.h>
 #include <stdbool.h>
@@ -310,6 +314,7 @@ static void sync_keyboard_modifiers() {
         (xkb_mod_mask_t)g_keyboard.mods_depressed, (xkb_mod_mask_t)g_keyboard.mods_latched, (xkb_mod_mask_t)g_keyboard.mods_locked,
         (xkb_layout_index_t)g_keyboard.group, (xkb_layout_index_t)g_keyboard.group, (xkb_layout_index_t)g_keyboard.group);
 
+    CpdInputModifierKeyFlags old_modifiers = g_keyboard.modifiers;
     g_keyboard.modifiers = CpdInputModifierKey_None;
 
     if (xkb_state_mod_name_is_active(g_keyboard.state, XKB_MOD_NAME_SHIFT, XKB_STATE_MODS_DEPRESSED)) {
@@ -323,6 +328,25 @@ static void sync_keyboard_modifiers() {
     if (xkb_state_mod_name_is_active(g_keyboard.state, XKB_MOD_NAME_ALT, XKB_STATE_MODS_DEPRESSED)) {
         g_keyboard.modifiers |= CpdInputModifierKey_Alt;
     }
+
+
+#ifdef CPD_IMGUI_AVAILABLE
+    // As on wayland keyboard modifiers are send as separate event
+    // and their new state is not yet available at 'key' event,
+    // we need to manually sync them for DearImGui 
+
+    if ((g_keyboard.modifiers & CpdInputModifierKey_Shift) != (old_modifiers & CpdInputModifierKey_Shift)) {
+        ImGuiIO_AddKeyEvent(ImGui_GetIO(), ImGuiMod_Shift, (g_keyboard.modifiers & CpdInputModifierKey_Shift) != 0);
+    }
+
+    if ((g_keyboard.modifiers & CpdInputModifierKey_Control) != (old_modifiers & CpdInputModifierKey_Control)) {
+        ImGuiIO_AddKeyEvent(ImGui_GetIO(), ImGuiMod_Ctrl, (g_keyboard.modifiers & CpdInputModifierKey_Control) != 0);
+    }
+
+    if ((g_keyboard.modifiers & CpdInputModifierKey_Alt) != (old_modifiers & CpdInputModifierKey_Alt)) {
+        ImGuiIO_AddKeyEvent(ImGui_GetIO(), ImGuiMod_Alt, (g_keyboard.modifiers & CpdInputModifierKey_Alt) != 0);
+    }
+#endif
 }
 
 static void keyboard_repeat_info(void* data, struct wl_keyboard* wl_keyboard, int32_t rate, int32_t delay) {

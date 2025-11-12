@@ -469,8 +469,14 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
             data->focused = LOWORD(wParam) != WA_INACTIVE;
 
-            if (data->focused && data->use_raw_input) {
-                data->use_raw_input = register_raw_input(hWnd);
+            if (data->focused) {
+                if (data->use_raw_input) {
+                    data->use_raw_input = register_raw_input(hWnd);
+                }
+
+#ifdef CPD_IMGUI_AVAILABLE
+                ImGui_SetCurrentContext(data->imgui_context);
+#endif
             }
         }
         return 0;

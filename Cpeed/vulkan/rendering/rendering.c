@@ -3,6 +3,11 @@
 #include "../shortcuts.h"
 #include "rendering.h"
 
+#ifdef CPD_IMGUI_AVAILABLE
+#include <dcimgui_impl_vulkan.h>
+#include "../../common/imgui/imgui_impl_cpeed.h"
+#endif
+
 VkCommandBuffer buffer = VK_NULL_HANDLE;
 VkFence render_fence = VK_NULL_HANDLE;
 
@@ -99,6 +104,23 @@ VkResult RENDERING_frame(CpdRenderer* cpeed_renderer) {
         }
     }
 
+#ifdef CPD_IMGUI_AVAILABLE
+    CpdFrameLayer* lowest = 0;
+    loop_frame_layers(cpeed_renderer->window, get_lowest_frame_layer, &lowest);
+
+    cImGui_ImplVulkan_NewFrame();
+    cImGui_ImplCpeed_NewFrame();
+    ImGui_NewFrame();
+
+    for (CpdFrameLayer* layer = lowest; layer != 0; layer = layer->higher) {
+        if (layer->functions.imgui != 0) {
+            layer->functions.imgui();
+        }
+    }
+
+    ImGui_EndFrame();
+#endif
+
     SWAPCHAIN_set_layout(&cpeed_renderer->swapchain, &cpeed_renderer->render_device, buffer,
         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
@@ -116,6 +138,11 @@ VkResult RENDERING_frame(CpdRenderer* cpeed_renderer) {
     }
 
     begin_rendering(cpeed_renderer, buffer);
+
+#ifdef CPD_IMGUI_AVAILABLE
+    ImGui_Render();
+    cImGui_ImplVulkan_RenderDrawData(ImGui_GetDrawData(), buffer);
+#endif
 
     cpeed_renderer->render_device.vkCmdEndRendering(buffer);
 

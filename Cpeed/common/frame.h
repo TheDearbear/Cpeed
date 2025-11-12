@@ -36,7 +36,15 @@ typedef bool (*CpdFrameInputFunction)(CpdWindow window, CpdFrame*, const CpdInpu
 typedef void (*CpdFrameRenderFunction)(CpdFrame*);
 typedef void (*CpdFrameResizeFunction)(CpdWindow window, CpdFrame*, CpdSize size);
 
+#ifdef CPD_IMGUI_AVAILABLE
+typedef void (*CpdFrameImGuiFunction)();
+#endif
+
 typedef struct CpdFrameLayerFunctions {
+#ifdef CPD_IMGUI_AVAILABLE
+    CpdFrameImGuiFunction imgui;
+#endif
+
     CpdFrameInputFunction input;
     CpdFrameRenderFunction render;
     CpdFrameResizeFunction resize;

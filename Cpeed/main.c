@@ -6,6 +6,11 @@
 #include "backend.h"
 #include "platform.h"
 
+#ifdef CPD_IMGUI_AVAILABLE
+#include "common/imgui/imgui_impl_cpeed.h"
+#include <dcimgui.h>
+#endif
+
 static bool get_lowest_frame_layer(void* context, CpdFrameLayer* frame_layer) {
     CpdFrameLayer** output = (CpdFrameLayer**)context;
 
@@ -33,19 +38,27 @@ int main() {
         return -1;
     }
 
-    CpdWindowInfo window_info = {
-        .title = "Cpeed",
-        .size.width = 800,
-        .size.height = 600,
-        .input_mode = CpdInputMode_KeyCode
-    };
-    CpdWindow window = create_window(&window_info);
+#ifdef CPD_IMGUI_AVAILABLE
+    log_debug("ImGui Version: %s\n", ImGui_GetVersion());
+#endif
+
+    CpdWindow window = create_window(&g_window_create_info);
     if (window == 0) {
         log_error("Unable to create window\n");
         implementation.shutdown_backend();
         shutdown_platform();
         return -1;
     }
+
+#ifdef CPD_IMGUI_AVAILABLE
+    if (!cImGui_ImplCpeed_Init(window)) {
+        log_error("Unable to initialize ImGui for window\n");
+        destroy_window(window);
+        implementation.shutdown_backend();
+        shutdown_platform();
+        return -1;
+    }
+#endif
 
     CpdBackendInfo backend_info = {
         .window = window,
@@ -110,6 +123,10 @@ int main() {
     log_info("Goodbye!\n");
 
     shutdown_engine();
+
+#ifdef CPD_IMGUI_AVAILABLE
+    cImGui_ImplCpeed_Shutdown();
+#endif
 
     implementation.shutdown_window(backend);
 

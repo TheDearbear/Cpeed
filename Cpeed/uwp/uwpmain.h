@@ -40,6 +40,10 @@ typedef struct CpdUWPWindow {
 
     struct CpdFrameLayer* layers;
 
+#ifdef CPD_IMGUI_AVAILABLE
+    ImGuiContext* imgui_context;
+#endif
+
     uint32_t should_close : 1;
     uint32_t resized : 1;
     uint32_t visible : 1;

@@ -11,4 +11,10 @@ target_link_libraries(CpeedDirectX d3d11 dxgi dxguid)
 
 target_sources(Cpeed PRIVATE "../platform/backend/directx.h")
 
+if (TARGET DearImGui)
+  target_link_libraries (CpeedDirectX DearImGui)
+  target_include_directories (CpeedDirectX PRIVATE "${DearBindings_SOURCE_DIR}/imgui")
+  target_include_directories (CpeedDirectX PRIVATE "${DearBindings_SOURCE_DIR}/dear_bindings/dcimgui")
+endif ()
+
 set_property(TARGET CpeedDirectX PROPERTY C_STANDARD 99)
