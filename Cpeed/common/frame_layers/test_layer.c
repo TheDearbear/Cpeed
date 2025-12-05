@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #include "../../platform/input/gamepad.h"
 #include "../../platform/logging.h"
 #include "test_layer.h"
