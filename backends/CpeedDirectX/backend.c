@@ -1,7 +1,7 @@
 #include <malloc.h>
 
-#include <Cpeed/common/frame.h>
 #include <Cpeed/platform/input/gamepad.h>
+#include <Cpeed/platform/frame.h>
 
 #include "backend.h"
 #include "directx.h"

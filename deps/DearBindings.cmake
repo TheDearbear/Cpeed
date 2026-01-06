@@ -31,8 +31,9 @@ add_library (DearImGui STATIC
   "${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_widgets.cpp")
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  string(APPEND CMAKE_CXX_FLAGS " -fno-threadsafe-statics")
-  target_link_libraries (DearImGui "stdc++")
+  string (APPEND CMAKE_CXX_FLAGS " -fno-threadsafe-statics")
+  target_link_libraries (DearImGui "stdc++" "m")
+  set (LIB_M m)
 endif ()
 
 target_include_directories (DearImGui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/imgui")

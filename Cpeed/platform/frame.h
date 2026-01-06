@@ -8,21 +8,8 @@
 
 #define INVALID_FRAME_LAYER_HANDLE ((uint32_t)0)
 
-#define RENDER_QUEUE_BASE_SIZE 128
-#define RENDER_QUEUE_SIZE_STEP 64
-
-typedef struct CpdRenderQueueEntry {
-    struct CpdObject* object;
-} CpdRenderQueueEntry;
-
 typedef struct CpdFrame {
     CpdVector3 background;
-
-    uint16_t render_queue_max_size;
-    uint16_t render_queue_size;
-    CpdRenderQueueEntry* render_queue;
-
-    // TODO: Add functions for adding objects for render to queue (request_object_render, load_model, load_texture, etc)
 } CpdFrame;
 
 struct CpdFrameLayer;

@@ -10,7 +10,6 @@ add_executable (Cpeed
 
   "common/frame_layers/test_layer.c" "common/frame_layers/test_layer.h"
 
-  "common/frame.c" "common/frame.h"
   "common/init.c" "common/init.h"
   "common/math.c" "common/math.h"
 
@@ -22,7 +21,8 @@ add_executable (Cpeed
   "platform/input/gamepad.h"
   "platform/input/mode.h"
   "platform/input/queue.h"
-
+  
+  "platform/frame.h"
   "platform/init.h"
   "platform/lock.h"
   "platform/logging.h"

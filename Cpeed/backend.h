@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/frame.h"
+#include "platform/frame.h"
 #include "platform/window.h"
 #include "input.h"
 #include "platform.h"

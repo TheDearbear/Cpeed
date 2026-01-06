@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Cpeed/common/frame.h>
+#include <Cpeed/platform/frame.h>
 
 #include "vulkan.h"
 #include "device.h"
