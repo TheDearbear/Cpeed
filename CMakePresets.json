@@ -45,6 +45,25 @@
             }
         },
         {
+            "name": "ps3-base",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "installDir": "${sourceDir}/out/install/${presetName}",
+            "environment": {
+                "PS3DEV": "/usr/local/ps3dev",
+                "PSL1GHT": "/usr/local/ps3dev"
+            },
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/toolchains/ps3-gcc-powerpc64.cmake",
+                "CMAKE_MAKE_PROGRAM": "ninja"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
             "name": "windows-x64-debug",
             "displayName": "Windows x64 Debug",
             "inherits": "windows-base",
@@ -93,6 +112,14 @@
             }
         },
         {
+            "name": "ps3-debug",
+            "displayName": "PS3 Debug (PSL1GHT & ps3toolchain)",
+            "inherits": "ps3-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
             "name": "windows-x64-release",
             "displayName": "Windows x64 Release",
             "inherits": "windows-x64-debug",
@@ -120,6 +147,14 @@
             "name": "linux-arm64-release",
             "displayName": "Linux arm64 Release",
             "inherits": "linux-arm64-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "ps3-release",
+            "displayName": "PS3 Release (PSL1GHT & ps3toolchain)",
+            "inherits": "ps3-base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
