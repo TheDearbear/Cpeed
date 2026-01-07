@@ -13,8 +13,9 @@ typedef struct ImGuiContext_t ImGuiContext;
 
 typedef void* CpdWindow;
 
-// Reserved for future use
-typedef unsigned int CpdWindowFlags;
+typedef enum CpdWindowFlags {
+    CpdWindowFlags_None
+} CpdWindowFlags;
 
 typedef struct CpdWindowInfo {
     const char* title;

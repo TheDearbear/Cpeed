@@ -8,7 +8,7 @@
 
 static float brightness_step = 0.05f;
 
-static bool input(CpdWindow window, CpdFrame* frame, const CpdInputEvent* event) {
+static bool input(void* context, CpdWindow window, CpdFrame* frame, const CpdInputEvent* event) {
     if (event->type == CpdInputEventType_CharInput) {
         uint64_t text = event->data.char_input.character;
         log_debug("Char input: %s (%d bytes)\n", (char*)&text, event->data.char_input.length);
@@ -76,12 +76,12 @@ static bool input(CpdWindow window, CpdFrame* frame, const CpdInputEvent* event)
     return true;
 }
 
-static void render(CpdFrame* frame) {
+static void render(void* context, CpdFrame* frame) {
     //
 }
 
 #ifdef CPD_IMGUI_AVAILABLE
-static void imgui() {
+static void imgui(void* context) {
     ImGui_ShowDemoWindow(0);
 }
 #endif
@@ -92,5 +92,9 @@ CpdFrameLayerFunctions g_frame_layer_functions_test = {
     .imgui = imgui,
 #endif
     .input = input,
-    .render = render
+    .render = render,
+    .resize = 0,
+    .first_frame = 0,
+    .added = 0,
+    .remove = 0
 };

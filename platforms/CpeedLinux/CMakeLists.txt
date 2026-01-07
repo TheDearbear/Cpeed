@@ -50,8 +50,8 @@ target_sources (WaylandExtensions PRIVATE
 target_include_directories (CpeedLinux
   PRIVATE ${Wayland_INCLUDE_DIRS}
   PRIVATE ${X11_xkbcommon_INCLUDE_PATH}
-  PRIVATE ${EVDEV_INCLUDEDIR}
-  PRIVATE ${SYSTEMD_INCLUDEDIR}
+  PRIVATE ${EVDEV_INCLUDE_DIRS}
+  PRIVATE ${SYSTEMD_INCLUDE_DIRS}
   PRIVATE ${Cpeed_SOURCE_DIR}
 )
 

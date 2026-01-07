@@ -194,7 +194,7 @@ static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
 
     while (frame_layer != 0) {
         if (frame_layer->functions.resize != 0) {
-            frame_layer->functions.resize(renderer->window, renderer->frame, new_size);
+            frame_layer->functions.resize(frame_layer->context, renderer->window, renderer->frame, new_size);
         }
 
         frame_layer = frame_layer->higher;
@@ -242,7 +242,7 @@ static bool frame(CpdBackendHandle cpeed_backend) {
 
     for (CpdFrameLayer* layer = lowest; layer != 0; layer = layer->higher) {
         if (layer->functions.imgui != 0) {
-            layer->functions.imgui();
+            layer->functions.imgui(layer->context);
         }
     }
 
@@ -250,8 +250,16 @@ static bool frame(CpdBackendHandle cpeed_backend) {
 #endif
 
     for (CpdFrameLayer* layer = lowest; layer != 0; layer = layer->higher) {
+        if ((layer->flags & CpdFrameLayerFlags_FirstFramePassed) == 0) {
+            if (layer->functions.first_frame != 0) {
+                layer->functions.first_frame(layer->context, renderer->window, renderer->frame);
+            }
+
+            layer->flags |= CpdFrameLayerFlags_FirstFramePassed;
+        }
+
         if (layer->functions.render != 0) {
-            layer->functions.render(renderer->frame);
+            layer->functions.render(layer->context, renderer->frame);
         }
     }
 

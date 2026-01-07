@@ -6,7 +6,7 @@
 
 static uint32_t g_new_layer_handle = 1;
 
-uint32_t add_frame_layer(CpdWindow window, const CpdFrameLayerFunctions* functions, CpdFrameLayerFlags flags) {
+uint32_t add_frame_layer(CpdWindow window, const CpdFrameLayerFunctions* functions, void* context, CpdFrameLayerFlags flags) {
     CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
 
     CpdFrameLayer* layer = (CpdFrameLayer*)malloc(sizeof(CpdFrameLayer));
@@ -18,6 +18,7 @@ uint32_t add_frame_layer(CpdWindow window, const CpdFrameLayerFunctions* functio
     layer->underlying = uwp_window->layers;
     layer->handle = g_new_layer_handle++;
     layer->flags = flags;
+    layer->context = context;
     layer->functions = *functions;
 
     if (uwp_window->layers != 0) {
@@ -25,6 +26,10 @@ uint32_t add_frame_layer(CpdWindow window, const CpdFrameLayerFunctions* functio
     }
 
     uwp_window->layers = layer;
+
+    if (layer->functions.added != 0) {
+        layer->functions.added(context);
+    }
 
     return layer->handle;
 }
@@ -41,8 +46,11 @@ static bool remove_frame_layer_loop(void* context, CpdFrameLayer* layer) {
         return true;
     }
 
-    CpdFrameLayer* higher = layer->higher;
+    if (layer->functions.remove != 0) {
+        layer->functions.remove(layer->context);
+    }
 
+    CpdFrameLayer* higher = layer->higher;
 
     if (higher == 0) {
         args->uwp_window->layers = layer->underlying;

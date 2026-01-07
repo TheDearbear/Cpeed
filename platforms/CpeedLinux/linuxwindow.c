@@ -7,6 +7,8 @@
 #include <Cpeed/platform/window.h>
 #include <Cpeed/input.h>
 
+#include "xdg-decoration/client.h"
+
 #include "linuxevent.h"
 #include "linuxmain.h"
 #include "linuxwayland.h"

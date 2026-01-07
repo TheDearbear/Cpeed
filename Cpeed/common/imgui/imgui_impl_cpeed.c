@@ -80,7 +80,7 @@ static ImGuiKey map_key(CpdKeyCode key_code) {
     return ImGuiKey_None;
 }
 
-static bool input(CpdWindow window, CpdFrame* frame, const CpdInputEvent* event) {
+static bool input(void* context, CpdWindow window, CpdFrame* frame, const CpdInputEvent* event) {
     ImGui_ImplCpeed_Data* data = cImGui_ImplCpeed_GetBackendData();
     ImGuiIO* io = ImGui_GetIO();
 
@@ -165,7 +165,7 @@ static bool input(CpdWindow window, CpdFrame* frame, const CpdInputEvent* event)
     return true;
 }
 
-static void resize(CpdWindow window, CpdFrame* frame, CpdSize size) {
+static void resize(void* context, CpdWindow window, CpdFrame* frame, CpdSize size) {
     ImGuiIO* io = ImGui_GetIO();
 
     io->DisplaySize = (ImVec2) {
@@ -204,10 +204,13 @@ CIMGUI_IMPL_API bool cImGui_ImplCpeed_Init(CpdWindow window) {
         .imgui = 0,
         .input = input,
         .render = 0,
-        .resize = resize
+        .resize = resize,
+        .first_frame = 0,
+        .added = 0,
+        .remove = 0
     };
 
-    add_frame_layer(window, &functions, CpdFrameLayerFlags_None);
+    add_frame_layer(window, &functions, 0, CpdFrameLayerFlags_None);
 
     return true;
 }

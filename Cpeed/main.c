@@ -103,7 +103,7 @@ int main() {
                 loop_frame_layers(window, get_lowest_frame_layer, &frame_layer);
 
                 while (frame_layer != 0) {
-                    if (frame_layer->functions.input != 0 && !frame_layer->functions.input(window, cpeed_frame, &input_events[i])) {
+                    if (frame_layer->functions.input != 0 && !frame_layer->functions.input(frame_layer->context, window, cpeed_frame, &input_events[i])) {
                         break;
                     }
 

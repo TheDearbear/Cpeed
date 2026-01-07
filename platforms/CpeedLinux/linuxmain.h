@@ -8,7 +8,6 @@
 
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
-#include "xdg-decoration/client.h"
 #include "xdg-shell/client.h"
 
 #include <Cpeed/input.h>

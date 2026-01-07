@@ -8,13 +8,13 @@ CpdWindowInfo g_window_create_info = {
     .title = "Cpeed",
     .size.width = 800,
     .size.height = 600,
-    .flags = 0,
+    .flags = CpdWindowFlags_None,
     .input_mode = CpdInputMode_KeyCode
 };
 
 void init_engine(CpdWindow window) {
     g_window = window;
-    g_test_layer_handle = add_frame_layer(window, &g_frame_layer_functions_test, g_frame_layer_flags_test);
+    g_test_layer_handle = add_frame_layer(window, &g_frame_layer_functions_test, 0, g_frame_layer_flags_test);
 }
 
 void shutdown_engine() {

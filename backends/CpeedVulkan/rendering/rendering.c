@@ -42,7 +42,7 @@ VkResult RENDERING_resize(CpdRenderer* cpeed_renderer, CpdSize new_size) {
 
     while (frame_layer != 0) {
         if (frame_layer->functions.resize != 0) {
-            frame_layer->functions.resize(cpeed_renderer->window, cpeed_renderer->frame, new_size);
+            frame_layer->functions.resize(frame_layer->context, cpeed_renderer->window, cpeed_renderer->frame, new_size);
         }
 
         frame_layer = frame_layer->higher;
@@ -115,7 +115,7 @@ VkResult RENDERING_frame(CpdRenderer* cpeed_renderer) {
 
     for (CpdFrameLayer* layer = lowest; layer != 0; layer = layer->higher) {
         if (layer->functions.imgui != 0) {
-            layer->functions.imgui();
+            layer->functions.imgui(layer->context);
         }
     }
 
@@ -131,8 +131,16 @@ VkResult RENDERING_frame(CpdRenderer* cpeed_renderer) {
     loop_frame_layers(cpeed_renderer->window, get_lowest_frame_layer, &frame_layer);
 
     while (frame_layer != 0) {
+        if ((frame_layer->flags & CpdFrameLayerFlags_FirstFramePassed) == 0) {
+            if (frame_layer->functions.first_frame != 0) {
+                frame_layer->functions.first_frame(frame_layer->context, cpeed_renderer->window, cpeed_renderer->frame);
+            }
+
+            frame_layer->flags |= CpdFrameLayerFlags_FirstFramePassed;
+        }
+
         if (frame_layer->functions.render != 0) {
-            frame_layer->functions.render(cpeed_renderer->frame);
+            frame_layer->functions.render(frame_layer->context, cpeed_renderer->frame);
         }
 
         frame_layer = frame_layer->higher;
