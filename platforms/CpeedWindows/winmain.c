@@ -13,6 +13,10 @@ CpdCompilePlatform compile_platform() {
     return CpdCompilePlatform_Windows;
 }
 
+const char* compile_platform_name() {
+    return "Windows";
+}
+
 CpdPlatformBackendFlags platform_supported_backends() {
     return CpdPlatformBackendFlags_Vulkan;
 }

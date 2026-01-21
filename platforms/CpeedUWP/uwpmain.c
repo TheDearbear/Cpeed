@@ -8,6 +8,10 @@ CpdCompilePlatform compile_platform() {
     return CpdCompilePlatform_UWP;
 }
 
+const char* compile_platform_name() {
+    return "Universal Windows Platform";
+}
+
 CpdPlatformBackendFlags platform_supported_backends() {
     return CpdPlatformBackendFlags_DirectX;
 }

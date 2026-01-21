@@ -15,6 +15,8 @@ typedef enum CpdPlatformBackendFlags {
 
 extern CpdCompilePlatform compile_platform();
 
+extern const char* compile_platform_name();
+
 extern CpdPlatformBackendFlags platform_supported_backends();
 
 extern uint64_t get_clock_usec();

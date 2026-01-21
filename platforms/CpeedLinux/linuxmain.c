@@ -9,6 +9,10 @@ CpdCompilePlatform compile_platform() {
     return CpdCompilePlatform_Linux;
 }
 
+const char* compile_platform_name() {
+    return "Linux";
+}
+
 CpdPlatformBackendFlags platform_supported_backends() {
     return CpdPlatformBackendFlags_Vulkan;
 }
