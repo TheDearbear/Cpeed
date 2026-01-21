@@ -144,7 +144,7 @@ bool initialize_platform() {
         return false;
     }
 
-    HRESULT result = CoInitialize(NULL);
+    HRESULT result = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
     if (FAILED(result)) {
         return false;
     }

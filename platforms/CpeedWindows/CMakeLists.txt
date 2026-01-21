@@ -6,6 +6,7 @@ add_library (CpeedWindows STATIC
   "winlogging.c"
   "winmain.c" "winmain.h"
   "winproc.c" "winproc.h"
+  "winthread.c"
   "winwindow.c")
 
 target_sources (CpeedVulkan PRIVATE "backend/vulkan.c")

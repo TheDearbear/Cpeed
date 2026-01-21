@@ -6,9 +6,11 @@ add_library (CpeedUWP STATIC
   "uwpframe.c"
   "uwpinit.c"
   "uwpinput.c"
+  "uwplock.c"
   "uwplogging.c"
   "uwpmain.c" "uwpmain.h"
   "uwpqueue.c"
+  "uwpthread.c"
   "uwpwindow.c")
 
 target_sources (Cpeed PRIVATE "mainstub.c")

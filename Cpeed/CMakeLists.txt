@@ -26,6 +26,7 @@ add_executable (Cpeed
   "platform/init.h"
   "platform/lock.h"
   "platform/logging.h"
+  "platform/thread.h"
   "platform/window.h")
 
 if (TARGET DearImGui)

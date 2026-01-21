@@ -6,6 +6,7 @@ add_library (CpeedLinux STATIC
   "linuxlock.c"
   "linuxlogging.c"
   "linuxmain.c" "linuxmain.h"
+  "linuxthread.c"
   "linuxwayland.c" "linuxwayland.h"
   "linuxwindow.c"
   "linuxwindowlist.c" "linuxwindowlist.h")

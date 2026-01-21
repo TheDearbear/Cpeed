@@ -4,11 +4,11 @@
 
 LARGE_INTEGER g_counter_frequency;
 
-extern CpdCompilePlatform compile_platform() {
+CpdCompilePlatform compile_platform() {
     return CpdCompilePlatform_UWP;
 }
 
-extern CpdPlatformBackendFlags platform_supported_backends() {
+CpdPlatformBackendFlags platform_supported_backends() {
     return CpdPlatformBackendFlags_DirectX;
 }
 

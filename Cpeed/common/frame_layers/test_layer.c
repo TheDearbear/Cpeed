@@ -86,8 +86,8 @@ static void imgui(void* context) {
 }
 #endif
 
-CpdFrameLayerFlags g_frame_layer_flags_test = CpdFrameLayerFlags_None;
-CpdFrameLayerFunctions g_frame_layer_functions_test = {
+const CpdFrameLayerFlags g_frame_layer_flags_test = CpdFrameLayerFlags_None;
+const CpdFrameLayerFunctions g_frame_layer_functions_test = {
 #ifdef CPD_IMGUI_AVAILABLE
     .imgui = imgui,
 #endif

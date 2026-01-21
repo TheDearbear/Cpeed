@@ -1,8 +1,22 @@
 #include "../platform/frame.h"
 #include "frame_layers/test_layer.h"
 
+typedef struct CpdFrameLayerInstance {
+    const CpdFrameLayerFunctions* functions;
+    const CpdFrameLayerFlags* flags;
+    const void* context;
+    uint32_t handle;
+} CpdFrameLayerInstance;
+
 static CpdWindow g_window;
-static uint32_t g_test_layer_handle;
+
+static CpdFrameLayerInstance g_frame_layer_instances[] = {
+    {
+        .functions = &g_frame_layer_functions_test,
+        .flags = &g_frame_layer_flags_test,
+        .context = 0
+    }
+};
 
 CpdWindowInfo g_window_create_info = {
     .title = "Cpeed",
@@ -14,9 +28,18 @@ CpdWindowInfo g_window_create_info = {
 
 void init_engine(CpdWindow window) {
     g_window = window;
-    g_test_layer_handle = add_frame_layer(window, &g_frame_layer_functions_test, 0, g_frame_layer_flags_test);
+
+    for (size_t i = 0; i < sizeof(g_frame_layer_instances) / sizeof(CpdFrameLayerInstance); i++) {
+        CpdFrameLayerInstance* instance = &g_frame_layer_instances[i];
+
+        instance->handle = add_frame_layer(window, instance->functions, instance->context, *instance->flags);
+    }
 }
 
 void shutdown_engine() {
-    remove_frame_layer(g_window, g_test_layer_handle);
+    for (size_t i = 0; i < sizeof(g_frame_layer_instances) / sizeof(CpdFrameLayerInstance); i++) {
+        CpdFrameLayerInstance* instance = &g_frame_layer_instances[i];
+
+        remove_frame_layer(g_window, instance->handle);
+    }
 }
