@@ -33,8 +33,8 @@
             }
         },
         {
-            "name": "uwp",
-            "displayName": "UWP",
+            "name": "uwp-base",
+            "hidden": true,
             "inherits": "windows-base",
             "generator": "Visual Studio 16 2019",
             "cacheVariables": {
@@ -123,6 +123,28 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "uwp-x64",
+            "displayName": "UWP x64",
+            "inherits": "uwp-base",
+            "architecture": "x64"
+        },
+        {
+            "name": "uwp-arm",
+            "displayName": "UWP arm",
+            "inherits": "uwp-base",
+            "architecture": "ARM",
+            "cacheVariables": {
+                "CMAKE_SYSTEM_VERSION": "10.0.19041",
+                "CMAKE_VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION": "10.0.15063.0"
+            }
+        },
+        {
+            "name": "uwp-arm64",
+            "displayName": "UWP arm64",
+            "inherits": "uwp-base",
+            "architecture": "ARM64"
         }
     ]
 }
