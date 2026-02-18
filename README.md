@@ -5,11 +5,10 @@ Cpeed is a custom engine targeted for platform portability and compatibility wit
 
 ## Rendering backend support
 
-|               |       DirectX      |       Vulkan       |
-| ------------- | :----------------: | :----------------: |
-| Linux[^1]     |         :x:        | :heavy_check_mark: |
-| Windows[^2]   | :heavy_check_mark: | :heavy_check_mark: |
-| UWP           | :heavy_check_mark: |         :x:        |
+|               |      Linux[^1]     |     Windows[^2]    |         UWP        |
+| ------------- | :----------------: | :----------------: | :----------------: |
+| DirectX       |         :x:        | :heavy_check_mark: | :heavy_check_mark: |
+| Vulkan        | :heavy_check_mark: | :heavy_check_mark: |         :x:        |
 
 [^1]: Systemd distro with wayland server required
 [^2]: Switching between backends after compilation is not yet supported
