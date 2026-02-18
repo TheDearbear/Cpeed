@@ -1,9 +1,17 @@
+#include <roapi.h>
+
 #include <Cpeed/platform/init.h>
 
 #include "uwpmain.h"
 
 bool initialize_platform() {
-    return QueryPerformanceFrequency(&g_counter_frequency) != 0;
+    if (FAILED(RoInitialize(RO_INIT_MULTITHREADED))) {
+        return false;
+    }
+
+    return QueryPerformanceFrequency(&g_counter_frequency) != FALSE;
 }
 
-void shutdown_platform() { }
+void shutdown_platform() {
+    RoUninitialize();
+}

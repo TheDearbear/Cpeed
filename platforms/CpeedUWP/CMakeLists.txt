@@ -2,19 +2,20 @@ project (CpeedUWP C CXX)
 
 add_library (CpeedUWP STATIC
   "AppView.cpp" "AppView.h"
-  "main.cpp" "main.h"
+  "main.c" "main.h"
   "uwpframe.c"
   "uwpinit.c"
   "uwpinput.c"
   "uwplock.c"
   "uwplogging.c"
   "uwpmain.c" "uwpmain.h"
-  "uwpqueue.c"
+  "uwpqueue.c" "uwpqueue.h"
   "uwpthread.c"
   "uwpwindow.c")
 
 target_sources (Cpeed PRIVATE "mainstub.c")
 
+target_link_libraries (CpeedUWP uuid)
 target_include_directories (CpeedUWP PRIVATE "${Cpeed_SOURCE_DIR}")
 
 if (TARGET DearImGui)

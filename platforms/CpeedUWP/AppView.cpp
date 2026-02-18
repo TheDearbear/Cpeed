@@ -16,6 +16,9 @@ extern "C" {
 
 #include <Cpeed/common/init.h>
 #include <Cpeed/platform/input/queue.h>
+#include <Cpeed/platform/init.h>
+
+#include "uwpqueue.h"
 }
 
 #include "AppView.h"
@@ -110,6 +113,10 @@ void AppView::Initialize(CoreApplicationView const& applicationView)
         OnGamepadConnect(nullptr, gamepad);
     }
 
+    get_backend_implementation(CpdPlatformBackendFlags_DirectX, &impl);
+
+    impl.initialize_backend();
+
     window = (CpdUWPWindow*)create_window(&g_window_create_info);
 
 #ifdef CPD_IMGUI_AVAILABLE
@@ -117,10 +124,6 @@ void AppView::Initialize(CoreApplicationView const& applicationView)
         __debugbreak();
     }
 #endif
-
-    get_backend_implementation(CpdPlatformBackendFlags_DirectX, &impl);
-
-    impl.initialize_backend();
 
     init_engine(window);
 }
@@ -198,7 +201,7 @@ void AppView::Run()
                 loop_frame_layers((CpdWindow)window, get_lowest_frame_layer, &frame_layer);
 
                 while (frame_layer != 0) {
-                    if (frame_layer->functions.input != 0 && !frame_layer->functions.input(window, frame, &input_events[i])) {
+                    if (frame_layer->functions.input != 0 && !frame_layer->functions.input(frame_layer->context, window, frame, &input_events[i])) {
                         break;
                     }
 
@@ -255,6 +258,15 @@ void AppView::Uninitialize()
 #ifdef CPD_IMGUI_AVAILABLE
     cImGui_ImplCpeed_Shutdown();
 #endif
+
+    if (this->window != 0) {
+        if (this->window->backend != 0) {
+            impl.shutdown_window(this->window->backend);
+            impl.shutdown_backend();
+        }
+
+        destroy_window(this->window);
+    }
 }
 
 void AppView::OnViewActivated(CoreApplicationView const& sender, IActivatedEventArgs const& args)
@@ -524,3 +536,16 @@ void AppView::OnPointerWheel(CoreWindow const& sender, PointerEventArgs const& a
 IFrameworkView AppViewSource::CreateView() {
     return winrt::make<AppView>();
 }
+
+extern "C" {
+    int main() {
+        if (initialize_platform()) {
+            CoreApplication::Run(winrt::make<AppViewSource>());
+
+            shutdown_platform();
+        }
+
+        return 0;
+    }
+}
+
