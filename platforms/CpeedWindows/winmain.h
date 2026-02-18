@@ -3,6 +3,32 @@
 #define WIN32_LEAN_AND_MEAN
 #define COBJMACROS
 
+#define NOGDICAPMASKS
+#define NOSYSMETRICS
+#define NOMENUS
+#define NORASTEROPS
+#define NOSHOWWINDOW
+#define OEMRESOURCE
+#define NOCOLOR
+#define NODRAWTEXT
+#define NOGDI
+#define NOKERNEL
+#define NOMB
+#define NOMEMMGR
+#define NOMETAFILE
+#define NOMINMAX
+#define NOSCROLL
+#define NOSERVICE
+#define NOSOUND
+#define NOTEXTMETRIC
+#define NOWH
+#define NOCOMM
+#define NOKANJI
+#define NOHELP
+#define NOPROFILER
+#define NODEFERWINDOWPOS
+#define NOMCX
+
 #ifdef CPD_IMGUI_AVAILABLE
 #include <dcimgui.h>
 #endif
