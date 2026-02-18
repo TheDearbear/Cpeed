@@ -16,13 +16,20 @@ target_sources (Cpeed PRIVATE
   "Cpeed.rc"
   "icon.ico")
 
-target_link_libraries (CpeedWindows gameinput)
-target_include_directories (CpeedWindows PRIVATE "${Cpeed_SOURCE_DIR}")
+include ("MicrosoftGDK.cmake")
+
+target_link_libraries (CpeedWindows "${GDK_LIBRARY_DIR}/GameInput.lib")
+target_include_directories (CpeedWindows
+  PRIVATE "${Cpeed_SOURCE_DIR}"
+  PRIVATE "${GDK_INCLUDE_DIR}"
+)
 
 if (TARGET DearImGui)
   target_link_libraries (CpeedWindows DearImGui)
-  target_include_directories (CpeedWindows PRIVATE "${DearBindings_SOURCE_DIR}/imgui")
-  target_include_directories (CpeedWindows PRIVATE "${DearBindings_SOURCE_DIR}/dear_bindings/dcimgui")
+  target_include_directories (CpeedWindows
+    PRIVATE "${DearBindings_SOURCE_DIR}/imgui"
+    PRIVATE "${DearBindings_SOURCE_DIR}/dear_bindings/dcimgui"
+  )
 endif ()
 
 set_property(TARGET CpeedWindows PROPERTY C_STANDARD 99)

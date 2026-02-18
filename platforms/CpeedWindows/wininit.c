@@ -1,5 +1,6 @@
 #include <Cpeed/platform.h>
 
+#include "wininput.h"
 #include "winmain.h"
 #include "winproc.h"
 

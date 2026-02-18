@@ -2,7 +2,11 @@
 
 #include <Cpeed/platform/window.h>
 
+#include "wininput.h"
 #include "winmain.h"
+
+IGameInput* g_game_input;
+CpdGamepad* g_gamepads;
 
 bool set_window_input_mode(CpdWindow window, CpdInputMode mode) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);

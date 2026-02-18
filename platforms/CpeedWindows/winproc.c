@@ -1,5 +1,6 @@
-#include <stdio.h>
+#include <limits.h>
 #include <malloc.h>
+#include <stdio.h>
 #include <windowsx.h>
 
 #include <Cpeed/platform/logging.h>

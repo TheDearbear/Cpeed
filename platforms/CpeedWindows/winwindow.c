@@ -6,6 +6,7 @@
 #include <Cpeed/platform/logging.h>
 #include <Cpeed/platform.h>
 
+#include "wininput.h"
 #include "winmain.h"
 
 CpdWindow create_window(const CpdWindowInfo* info) {

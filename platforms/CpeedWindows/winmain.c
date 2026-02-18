@@ -3,9 +3,8 @@
 #include "winmain.h"
 
 #include <hidusage.h>
+#include <malloc.h>
 
-IGameInput* g_game_input;
-CpdGamepad* g_gamepads;
 LARGE_INTEGER g_counter_frequency;
 ATOM g_window_class;
 

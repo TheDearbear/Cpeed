@@ -8,7 +8,6 @@
 #endif
 
 #include <stdbool.h>
-#include <GameInput.h>
 #include <windows.h>
 
 #include <Cpeed/platform/window.h>
@@ -22,17 +21,8 @@
 
 #define GET_EXTRA_DATA(hWnd) ((WindowExtraData*)GetWindowLongPtrW(hWnd, GWLP_USERDATA))
 
-extern IGameInput* g_game_input;
-extern struct CpdGamepad* g_gamepads;
-
 extern LARGE_INTEGER g_counter_frequency;
 extern ATOM g_window_class;
-
-typedef struct CpdGamepad {
-    struct CpdGamepad* next;
-    IGameInputDevice* device;
-    GameInputGamepadState last_used_state;
-} CpdGamepad;
 
 typedef struct CpdKeyboardKey {
     uint16_t scan_code;
