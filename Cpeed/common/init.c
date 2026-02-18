@@ -4,7 +4,7 @@
 typedef struct CpdFrameLayerInstance {
     const CpdFrameLayerFunctions* functions;
     const CpdFrameLayerFlags* flags;
-    const void* context;
+    void* context;
     uint32_t handle;
 } CpdFrameLayerInstance;
 
