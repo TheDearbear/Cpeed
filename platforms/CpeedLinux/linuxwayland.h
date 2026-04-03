@@ -2,6 +2,7 @@
 
 #include <xkbcommon/xkbcommon.h>
 
+#include "xdg-foreign/client.h"
 #include "linuxmain.h"
 
 extern CpdWaylandWindow* g_current_pointer_focus;
@@ -12,6 +13,7 @@ extern struct wl_display* g_display;
 extern struct wl_seat* g_seat;
 extern struct xdg_wm_base* g_wm_base;
 extern struct zxdg_decoration_manager_v1* g_decoration;
+extern struct zxdg_exporter_v2* g_exporter;
 
 extern struct wl_seat_listener g_seat_listener;
 

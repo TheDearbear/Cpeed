@@ -22,6 +22,8 @@ add_executable (Cpeed
   "platform/input/mode.h"
   "platform/input/queue.h"
   
+  "platform/dialog.h"
+  "platform/file.h"
   "platform/frame.h"
   "platform/init.h"
   "platform/lock.h"

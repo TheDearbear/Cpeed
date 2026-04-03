@@ -87,6 +87,8 @@ void close_window(CpdWindow window) {
 bool poll_window(CpdWindow window) {
     CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
 
+    uwp_window->resized = false;
+
     poll_events(uwp_window);
     poll_gamepads(uwp_window);
 
@@ -102,10 +104,7 @@ CpdSize window_size(CpdWindow window) {
 bool window_resized(CpdWindow window) {
     CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
 
-    bool result = uwp_window->resized;
-    uwp_window->resized = false;
-
-    return result;
+    return uwp_window->resized;
 }
 
 bool window_present_allowed(CpdWindow window) {

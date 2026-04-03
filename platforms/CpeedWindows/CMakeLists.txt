@@ -1,4 +1,6 @@
 add_library (CpeedWindows STATIC
+  "windialog.c"
+  "winfile.c" "winfile.h"
   "winframe.c"
   "wininit.c"
   "wininput.c"
@@ -7,12 +9,13 @@ add_library (CpeedWindows STATIC
   "winmain.c" "winmain.h"
   "winproc.c" "winproc.h"
   "winthread.c"
-  "winwindow.c")
+  "winwindow.c" "winfile.h")
 
 target_sources (CpeedVulkan PRIVATE "backend/vulkan.c")
 target_sources (Cpeed PRIVATE
   "${Cpeed_SOURCE_DIR}/Cpeed/main.c"
 
+  "Cpeed.manifest"
   "Cpeed.rc"
   "icon.ico")
 

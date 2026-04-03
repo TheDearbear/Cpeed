@@ -270,13 +270,15 @@ static void poll_gamepads(WindowExtraData* data) {
 }
 
 bool poll_window(CpdWindow window) {
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
+
+    data->resized = false;
+
     MSG msg;
     while (PeekMessageW(&msg, (HWND)window, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
     }
-
-    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     if (data == 0) {
         DWORD err = GetLastError();
@@ -297,11 +299,8 @@ CpdSize window_size(CpdWindow window) {
 
 bool window_resized(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
-    
-    bool resized = data->resized;
-    data->resized = false;
 
-    return resized;
+    return data->resized;
 }
 
 bool window_present_allowed(CpdWindow window) {

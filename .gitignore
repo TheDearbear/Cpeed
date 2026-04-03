@@ -12,6 +12,7 @@ _deps
 CMakeUserPresets.json
 
 platforms/CpeedLinux/xdg-decoration/
+platforms/CpeedLinux/xdg-foreign/
 platforms/CpeedLinux/xdg-shell/
 
 # Produced by Visual Studio

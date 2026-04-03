@@ -37,6 +37,10 @@ using namespace winrt::Windows::UI::ViewManagement;
 const USHORT SCANCODE_LSHIFT = 42;
 const USHORT SCANCODE_RSHIFT = 54;
 
+static inline double display_dpi() {
+    return DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+}
+
 void AppView::OnGamepadConnect(winrt::Windows::Foundation::IUnknown const&, Gamepad const& gamepad) {
     CpdInputDevice* entry = (CpdInputDevice*)malloc(sizeof(CpdInputDevice));
     if (entry == 0) {
@@ -136,9 +140,10 @@ void AppView::SetWindow(CoreWindow const& window)
     }
 
     this->window->core_window = (void*)winrt::get_unknown(window);
+    g_main_core_window = this->window->core_window;
     auto bounds = window.Bounds();
 
-    double screen_factor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+    double screen_factor = display_dpi();
 
     this->window->size.width = (unsigned short)(bounds.Width * screen_factor);
     this->window->size.height = (unsigned short)(bounds.Height * screen_factor);
@@ -287,7 +292,7 @@ void AppView::OnWindowClosed(CoreWindow const& sender, CoreWindowEventArgs const
 }
 
 void AppView::OnSizeChanged(CoreWindow const& sender, WindowSizeChangedEventArgs const& args) {
-    double screen_factor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+    double screen_factor = display_dpi();
 
     window->size.width = (uint16_t)(args.Size().Width * screen_factor);
     window->size.height = (uint16_t)(args.Size().Height * screen_factor);

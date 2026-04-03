@@ -3,6 +3,7 @@
 #include "uwpmain.h"
 
 LARGE_INTEGER g_counter_frequency;
+void* g_main_core_window;
 
 CpdCompilePlatform compile_platform() {
     return CpdCompilePlatform_UWP;
@@ -35,3 +36,6 @@ void cleanup_input_queue(CpdInputEvent* queue, uint32_t size) {
         }
     }
 }
+
+WCHAR* wide_string_from_utf8(const char* src, UINT* wide_len);
+HSTRING create_hstring_from_utf8(const char* src);

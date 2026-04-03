@@ -21,6 +21,7 @@ typedef struct CpdWaylandWindow {
     struct xdg_surface* shell_surface;
     struct xdg_toplevel* top_level;
     struct zxdg_toplevel_decoration_v1* decoration;
+    char* handle;
 
     CpdInputMode input_mode;
     uint32_t input_queue_size;

@@ -1,12 +1,23 @@
+#include <glib-object.h>
+#include <libportal/portal-helpers.h>
 #include <string.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include <Cpeed/platform/init.h>
+#include <Cpeed/platform/thread.h>
 
+#include "xdg-decoration/client.h"
+#include "xdg-foreign/client.h"
+
+#include "libportal/portal-cpeed.h"
+#include "linuxdialog.h"
 #include "linuxevent.h"
+#include "linuxpolling.h"
 #include "linuxwayland.h"
 
 static struct wl_registry* g_registry;
+static CpdThread g_polling_thread;
+static bool g_polling_running;
 
 static void wm_base_ping(void* data, struct xdg_wm_base* xdg_wm_base, uint32_t serial) {
     xdg_wm_base_pong(xdg_wm_base, serial);
@@ -36,6 +47,9 @@ static void registry_global(
     else if (strcmp(interface, zxdg_decoration_manager_v1_interface.name) == 0) {
         g_decoration = (struct zxdg_decoration_manager_v1*)wl_registry_bind(wl_registry, name, &zxdg_decoration_manager_v1_interface, 1);
     }
+    else if (strcmp(interface, zxdg_exporter_v2_interface.name) == 0) {
+        g_exporter = (struct zxdg_exporter_v2*)wl_registry_bind(wl_registry, name, &zxdg_exporter_v2_interface, 1);
+    }
 }
 
 struct wl_registry_listener registry_listener = (struct wl_registry_listener) {
@@ -53,9 +67,27 @@ bool initialize_platform() {
         return false;
     }
 
+    g_poll_fds = g_array_new(FALSE, FALSE, sizeof(GPollFD));
+    if (g_poll_fds == 0) {
+        return false;
+    }
+
+    GError* gerr = 0;
+    g_portal = xdp_portal_initable_new(&gerr);
+    if (gerr != 0) {
+        g_error_free(gerr);
+        return false;
+    }
+
     g_display = wl_display_connect(0);
 
     if (g_display == 0) {
+        return false;
+    }
+
+    g_polling_running = true;
+    g_polling_thread = create_thread(poll_glib_events, &g_polling_running);
+    if (g_polling_thread == 0) {
         return false;
     }
 
@@ -68,12 +100,20 @@ bool initialize_platform() {
 }
 
 void shutdown_platform() {
+    g_polling_running = false;
+    join_thread(g_polling_thread, 0);
+
     if (g_xkb_context != 0) {
         xkb_context_unref(g_xkb_context);
         g_xkb_context = 0;
     }
 
     shutdown_events();
+
+    if (g_exporter != 0) {
+        zxdg_exporter_v2_destroy(g_exporter);
+        g_exporter = 0;
+    }
 
     if (g_decoration != 0) {
         zxdg_decoration_manager_v1_destroy(g_decoration);
@@ -107,4 +147,7 @@ void shutdown_platform() {
         wl_display_disconnect(g_display);
         g_display = 0;
     }
+
+    g_object_unref(g_portal);
+    g_array_unref(g_poll_fds);
 }

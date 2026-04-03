@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <malloc.h>
+#include <string.h>
 
 #include <Cpeed/platform/input/gamepad.h>
 #include <Cpeed/platform/frame.h>
@@ -38,6 +39,11 @@ static struct wl_callback_listener frame_listener = (struct wl_callback_listener
 static void decoration_configure(void* data, struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1, uint32_t mode);
 static struct zxdg_toplevel_decoration_v1_listener decoration_listener = (struct zxdg_toplevel_decoration_v1_listener) {
     .configure = decoration_configure
+};
+
+static void exported_handle(void *data, struct zxdg_exported_v2 *zxdg_exported_v2, const char *handle);
+static struct zxdg_exported_v2_listener exported_listener = (struct zxdg_exported_v2_listener) {
+    .handle = exported_handle
 };
 
 CpdWindow create_window(const CpdWindowInfo* info) {
@@ -86,6 +92,14 @@ CpdWindow create_window(const CpdWindowInfo* info) {
         wl_window->decoration = 0;
     }
 
+    wl_window->handle = 0;
+
+    struct zxdg_exported_v2* exported = 0;
+    if (g_exporter != 0) {
+        exported = zxdg_exporter_v2_export_toplevel(g_exporter, surface);
+        zxdg_exported_v2_add_listener(exported, &exported_listener, (void*)wl_window);
+    }
+
     wl_window->surface = surface;
     wl_window->callback = callback;
     wl_window->shell_surface = shell_surface;
@@ -126,6 +140,10 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     wl_surface_commit(surface);
     wl_display_roundtrip(g_display);
     wl_surface_commit(surface);
+
+    if (exported != 0) {
+        zxdg_exported_v2_destroy(exported);
+    }
 
     uint16_t count = get_gamepad_count(wl_window);
     if (!resize_input_queue_if_need(wl_window, count)) {
@@ -179,6 +197,7 @@ void destroy_window(CpdWindow window) {
 
     remove_window_from_list(wl_window);
 
+    free(wl_window->handle);
     free(wl_window->input_queue);
     free(wl_window->input_swap_queue);
     free(wl_window);
@@ -196,6 +215,8 @@ bool poll_window(CpdWindow window) {
     }
 
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
+
+    wl_window->resized = false;
 
     if (wl_window->should_close) {
         return true;
@@ -242,10 +263,7 @@ CpdSize window_size(CpdWindow window) {
 bool window_resized(CpdWindow window) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
 
-    bool result = wl_window->resized;
-    wl_window->resized = false;
-
-    return result;
+    return wl_window->resized;
 }
 
 bool window_present_allowed(CpdWindow window) {
@@ -314,15 +332,19 @@ static void top_level_configure_bounds(void* data, struct xdg_toplevel* xdg_topl
         height = min_i32(height, wl_window->height);
     }
 
+    bool resized = false;
+
     if (width != 0 && width != wl_window->width) {
         wl_window->width = width;
-        wl_window->resized = true;
+        resized = true;
     }
 
     if (height != 0 && height != wl_window->height) {
         wl_window->height = height;
-        wl_window->resized = true;
+        resized = true;
     }
+
+    wl_window->resized = resized || wl_window->resized;
 }
 
 static void top_level_wm_capabilities(void* data, struct xdg_toplevel* xdg_toplevel, struct wl_array* capabilities) {
@@ -358,4 +380,18 @@ static void decoration_configure(void* data, struct zxdg_toplevel_decoration_v1*
     if (mode != ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE) {
         // TODO: Enable client-side decoration
     }
+}
+
+void exported_handle(void *data, struct zxdg_exported_v2 *zxdg_exported_v2, const char *handle) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)data;
+
+    size_t len = strlen(handle);
+    char* wl_handle = (char*)malloc((len + 1) * sizeof(char));
+    if (wl_handle == 0) {
+        wl_window->handle = 0;
+        return;
+    }
+
+    memcpy(wl_handle, handle, len + 1);
+    wl_window->handle = wl_handle;
 }

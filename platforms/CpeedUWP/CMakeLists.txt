@@ -3,6 +3,8 @@ project (CpeedUWP C CXX)
 add_library (CpeedUWP STATIC
   "AppView.cpp" "AppView.h"
   "main.c" "main.h"
+  "uwpdialog.c"
+  "uwpfile.c" "uwpfile.h"
   "uwpframe.c"
   "uwpinit.c"
   "uwpinput.c"
@@ -11,7 +13,8 @@ add_library (CpeedUWP STATIC
   "uwpmain.c" "uwpmain.h"
   "uwpqueue.c" "uwpqueue.h"
   "uwpthread.c"
-  "uwpwindow.c")
+  "uwpwindow.c"
+  "winrt_helpers.c" "winrt_helpers.h")
 
 target_sources (Cpeed PRIVATE "mainstub.c")
 

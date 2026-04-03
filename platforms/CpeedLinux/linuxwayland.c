@@ -34,6 +34,7 @@ struct wl_display* g_display;
 struct wl_seat* g_seat;
 struct xdg_wm_base* g_wm_base;
 struct zxdg_decoration_manager_v1* g_decoration;
+struct zxdg_exporter_v2* g_exporter;
 
 struct xkb_context* g_xkb_context;
 

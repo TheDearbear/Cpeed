@@ -3,7 +3,11 @@
 #define WIN32_LEAN_AND_MEAN
 #define CINTERFACE
 
+#include <malloc.h>
+#include <string.h>
+
 #include <windows.h>
+#include <winstring.h>
 
 // HACK: Ignore header file 'Windows.Foundation.Collections.h'
 // to make project compatible with old Windows SDKs that
@@ -20,6 +24,7 @@
 #define INPUT_QUEUE_SIZE_STEP 16
 
 extern LARGE_INTEGER g_counter_frequency;
+extern void* g_main_core_window;
 
 typedef struct CpdInputDevice {
     struct CpdInputDevice* next;
@@ -64,3 +69,38 @@ void poll_events(CpdUWPWindow* uwp_window);
 void poll_gamepads(CpdUWPWindow* uwp_window);
 
 bool get_lowest_frame_layer(void* context, struct CpdFrameLayer* frame_layer);
+
+inline WCHAR* wide_string_from_utf8(const char* src, UINT* wide_len) {
+    int str_length = (int)(strlen(src) + 1);
+    int required_length = MultiByteToWideChar(CP_UTF8, 0, src, str_length, NULL, 0);
+
+    WCHAR* wide_str = (WCHAR*)malloc(required_length * sizeof(WCHAR));
+    if (wide_str == NULL) {
+        return NULL;
+    }
+
+    MultiByteToWideChar(CP_UTF8, 0, src, str_length, wide_str, required_length);
+
+    if (wide_len != NULL) {
+        *wide_len = str_length;
+    }
+
+    return wide_str;
+}
+
+inline HSTRING create_hstring_from_utf8(const char* src) {
+    int str_length = (int)strlen(src);
+    int required_length = MultiByteToWideChar(CP_UTF8, 0, src, str_length, NULL, 0);
+
+    WCHAR* wide_str = (WCHAR*)malloc(required_length * sizeof(WCHAR));
+    if (wide_str == NULL) {
+        return NULL;
+    }
+
+    MultiByteToWideChar(CP_UTF8, 0, src, str_length, wide_str, required_length);
+
+    HSTRING hstr = NULL;
+    WindowsCreateString(wide_str, required_length, &hstr);
+
+    return hstr;
+}
