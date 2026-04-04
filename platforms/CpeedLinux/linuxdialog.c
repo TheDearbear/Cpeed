@@ -284,18 +284,21 @@ CpdFileResult open_file_from_dialog_handle(CpdFileDialogHandle handle, const cha
             GVariantIter path_iter;
             gsize arr_count = g_variant_iter_init(&path_iter, value);
 
-            const gchar* gpath;
+            gchar* gpath;
             for (gsize i = 0; g_variant_iter_next(&path_iter, "s", &gpath) && i < arr_count; i++) {
                 size_t offset = strstr(gpath, "file://") == gpath ? strlen("file://") : 0;
 
                 if (path == 0 || strcmp(gpath + offset, path) == 0) {
                     CpdFileResult result = open_file(gpath + offset, opening, mode, sharing, file);
-                    
+
+                    g_free(gpath);
                     g_variant_unref(value);
                     g_free(key);
 
                     return result;
                 }
+
+                g_free(gpath);
             }
 
             g_variant_unref(value);
@@ -367,7 +370,7 @@ bool wait_for_file_dialog(CpdFileDialogHandle handle, uint64_t timeout, char*** 
                 return false;
             }
 
-            const gchar* path;
+            gchar* path;
             for (gsize i = 0; g_variant_iter_next(&path_iter, "s", &path) && i < arr_count; i++) {
                 size_t len = (strlen(path) + 1) * sizeof(char);
                 size_t offset = 0;
@@ -386,12 +389,14 @@ bool wait_for_file_dialog(CpdFileDialogHandle handle, uint64_t timeout, char*** 
 
                     free(arr);
 
+                    g_free(path);
                     g_variant_unref(value);
                     g_free(key);
                     return false;
                 }
 
                 memcpy(arr[i], path + offset, len);
+                g_free(path);
             }
 
             *paths = arr;
