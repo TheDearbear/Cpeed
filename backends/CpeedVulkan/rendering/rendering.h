@@ -6,7 +6,7 @@
 
 VkResult RENDERING_initialize(CpdRenderer* cpeed_renderer);
 
-VkResult RENDERING_resize(CpdRenderer* cpeed_renderer, CpdSize new_size);
+VkResult RENDERING_resize(CpdRenderer* cpeed_renderer, CpdWindowResizeFlags resize_flags, CpdSize new_size, float new_scale);
 
 VkResult RENDERING_frame(CpdRenderer* cpeed_renderer);
 

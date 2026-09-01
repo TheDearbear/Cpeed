@@ -64,7 +64,10 @@ CpdWindow create_window(const CpdWindowInfo* info) {
 
     data->layers = 0;
 
+    data->dpi = GetDpiForWindow(hWnd);
+
     data->resized = false;
+    data->dpi_changed = false;
     data->should_close = false;
     data->minimized = false;
     data->resize_swap_queue = false;
@@ -273,6 +276,7 @@ bool poll_window(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
     data->resized = false;
+    data->dpi_changed = false;
 
     MSG msg;
     while (PeekMessageW(&msg, (HWND)window, 0, 0, PM_REMOVE)) {
@@ -297,10 +301,26 @@ CpdSize window_size(CpdWindow window) {
     return data->size;
 }
 
-bool window_resized(CpdWindow window) {
+float window_scale_factor(CpdWindow window) {
     WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
 
-    return data->resized;
+    return (float)data->dpi / USER_DEFAULT_SCREEN_DPI;
+}
+
+CpdWindowResizeFlags window_resized(CpdWindow window) {
+    WindowExtraData* data = GET_EXTRA_DATA((HWND)window);
+
+    CpdWindowResizeFlags flags = CpdWindowResizeFlags_None;
+
+    if (data->resized) {
+        flags |= CpdWindowResizeFlags_Size;
+    }
+
+    if (data->dpi_changed) {
+        flags |= CpdWindowResizeFlags_Scale;
+    }
+
+    return flags;
 }
 
 bool window_present_allowed(CpdWindow window) {

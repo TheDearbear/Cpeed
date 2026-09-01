@@ -77,8 +77,11 @@ typedef struct WindowExtraData {
     ImGuiContext* imgui_context;
 #endif
 
+    uint32_t dpi;
+
     uint32_t should_close : 1;
     uint32_t resized : 1;
+    uint32_t dpi_changed : 1;
     uint32_t minimized : 1;
     uint32_t resize_swap_queue : 1;
     uint32_t first_mouse_event : 1;

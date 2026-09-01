@@ -85,11 +85,12 @@ int main() {
     CpdFrame* cpeed_frame = implementation.get_frame(backend);
 
     while (!poll_window(window)) {
-        bool resized = window_resized(window);
-        if (resized) {
+        CpdWindowResizeFlags resize_flags = window_resized(window);
+        if (resize_flags != CpdWindowResizeFlags_None) {
             CpdSize size = window_size(window);
+            float scale = window_scale_factor(window);
 
-            if (!implementation.resize(backend, size)) {
+            if (!implementation.resize(backend, resize_flags, size, scale)) {
                 log_error("Unable to resize window\n");
                 continue;
             }

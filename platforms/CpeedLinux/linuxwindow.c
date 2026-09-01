@@ -8,6 +8,8 @@
 #include <Cpeed/platform/window.h>
 #include <Cpeed/input.h>
 
+#include "fractional-scale/client.h"
+#include "viewporter/client.h"
 #include "xdg-decoration/client.h"
 
 #include "linuxevent.h"
@@ -34,6 +36,11 @@ static struct xdg_toplevel_listener top_level_listener = (struct xdg_toplevel_li
 static void frame_done(void* data, struct wl_callback* wl_callback, uint32_t callback_data);
 static struct wl_callback_listener frame_listener = (struct wl_callback_listener) {
     .done = frame_done
+};
+
+static void scale_preferred_scale(void* data, struct wp_fractional_scale_v1* wp_fractional_scale_v1, uint32_t scale);
+static struct wp_fractional_scale_v1_listener scale_listener = (struct wp_fractional_scale_v1_listener) {
+    .preferred_scale = scale_preferred_scale
 };
 
 static void decoration_configure(void* data, struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1, uint32_t mode);
@@ -83,6 +90,22 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     struct xdg_toplevel* top_level = xdg_surface_get_toplevel(shell_surface);
     xdg_toplevel_add_listener(top_level, &top_level_listener, (void*)wl_window);
 
+    if (g_viewporter != 0) {
+        wl_window->viewport = wp_viewporter_get_viewport(g_viewporter, surface);
+    }
+    else {
+        wl_window->viewport = 0;
+    }
+
+    if (wl_window->viewport != 0 && g_scale_manager != 0) {
+        wl_window->scale = wp_fractional_scale_manager_v1_get_fractional_scale(g_scale_manager, surface);
+        wp_fractional_scale_v1_add_listener(wl_window->scale, &scale_listener, (void*)wl_window);
+    }
+    else {
+        wl_window->scale = 0;
+    }
+    log_debug("scale_manager=%p\n", g_scale_manager);
+
     if (g_decoration != 0) {
         wl_window->decoration = zxdg_decoration_manager_v1_get_toplevel_decoration(g_decoration, top_level);
         zxdg_toplevel_decoration_v1_add_listener(wl_window->decoration, &decoration_listener, (void*)wl_window);
@@ -127,7 +150,11 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     ImGui_SetCurrentContext(wl_window->imgui_context);
 #endif
 
+    wl_window->scale_value = WP_SCALE_DENOMINATOR;
+    wl_window->scale_value_float = 1.0f;
+
     wl_window->resized = false;
+    wl_window->scale_changed = false;
     wl_window->should_close = false;
     wl_window->should_render = true;
     wl_window->resize_swap_queue = false;
@@ -183,6 +210,14 @@ void destroy_window(CpdWindow window) {
         g_current_keyboard_focus = 0;
     }
 
+    if (wl_window->scale != 0) {
+        wp_fractional_scale_v1_destroy(wl_window->scale);
+    }
+
+    if (wl_window->viewport != 0) {
+        wp_viewport_destroy(wl_window->viewport);
+    }
+
     if (wl_window->decoration != 0) {
         zxdg_toplevel_decoration_v1_destroy(wl_window->decoration);
     }
@@ -217,6 +252,7 @@ bool poll_window(CpdWindow window) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
 
     wl_window->resized = false;
+    wl_window->scale_changed = false;
 
     if (wl_window->should_close) {
         return true;
@@ -260,10 +296,26 @@ CpdSize window_size(CpdWindow window) {
     };
 }
 
-bool window_resized(CpdWindow window) {
+float window_scale_factor(CpdWindow window) {
     CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
 
-    return wl_window->resized;
+    return wl_window->scale_value_float;
+}
+
+CpdWindowResizeFlags window_resized(CpdWindow window) {
+    CpdWaylandWindow* wl_window = (CpdWaylandWindow*)window;
+
+    CpdWindowResizeFlags flags = CpdWindowResizeFlags_None;
+
+    if (wl_window->resized) {
+        flags |= CpdWindowResizeFlags_Size;
+    }
+
+    if (wl_window->scale_changed) {
+        flags |= CpdWindowResizeFlags_Scale;
+    }
+
+    return flags;
 }
 
 bool window_present_allowed(CpdWindow window) {
@@ -372,6 +424,10 @@ static void frame_done(void* data, struct wl_callback* wl_callback, uint32_t cal
     wl_callback_add_listener(wl_window->callback, &frame_listener, data);
 
     wl_window->should_render = true;
+}
+
+static void scale_preferred_scale(void* data, struct wp_fractional_scale_v1* wp_fractional_scale_v1, uint32_t scale) {
+    // TODO
 }
 
 static void decoration_configure(void* data, struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1, uint32_t mode) {

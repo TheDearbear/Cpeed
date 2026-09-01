@@ -5,12 +5,16 @@
 #include "xdg-foreign/client.h"
 #include "linuxmain.h"
 
+#define WP_SCALE_DENOMINATOR 120
+
 extern CpdWaylandWindow* g_current_pointer_focus;
 extern CpdWaylandWindow* g_current_keyboard_focus;
 
 extern struct wl_compositor* g_compositor;
 extern struct wl_display* g_display;
 extern struct wl_seat* g_seat;
+extern struct wp_fractional_scale_manager_v1* g_scale_manager;
+extern struct wp_viewporter* g_viewporter;
 extern struct xdg_wm_base* g_wm_base;
 extern struct zxdg_decoration_manager_v1* g_decoration;
 extern struct zxdg_exporter_v2* g_exporter;

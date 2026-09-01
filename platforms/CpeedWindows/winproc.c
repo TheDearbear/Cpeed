@@ -483,6 +483,34 @@ LRESULT window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         return 0;
 
+        case WM_DPICHANGED:
+        {
+            WORD dpi_x = LOWORD(wParam);
+            const RECT* window_rect = (const RECT*)lParam;
+
+            LONG width = window_rect->right - window_rect->left;
+            LONG height = window_rect->bottom - window_rect->top;
+
+            SetWindowPos(hWnd, 0,
+                window_rect->left,
+                window_rect->top,
+                width,
+                height,
+                SWP_NOREDRAW | SWP_NOACTIVATE | SWP_DEFERERASE);
+
+            WindowExtraData* data = GET_EXTRA_DATA(hWnd);
+
+            data->dpi_changed = true;
+            data->dpi = dpi_x;
+
+            data->resized = true;
+            data->size = (CpdSize) {
+                .width = width,
+                .height = height
+            };
+        }
+        return 0;
+
         default:
             return DefWindowProcW(hWnd, uMsg, wParam, lParam);
     }

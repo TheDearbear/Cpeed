@@ -6,6 +6,8 @@
 #include <Cpeed/platform/init.h>
 #include <Cpeed/platform/thread.h>
 
+#include "fractional-scale/client.h"
+#include "viewporter/client.h"
 #include "xdg-decoration/client.h"
 #include "xdg-foreign/client.h"
 
@@ -38,6 +40,12 @@ static void registry_global(
         g_seat = (struct wl_seat*)wl_registry_bind(wl_registry, name, &wl_seat_interface, version);
 
         wl_seat_add_listener(g_seat, &g_seat_listener, 0);
+    }
+    else if (strcmp(interface, wp_fractional_scale_manager_v1_interface.name) == 0) {
+        g_scale_manager = (struct wp_fractional_scale_manager_v1*)wl_registry_bind(wl_registry, name, &wp_fractional_scale_manager_v1_interface, 1);
+    }
+    else if (strcmp(interface, wp_viewporter_interface.name) == 0) {
+        g_viewporter = (struct wp_viewporter*)wl_registry_bind(wl_registry, name, &wp_viewporter_interface, 1);
     }
     else if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
         g_wm_base = (struct xdg_wm_base*)wl_registry_bind(wl_registry, name, &xdg_wm_base_interface, version);
@@ -109,6 +117,16 @@ void shutdown_platform() {
     }
 
     shutdown_events();
+
+    if (g_scale_manager != 0) {
+        wp_fractional_scale_manager_v1_destroy(g_scale_manager);
+        g_scale_manager = 0;
+    }
+
+    if (g_viewporter != 0) {
+        wp_viewporter_destroy(g_viewporter);
+        g_viewporter = 0;
+    }
 
     if (g_exporter != 0) {
         zxdg_exporter_v2_destroy(g_exporter);

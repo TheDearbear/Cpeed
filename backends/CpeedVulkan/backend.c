@@ -415,7 +415,7 @@ static CpdFrame* get_frame(CpdBackendHandle cpeed_backend) {
     return renderer->frame;
 }
 
-static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
+static bool resize(CpdBackendHandle cpeed_backend, CpdWindowResizeFlags resize_flags, CpdSize new_size, float new_scale) {
     CpdRenderer* renderer = (CpdRenderer*)cpeed_backend;
 
     DEVICE_wait_idle(&renderer->render_device, false);
@@ -426,7 +426,7 @@ static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
         return false;
     }
 
-    result = RENDERING_resize(renderer, new_size);
+    result = RENDERING_resize(renderer, resize_flags, new_size, new_scale);
     if (result != VK_SUCCESS) {
         log_error("Unable to adapt for new surface size. Result code: %s\n", string_VkResult(result));
         return false;

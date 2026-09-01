@@ -13,6 +13,7 @@ typedef struct ImGui_ImplCpeed_Data {
     CpdWindow window;
     uint64_t time;
     uint32_t frame_layer_handle;
+    float scale;
 
     uint32_t wanted_text_input : 1;
 } ImGui_ImplCpeed_Data;
@@ -165,13 +166,25 @@ static bool input(void* context, CpdWindow window, CpdFrame* frame, const CpdInp
     return true;
 }
 
-static void resize(void* context, CpdWindow window, CpdFrame* frame, CpdSize size) {
-    ImGuiIO* io = ImGui_GetIO();
+static void resize(void* context, CpdWindow window, CpdFrame* frame, CpdWindowResizeFlags resize_flags, CpdSize size, float scale) {
+    ImGui_ImplCpeed_Data* data = cImGui_ImplCpeed_GetBackendData();
 
-    io->DisplaySize = (ImVec2) {
-        .x = (float)size.width,
-        .y = (float)size.height
-    };
+    if (resize_flags & CpdWindowResizeFlags_Size) {
+        ImGuiIO* io = ImGui_GetIO();
+
+        io->DisplaySize = (ImVec2) {
+            .x = (float)size.width,
+            .y = (float)size.height
+        };
+    }
+
+    if (resize_flags & CpdWindowResizeFlags_Scale) {
+        ImGuiStyle* style = ImGui_GetStyle();
+
+        ImGuiStyle_ScaleAllSizes(style, scale / data->scale);
+        style->FontScaleDpi = scale;
+        data->scale = scale;
+    }
 }
 
 CIMGUI_IMPL_API bool cImGui_ImplCpeed_Init(CpdWindow window) {
@@ -182,6 +195,7 @@ CIMGUI_IMPL_API bool cImGui_ImplCpeed_Init(CpdWindow window) {
 
     data->window = window;
     data->time = get_clock_usec();
+    data->scale = window_scale_factor(window);
 
     data->wanted_text_input = false;
 
@@ -194,6 +208,11 @@ CIMGUI_IMPL_API bool cImGui_ImplCpeed_Init(CpdWindow window) {
         .x = (float)size.width,
         .y = (float)size.height
     };
+
+    ImGuiStyle* style = ImGui_GetStyle();
+
+    ImGuiStyle_ScaleAllSizes(style, data->scale);
+    style->FontScaleDpi = data->scale;
 
     ImGuiViewport* main_viewport = ImGui_GetMainViewport();
     main_viewport->PlatformHandle = window;

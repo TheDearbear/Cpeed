@@ -18,6 +18,8 @@
 typedef struct CpdWaylandWindow {
     struct wl_surface* surface;
     struct wl_callback* callback;
+    struct wp_fractional_scale_v1* scale;
+    struct wp_viewport* viewport;
     struct xdg_surface* shell_surface;
     struct xdg_toplevel* top_level;
     struct zxdg_toplevel_decoration_v1* decoration;
@@ -44,7 +46,11 @@ typedef struct CpdWaylandWindow {
     ImGuiContext* imgui_context;
 #endif
 
+    uint32_t scale_value;
+    float scale_value_float;
+
     uint64_t resized : 1;
+    uint64_t scale_changed : 1;
     uint64_t should_close : 1;
     uint64_t should_render : 1;
     uint64_t resize_swap_queue : 1;

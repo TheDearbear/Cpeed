@@ -36,10 +36,12 @@ void init_engine(CpdWindow window) {
     }
 }
 
-void shutdown_engine() {
-    for (size_t i = 0; i < sizeof(g_frame_layer_instances) / sizeof(CpdFrameLayerInstance); i++) {
-        CpdFrameLayerInstance* instance = &g_frame_layer_instances[i];
+static bool remove_frame_layer_loop(void* context, CpdFrameLayer* layer) {
+    remove_frame_layer(g_window, layer->handle);
 
-        remove_frame_layer(g_window, instance->handle);
-    }
+    return true;
+}
+
+void shutdown_engine() {
+    loop_frame_layers(g_window, remove_frame_layer_loop, 0);
 }

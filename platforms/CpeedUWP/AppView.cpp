@@ -37,8 +37,8 @@ using namespace winrt::Windows::UI::ViewManagement;
 const USHORT SCANCODE_LSHIFT = 42;
 const USHORT SCANCODE_RSHIFT = 54;
 
-static inline double display_dpi() {
-    return DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+static inline float display_dpi() {
+    return DisplayInformation::GetForCurrentView().LogicalDpi();
 }
 
 void AppView::OnGamepadConnect(winrt::Windows::Foundation::IUnknown const&, Gamepad const& gamepad) {
@@ -143,11 +143,14 @@ void AppView::SetWindow(CoreWindow const& window)
     g_main_core_window = this->window->core_window;
     auto bounds = window.Bounds();
 
-    double screen_factor = display_dpi();
+    float dpi = display_dpi();
+	float scale_factor = dpi / USER_DEFAULT_SCREEN_DPI;
 
-    this->window->size.width = (unsigned short)(bounds.Width * screen_factor);
-    this->window->size.height = (unsigned short)(bounds.Height * screen_factor);
+    this->window->size.width = (unsigned short)(bounds.Width * scale_factor);
+    this->window->size.height = (unsigned short)(bounds.Height * scale_factor);
+    this->window->dpi = dpi;
     this->window->resized = true;
+    this->window->dpi_changed = true;
 
     CpdBackendInfo backend_info = { (CpdWindow)this->window, { 0.2f, 0.5f, 0.5f } };
 
@@ -173,6 +176,8 @@ void AppView::SetWindow(CoreWindow const& window)
     pointer_key_down_token = window.PointerPressed({ this, &AppView::OnPointerButton });
     pointer_move_token = window.PointerMoved({ this, &AppView::OnPointerMoved });
     pointer_wheel_token = window.PointerWheelChanged({ this, &AppView::OnPointerWheel });
+
+	dpi_changed_token = DisplayInformation::GetForCurrentView().DpiChanged({ this, &AppView::OnDpiChanged });
 }
 
 // The Load method can be used to initialize scene resources or to load a
@@ -187,13 +192,19 @@ void AppView::Run()
 {
     CpdFrame* frame = impl.get_frame(window->backend);
 
+    // Force resize to announce current scale factor
+    impl.resize(window->backend, (CpdWindowResizeFlags)(CpdWindowResizeFlags_Size | CpdWindowResizeFlags_Scale),
+		window_size((CpdWindow)window),
+		window_scale_factor((CpdWindow)window));
+
     while (!poll_window((CpdWindow)window))
     {
-        bool resized = window_resized((CpdWindow)window);
-        if (resized) {
-            CpdSize new_size = window_size((CpdWindow)window);
+        CpdWindowResizeFlags resize_flags = window_resized((CpdWindow)window);
+        if (resize_flags != CpdWindowResizeFlags_None) {
+            CpdSize size = window_size((CpdWindow)window);
+            float scale = window_scale_factor((CpdWindow)window);
 
-            if (!impl.resize(window->backend, new_size)) {
+            if (!impl.resize(window->backend, resize_flags, size, scale)) {
                 __debugbreak();
             }
         }
@@ -245,6 +256,8 @@ void AppView::Uninitialize()
         current = next;
     }
 
+	DisplayInformation::GetForCurrentView().DpiChanged(dpi_changed_token);
+
     window.Closed(m_windowClosedEventToken);
     window.VisibilityChanged(m_visibilityChangedEventToken);
 
@@ -292,11 +305,18 @@ void AppView::OnWindowClosed(CoreWindow const& sender, CoreWindowEventArgs const
 }
 
 void AppView::OnSizeChanged(CoreWindow const& sender, WindowSizeChangedEventArgs const& args) {
-    double screen_factor = display_dpi();
+	if (window->scaled_size.width == args.Size().Width && window->scaled_size.height == args.Size().Height) {
+		return;
+	}
 
-    window->size.width = (uint16_t)(args.Size().Width * screen_factor);
-    window->size.height = (uint16_t)(args.Size().Height * screen_factor);
-    window->resized = true;
+	float scale_factor = display_dpi() / USER_DEFAULT_SCREEN_DPI;
+
+	window->scaled_size.width = (uint16_t)args.Size().Width;
+	window->scaled_size.height = (uint16_t)args.Size().Height;
+
+	window->size.width = (uint16_t)(window->scaled_size.width * scale_factor);
+	window->size.height = (uint16_t)(window->scaled_size.height * scale_factor);
+	window->resized = true;
 }
 
 static CpdKeyCode virtual_key_to_key_code(KeyEventArgs const& args) {
@@ -536,6 +556,21 @@ void AppView::OnPointerWheel(CoreWindow const& sender, PointerEventArgs const& a
     else {
         args.Handled(add_mouse_scroll_to_queue(window, -distance, 0));
     }
+}
+
+void AppView::OnDpiChanged(DisplayInformation const& sender, winrt::Windows::Foundation::IInspectable const& args) {
+	float dpi = sender.LogicalDpi();
+
+	if (dpi == window->dpi) {
+		return;
+	}
+
+	window->dpi = dpi;
+	float scale_factor = dpi / USER_DEFAULT_SCREEN_DPI;
+
+	window->scaled_size.width = (unsigned short)(window->size.width * scale_factor);
+	window->scaled_size.height = (unsigned short)(window->size.height * scale_factor);
+	window->dpi_changed = true;
 }
 
 IFrameworkView AppViewSource::CreateView() {

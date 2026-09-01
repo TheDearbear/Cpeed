@@ -17,6 +17,12 @@ typedef enum CpdWindowFlags {
     CpdWindowFlags_None
 } CpdWindowFlags;
 
+typedef enum CpdWindowResizeFlags {
+    CpdWindowResizeFlags_None = 0,
+    CpdWindowResizeFlags_Size = 1 << 0,
+    CpdWindowResizeFlags_Scale = 1 << 1
+} CpdWindowResizeFlags;
+
 typedef struct CpdWindowInfo {
     const char* title;
     CpdSize size;
@@ -38,7 +44,12 @@ extern bool poll_window(CpdWindow window);
 
 /* Returns current pixel size of window */
 extern CpdSize window_size(CpdWindow window);
-extern bool window_resized(CpdWindow window);
+
+/* Returns current scaling factor based on DPI value */
+extern float window_scale_factor(CpdWindow window);
+
+/* Checks if window was resized or changed scale factor before last poll */
+extern CpdWindowResizeFlags window_resized(CpdWindow window);
 
 /* Checks if there is any reason to present image to the window */
 extern bool window_present_allowed(CpdWindow window);

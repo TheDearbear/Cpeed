@@ -11,6 +11,8 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 
+platforms/CpeedLinux/fractional-scale/
+platforms/CpeedLinux/viewporter/
 platforms/CpeedLinux/xdg-decoration/
 platforms/CpeedLinux/xdg-foreign/
 platforms/CpeedLinux/xdg-shell/

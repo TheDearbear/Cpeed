@@ -14,6 +14,10 @@
 // do not provide support for C
 #define WINDOWS_FOUNDATION_COLLECTIONS_H
 
+#ifndef USER_DEFAULT_SCREEN_DPI
+#define USER_DEFAULT_SCREEN_DPI 96
+#endif
+
 #include <Windows.Gaming.Input.h>
 
 #include <Cpeed/common/math.h>
@@ -42,6 +46,7 @@ typedef struct CpdUWPWindow {
     uint32_t input_queue_max_size;
     CpdInputMode input_mode;
     CpdInputModifierKeyFlags current_key_modifiers;
+    CpdSize scaled_size;
     CpdSize size;
 
     int32_t mouse_x;
@@ -55,8 +60,11 @@ typedef struct CpdUWPWindow {
     ImGuiContext* imgui_context;
 #endif
 
+    float dpi;
+
     uint32_t should_close : 1;
     uint32_t resized : 1;
+    uint32_t dpi_changed : 1;
     uint32_t visible : 1;
     uint32_t resize_swap_queue : 1;
     uint32_t first_mouse_event : 1;

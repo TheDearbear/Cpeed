@@ -36,13 +36,13 @@ static bool get_lowest_frame_layer(void* context, CpdFrameLayer* frame_layer) {
     return true;
 }
 
-VkResult RENDERING_resize(CpdRenderer* cpeed_renderer, CpdSize new_size) {
+VkResult RENDERING_resize(CpdRenderer* cpeed_renderer, CpdWindowResizeFlags resize_flags, CpdSize new_size, float new_scale) {
     CpdFrameLayer* frame_layer = 0;
     loop_frame_layers(cpeed_renderer->window, get_lowest_frame_layer, &frame_layer);
 
     while (frame_layer != 0) {
         if (frame_layer->functions.resize != 0) {
-            frame_layer->functions.resize(frame_layer->context, cpeed_renderer->window, cpeed_renderer->frame, new_size);
+            frame_layer->functions.resize(frame_layer->context, cpeed_renderer->window, cpeed_renderer->frame, resize_flags, new_size, new_scale);
         }
 
         frame_layer = frame_layer->higher;

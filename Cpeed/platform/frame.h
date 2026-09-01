@@ -21,7 +21,7 @@ typedef enum CpdFrameLayerFlags {
 typedef bool (*CpdFrameLayerLoopFunction)(void*, struct CpdFrameLayer*);
 typedef bool (*CpdFrameInputFunction)(void* context, CpdWindow window, CpdFrame*, const CpdInputEvent*);
 typedef void (*CpdFrameRenderFunction)(void* context, CpdFrame*);
-typedef void (*CpdFrameResizeFunction)(void* context, CpdWindow window, CpdFrame*, CpdSize size);
+typedef void (*CpdFrameResizeFunction)(void* context, CpdWindow window, CpdFrame*, CpdWindowResizeFlags resize_flags, CpdSize size, float scale);
 typedef void (*CpdFrameFirstFrameFunction)(void* context, CpdWindow window, CpdFrame* frame);
 typedef void (*CpdFrameAddedFunction)(void* context);
 typedef void (*CpdFrameRemoveFunction)(void* context);

@@ -21,8 +21,6 @@ find_package (ECM REQUIRED NO_MODULE)
 set (CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
 
 find_package (Wayland REQUIRED Client)
-find_package (WaylandProtocols REQUIRED)
-find_package (WaylandScanner REQUIRED)
 
 find_package (X11 REQUIRED COMPONENTS xkbcommon)
 
@@ -39,9 +37,11 @@ include ("AddWaylandProtocol.cmake")
 
 add_library (WaylandExtensions OBJECT)
 
-add_unstable_wayland_protocol ("xdg-decoration" 1 WaylandExtensions)
-add_unstable_wayland_protocol ("xdg-foreign"    2 WaylandExtensions)
-add_stable_wayland_protocol   ("xdg-shell"        WaylandExtensions)
+add_staging_wayland_protocol  ("fractional-scale" 1 WaylandExtensions)
+add_stable_wayland_protocol   ("viewporter"         WaylandExtensions)
+add_unstable_wayland_protocol ("xdg-decoration"   1 WaylandExtensions)
+add_unstable_wayland_protocol ("xdg-foreign"      2 WaylandExtensions)
+add_stable_wayland_protocol   ("xdg-shell"          WaylandExtensions)
 
 target_include_directories (CpeedLinux
   PRIVATE ${Wayland_INCLUDE_DIRS}

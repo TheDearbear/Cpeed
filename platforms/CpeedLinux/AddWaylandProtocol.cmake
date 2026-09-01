@@ -1,3 +1,6 @@
+find_package (WaylandProtocols REQUIRED)
+find_package (WaylandScanner REQUIRED)
+
 function (add_stable_wayland_protocol protocol_name protocol_target)
   file (MAKE_DIRECTORY ${protocol_name})
 

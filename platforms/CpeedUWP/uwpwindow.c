@@ -30,6 +30,7 @@ CpdWindow create_window(const CpdWindowInfo* info) {
     uwp_window->input_queue_max_size = INPUT_QUEUE_BASE_SIZE;
     uwp_window->input_mode = info->input_mode;
     uwp_window->current_key_modifiers = CpdInputModifierKey_None;
+    uwp_window->scaled_size = info->size;
     uwp_window->size = info->size;
 
     uwp_window->mouse_x = 0;
@@ -39,8 +40,11 @@ CpdWindow create_window(const CpdWindowInfo* info) {
 
     uwp_window->layers = 0;
 
+    uwp_window->dpi = USER_DEFAULT_SCREEN_DPI;
+
     uwp_window->should_close = false;
     uwp_window->resized = false;
+    uwp_window->dpi_changed = false;
     uwp_window->visible = true;
     uwp_window->resize_swap_queue = false;
     uwp_window->first_mouse_event = true;
@@ -88,6 +92,7 @@ bool poll_window(CpdWindow window) {
     CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
 
     uwp_window->resized = false;
+    uwp_window->dpi_changed = false;
 
     poll_events(uwp_window);
     poll_gamepads(uwp_window);
@@ -101,10 +106,26 @@ CpdSize window_size(CpdWindow window) {
     return uwp_window->size;
 }
 
-bool window_resized(CpdWindow window) {
+float window_scale_factor(CpdWindow window) {
     CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
 
-    return uwp_window->resized;
+    return uwp_window->dpi / USER_DEFAULT_SCREEN_DPI;
+}
+
+CpdWindowResizeFlags window_resized(CpdWindow window) {
+    CpdUWPWindow* uwp_window = (CpdUWPWindow*)window;
+
+    CpdWindowResizeFlags flags = CpdWindowResizeFlags_None;
+    
+    if (uwp_window->resized) {
+        flags |= CpdWindowResizeFlags_Size;
+    }
+
+    if (uwp_window->dpi_changed) {
+        flags |= CpdWindowResizeFlags_Scale;
+    }
+
+    return flags;
 }
 
 bool window_present_allowed(CpdWindow window) {

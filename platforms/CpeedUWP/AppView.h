@@ -41,6 +41,8 @@ protected:
     void OnPointerMoved(winrt::Windows::UI::Core::CoreWindow const& sender, winrt::Windows::UI::Core::PointerEventArgs const& args);
     void OnPointerWheel(winrt::Windows::UI::Core::CoreWindow const& sender, winrt::Windows::UI::Core::PointerEventArgs const& args);
 
+    void OnDpiChanged(winrt::Windows::Graphics::Display::DisplayInformation const& sender, winrt::Windows::Foundation::IInspectable const& args);
+
 private:
     CpdUWPWindow* window;
     CpdBackendImplementation impl;
@@ -63,6 +65,8 @@ private:
     winrt::event_token pointer_key_down_token;
     winrt::event_token pointer_move_token;
     winrt::event_token pointer_wheel_token;
+
+    winrt::event_token dpi_changed_token;
 };
 
 class AppViewSource : public winrt::implements<AppViewSource, winrt::Windows::ApplicationModel::Core::IFrameworkViewSource>

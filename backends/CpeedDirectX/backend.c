@@ -171,7 +171,7 @@ static bool get_lowest_frame_layer(void* context, CpdFrameLayer* frame_layer) {
     return true;
 }
 
-static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
+static bool resize(CpdBackendHandle cpeed_backend, CpdWindowResizeFlags resize_flags, CpdSize new_size, float new_scale) {
     CpdDirectXRenderer* renderer = (CpdDirectXRenderer*)cpeed_backend;
 
 #ifdef CPD_IMGUI_AVAILABLE
@@ -194,7 +194,7 @@ static bool resize(CpdBackendHandle cpeed_backend, CpdSize new_size) {
 
     while (frame_layer != 0) {
         if (frame_layer->functions.resize != 0) {
-            frame_layer->functions.resize(frame_layer->context, renderer->window, renderer->frame, new_size);
+            frame_layer->functions.resize(frame_layer->context, renderer->window, renderer->frame, resize_flags, new_size, new_scale);
         }
 
         frame_layer = frame_layer->higher;

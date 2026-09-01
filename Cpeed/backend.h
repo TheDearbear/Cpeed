@@ -22,11 +22,14 @@ typedef struct CpdBackendImplementation {
 
     bool (*initialize_backend)();
     void (*shutdown_backend)();
+
     CpdBackendHandle (*initialize_window)(const CpdBackendInfo* info);
     void (*shutdown_window)(CpdBackendHandle cpeed_backend);
+    
     CpdBackendVersion (*get_version)(CpdBackendHandle cpeed_backend);
     CpdFrame* (*get_frame)(CpdBackendHandle cpeed_backend);
-    bool (*resize)(CpdBackendHandle cpeed_backend, CpdSize new_size);
+
+    bool (*resize)(CpdBackendHandle cpeed_backend, CpdWindowResizeFlags resize_flags, CpdSize new_size, float new_scale);
     bool (*should_frame)(CpdBackendHandle cpeed_backend, CpdWindow cpeed_window);
     bool (*pre_frame)(CpdBackendHandle cpeed_backend);
     bool (*frame)(CpdBackendHandle cpeed_backend);

@@ -2,10 +2,11 @@
 
 #define DEFINE_INSTANCE_FUNCTION(name) PFN_ ## name name = VK_NULL_HANDLE;
 
-#define FILL_VULKAN_EXTENSION_INFO(extensions, field_name, extension_name, promoted) \
+#define FILL_VULKAN_EXTENSION_INFO(extensions, field_name, extension_name, promoted) { \
     (extensions)->field_name.name = extension_name; \
     (extensions)->field_name.promoted_version = promoted; \
-    (extensions)->field_name.load_method = CpdVulkanExtensionLoadMethod_NotLoaded;
+    (extensions)->field_name.load_method = CpdVulkanExtensionLoadMethod_NotLoaded; \
+}
 
 // == Global
 
